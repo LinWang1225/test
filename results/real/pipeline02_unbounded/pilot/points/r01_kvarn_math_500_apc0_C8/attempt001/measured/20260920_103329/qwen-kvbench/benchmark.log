@@ -1,0 +1,145 @@
+2026-09-20 10:33:29 - evalscope - INFO: Starting benchmark with args: 
+2026-09-20 10:33:29 - evalscope - INFO: {
+    "model": "qwen-kvbench",
+    "model_id": "qwen-kvbench",
+    "attn_implementation": null,
+    "api": "openai",
+    "tokenizer_path": "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+    "port": 8877,
+    "url": "http://127.0.0.1:8000/v1/chat/completions",
+    "headers": {
+        "Authorization": "**********"
+    },
+    "connect_timeout": null,
+    "read_timeout": null,
+    "total_timeout": 3600,
+    "api_key": "**********",
+    "no_test_connection": true,
+    "scenario": null,
+    "number": 32,
+    "parallel": 8,
+    "rate": -1.0,
+    "warmup_num": 0.0,
+    "enable_pd_metrics": false,
+    "open_loop": false,
+    "sleep_interval": 5,
+    "duration": null,
+    "sla_auto_tune": false,
+    "sla_variable": "parallel",
+    "sla_params": null,
+    "sla_num_runs": 3,
+    "sla_upper_bound": 65536,
+    "sla_lower_bound": 1,
+    "sla_fixed_parallel": null,
+    "sla_number_multiplier": null,
+    "db_commit_interval": 1000,
+    "queue_size_multiplier": 5,
+    "in_flight_task_multiplier": 2,
+    "num_workers": 0,
+    "log_every_n_query": 100,
+    "debug": false,
+    "enable_progress_tracker": false,
+    "visualizer": null,
+    "wandb_api_key": null,
+    "swanlab_api_key": null,
+    "swanlab_host": null,
+    "name": null,
+    "outputs_dir": "/home/wanglin/kvbench-3090-cu126/results/real/pipeline02_unbounded/pilot/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_103329/qwen-kvbench",
+    "no_timestamp": false,
+    "max_prompt_length": 131072,
+    "min_prompt_length": 0,
+    "prefix_length": 0,
+    "prompt": null,
+    "query_template": null,
+    "apply_chat_template": true,
+    "image_width": 224,
+    "image_height": 224,
+    "image_format": "RGB",
+    "image_num": 1,
+    "image_patch_size": 28,
+    "dataset": "line_by_line",
+    "dataset_path": "/home/wanglin/kvbench-3090-cu126/results/real/pipeline02_unbounded/pilot/points/r01_kvarn_math_500_apc0_C8/attempt001/measure.requests.jsonl",
+    "data_source": null,
+    "dataset_offset": 0,
+    "dataset_args": null,
+    "frequency_penalty": null,
+    "repetition_penalty": null,
+    "logprobs": null,
+    "max_tokens": 2048,
+    "min_tokens": null,
+    "n_choices": null,
+    "seed": 42,
+    "stop": null,
+    "stop_token_ids": null,
+    "stream": true,
+    "temperature": 0.0,
+    "top_p": null,
+    "top_k": null,
+    "extra_args": {},
+    "tokenize_prompt": false,
+    "multi_turn": false,
+    "min_turns": 1,
+    "max_turns": null,
+    "multi_turn_args": null
+}
+2026-09-20 10:33:29 - evalscope - INFO: uvloop event loop policy installed (asyncio.sleep precision improved)
+2026-09-20 10:33:30 - evalscope - WARNING: Warmup is disabled, so the first 8 requests are released at once against an idle server. Their TTFT carries the start-up burst and can dominate the reported percentiles. Pass --warmup-num 8 to keep that burst out of the measured window, or 16 if you also read the max column.
+2026-09-20 10:33:31 - evalscope - INFO: Generating[requests]  97%| 31/32 [Elapsed: 00:00 < Remaining: 00:00, 63830.84it/s]
+2026-09-20 10:33:31 - evalscope - INFO: Save the data base to: /home/wanglin/kvbench-3090-cu126/results/real/pipeline02_unbounded/pilot/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_103329/qwen-kvbench/parallel_8_number_32/benchmark_data.db
+2026-09-20 10:34:45 - evalscope - INFO: Processing[parallel_8_number_32]  28%| 9/32 [Elapsed: 01:14 < Remaining: 02:46,  7.22s/it]
+2026-09-20 10:35:47 - evalscope - INFO: Processing[parallel_8_number_32]  78%| 25/32 [Elapsed: 02:16 < Remaining: 00:33,  4.85s/it]
+2026-09-20 10:36:00 - evalscope - INFO: Processing[parallel_8_number_32] 100%| 32/32 [Elapsed: 02:29 < Remaining: 00:00,  3.26s/it]
+2026-09-20 10:36:00 - evalscope - INFO: 
+Benchmarking summary:
+┌────────────────────────────┬─────────────┐
+│ Metric                     │       Value │
+├────────────────────────────┼─────────────┤
+│ ── General ──              │             │
+│ Test Duration (s)          │         149 │
+│ Concurrency                │           8 │
+│ Request Rate (req/s)       │          -1 │
+│ Total / Success / Failed   │ 32 / 32 / 0 │
+│ Req Throughput (req/s)     │        0.21 │
+│ ── Latency ──              │             │
+│ Avg Latency (s)            │      36.422 │
+│ Avg TTFT (ms)              │      226.06 │
+│ Avg TPOT (ms)              │       18.06 │
+│ Avg ITL (ms)               │       18.09 │
+│ ── Tokens ──               │             │
+│ Avg Input Tokens           │        85.1 │
+│ Avg Output Tokens          │      2004.7 │
+│ Output Throughput (tok/s)  │      430.56 │
+│ Total Throughput (tok/s)   │      448.84 │
+│ ── Speculative Decoding ── │             │
+│ Avg Decoded Tok/Iter       │           1 │
+│ Spec. Accept Rate          │         0.3 │
+└────────────────────────────┴─────────────┘
+2026-09-20 10:36:00 - evalscope - INFO: 
+Percentile results:
+┌────────────────┬───────┬───────┬───────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┐
+│ Metric         │   min │    1% │    5% │    10% │    25% │    50% │    75% │    90% │    95% │    99% │    max │
+├────────────────┼───────┼───────┼───────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┤
+│ Latency (s)    │ 29.49 │ 29.49 │ 29.88 │  34.61 │  36.42 │  36.86 │  37.55 │  37.88 │  37.88 │  37.96 │  37.96 │
+│ TTFT (ms)      │ 138.1 │ 138.1 │ 138.6 │ 139.09 │ 202.61 │ 221.11 │ 270.01 │ 298.14 │ 312.15 │ 368.07 │ 368.07 │
+│ ITL (ms)       │  0.01 │ 12.94 │ 13.23 │  13.32 │  13.74 │  14.46 │  15.34 │  15.84 │  76.67 │  78.73 │ 187.41 │
+│ TPOT (ms)      │ 17.68 │ 17.68 │ 17.69 │  17.69 │  17.69 │  18.08 │  18.24 │  18.38 │  18.38 │  18.38 │  18.38 │
+│ Input tokens   │    42 │    42 │    42 │     47 │     52 │     66 │     86 │    167 │    202 │    338 │    338 │
+│ Output tokens  │  1623 │  1623 │  1631 │   1912 │   2048 │   2048 │   2048 │   2048 │   2048 │   2048 │   2048 │
+│ Output (tok/s) │ 53.95 │ 53.95 │ 54.06 │  54.06 │  54.53 │  54.59 │  55.59 │  56.23 │  56.24 │  56.24 │  56.24 │
+│ Total (tok/s)  │ 55.06 │ 55.06 │ 55.43 │  56.03 │  56.49 │  57.17 │  57.83 │  59.02 │  59.39 │  63.14 │  63.14 │
+│ Decode (tok/s) │ 54.42 │ 54.42 │ 54.42 │  54.42 │  54.84 │  55.11 │  55.77 │  56.52 │  56.52 │  56.55 │  56.55 │
+└────────────────┴───────┴───────┴───────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
+2026-09-20 10:36:00 - evalscope - INFO: 
+Workload throughput (32 samples):
+┌─────────────────────┬───────────┬────────────┬─────────────────────┐
+│ Metric (tok/s)      │   Overall │   Last 30s │   Steady (drop 20%) │
+├─────────────────────┼───────────┼────────────┼─────────────────────┤
+│ Total Prompt tok/s  │     18.28 │      13.21 │               22.94 │
+│ New Prompt tok/s    │     18.28 │      13.21 │               22.94 │
+│ Cached Prompt tok/s │         0 │          0 │                   0 │
+│ Completion tok/s    │    430.57 │     417.43 │              557.18 │
+└─────────────────────┴───────────┴────────────┴─────────────────────┘
+2026-09-20 10:36:00 - evalscope - INFO: Save the summary to: /home/wanglin/kvbench-3090-cu126/results/real/pipeline02_unbounded/pilot/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_103329/qwen-kvbench/parallel_8_number_32
+2026-09-20 10:36:00 - evalscope - INFO: Running[perf] 100%| 1/1 [Elapsed: 02:31 < Remaining: 00:00, 151.26s/it]
+2026-09-20 10:36:00 - evalscope - INFO: Performance summary saved to: /home/wanglin/kvbench-3090-cu126/results/real/pipeline02_unbounded/pilot/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_103329/qwen-kvbench/performance_summary.txt
+2026-09-20 10:36:01 - evalscope - INFO: HTML report generated: /home/wanglin/kvbench-3090-cu126/results/real/pipeline02_unbounded/pilot/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_103329/qwen-kvbench/perf_report.html

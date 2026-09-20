@@ -1,0 +1,7 @@
+WARNING 09-20 10:18:24 [config.py:71] Support for Transformers v4 is deprecated. The Transformers v4 codepath will become unmaintained in vLLM v0.22.0 and will be removed in vLLM v0.24.0. Please upgrade to Transformers v5: pip install --upgrade transformers
+vllm: 0.1.dev227+g7586257f1.cu126 
+module: /home/wanglin/kvbench-3090-cu126/src/KVarN/vllm/__init__.py
+torch: 2.11.0+cu126 
+torch CUDA: 12.6
+GPU: 0 NVIDIA GeForce RTX 3090 (8, 6)
+source commit: 7586257f1c632e63187bfacbbe21ccb51540f7b3

@@ -1,0 +1,126 @@
+{
+  "compatibility": {
+    "model": "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+    "methods": [
+      "fp16",
+      "tq4",
+      "kvarn"
+    ],
+    "datasets": [
+      "math_500",
+      "humaneval"
+    ],
+    "gpu_util": 0.85,
+    "kv_bytes": null,
+    "max_len": 32768,
+    "max_seqs": 16,
+    "batch_tokens": 1024,
+    "eager": false,
+    "math_max_tokens": 16384,
+    "human_max_tokens": 8192,
+    "thinking": true,
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "top_k": 20,
+    "seed": 20260918,
+    "data_seed": 42,
+    "data_hashes": {
+      "math_500": "0834f3374ea929bd3645fc32cbfde32e7269210684244f24c76ea3ce68aecabb",
+      "humaneval": "048f17ed3d16d17d259251b629f16abb9419818fb748ff8f682af81a0572ffc5"
+    },
+    "prefix_sha256": null,
+    "knobs": {
+      "CUDA_HOME": "/usr/local/cuda-12.6",
+      "TRITON_PTXAS_PATH": "",
+      "LD_LIBRARY_PATH": "/home/wanglin/miniconda3/envs/vllm-turboquant/lib:/usr/local/cuda-12.6/lib64:/home/wanglin/miniconda3/envs/vllm-turboquant/lib:/usr/local/cuda-12.6/lib64:",
+      "KVARN_SINKHORN_ITERS": "",
+      "KVARN_SINK_TOKENS": "",
+      "VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS": "",
+      "VLLM_ATTENTION_BACKEND": ""
+    }
+  },
+  "source_identity": {
+    "scripts_sha256": {
+      "/home/wanglin/kvbench-3090-cu126/kvbench_real_v5/engine.py": "bd894629e76c231a89621aac9660901870b68947e99a67f334ed3a8c199123e7",
+      "/home/wanglin/kvbench-3090-cu126/kvbench_real_v5/export_saved.py": "8d264c43f003c65b315753365c7735c15b6673babbe0eaac799870358f930ca2",
+      "/home/wanglin/kvbench-3090-cu126/kvbench_real_v5/metrics.py": "c6d4125c3bb295f7684f36188696ee3ea13ae606333b71f939dbed10357ca9df",
+      "/home/wanglin/kvbench-3090-cu126/kvbench_real_v5/outputs.py": "47df6bba4fb154bf20215745be54b796b4e64d5a70c93e6ce82df049533d2355",
+      "/home/wanglin/kvbench-3090-cu126/kvbench_real_v5/prepare_data.py": "066c939a5326c068ea5831b6e8c1b1a427a2fbb3aa88000a905619d4b86e7733",
+      "/home/wanglin/kvbench-3090-cu126/kvbench_real_v5/run_real.py": "2bd10eba754408e4942d19c28dd46207af0c663a6055735f9d8ed324262c7c55",
+      "/home/wanglin/kvbench-3090-cu126/kvbench_real_v5/score_saved.py": "4db48e8e29b98eb46ded10c02c069c12de1fd32e53a46f3955288d5111af9d44",
+      "/home/wanglin/kvbench-3090-cu126/kvbench_real_v5/run_pipeline.sh": "2c26505c9c470f2dd23bf854478c299006e701f4b30a4e82902cfd50c12dad6e",
+      "/home/wanglin/kvbench-3090-cu126/kvbench_real_v5/run_real.sh": "d788a1fead3e4b580d99c4454852e212f8366d744a9554a9000c3ecc7a658696",
+      "/home/wanglin/kv_evalscope_3090_cu126_v2/serve.sh": "be48e9ace8c38a89699fbd2691e98fc55bc3b41eea5c42faddd8b648ea7b35d1",
+      "/home/wanglin/kv_evalscope_3090_cu126_v2/env.sh": "95b215bd33c84d077e42566ff78b1dacd2bcf19c2554e47ce1c14b1231a8b867"
+    },
+    "model_config_tokenizer_sha256": {
+      "config.json": "8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a",
+      "generation_config.json": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2",
+      "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "model.safetensors.index.json": "6dc0981b8829fead746441f68f38f24c5ca4a3a66351f652c26c6df0efc43ab2",
+      "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    },
+    "weight_file_sizes_mtime_ns": {
+      "model-00001-of-00003.safetensors": [
+        3957900840,
+        1789645173051872620
+      ],
+      "model-00002-of-00003.safetensors": [
+        3987450520,
+        1789645176987804646
+      ],
+      "model-00003-of-00003.safetensors": [
+        99630640,
+        1789644967934876223
+      ]
+    },
+    "python": "3.12.13 | packaged by conda-forge | (main, Aug 11 2026, 10:27:28) [GCC 14.4.0]",
+    "eval_packages": "absl-py==2.5.0\naddict==2.4.0\naiohappyeyeballs==2.7.1\naiohttp==3.14.3\naiosignal==1.4.0\naliyun-python-sdk-core==2.16.1\naliyun-python-sdk-kms==2.16.5\nannotated-doc==0.0.5\nannotated-types==0.8.0\nantlr4-python3-runtime==4.9.3\nanyio==4.15.1\nattrs==26.1.0\nboto3==1.43.96\nbotocore==1.43.96\ncertifi==2026.7.22\ncffi==2.1.1\ncharset-normalizer==3.5.1\nclick==8.5.0\ncloudpickle==3.1.2\ncolorama==0.4.6\ncolorlog==6.12.0\ncrcmod==1.7\ncryptography==50.0.1\ndatasets==4.8.4\ndefusedxml==0.7.1\ndill==0.4.1\ndistro==1.9.0\ndocstring_parser==0.18.0\ndotenv==0.9.9\neditdistance==0.8.1\neinops==0.8.2\nevalscope==1.12.0\nfastapi==0.141.1\nfastuuid==0.14.0\nfilelock==4.0.0\nfiletype==1.2.0\nfrozenlist==1.8.0\nfsspec==2026.2.0\nh11==0.16.0\nhf-xet==1.6.0\nhttpcore==1.0.9\nhttpx==0.28.1\nhuggingface_hub==0.36.2\nidna==3.19\nimportlib_metadata==8.9.0\njieba==0.42.1\nJinja2==3.1.6\njiter==0.17.0\njmespath==1.1.0\njoblib==1.6.0\njsonlines==4.0.0\njsonschema==4.26.0\njsonschema-specifications==2025.9.1\nlatex2sympy2_extended==1.11.0\nlitellm==1.101.0\nlxml==6.1.3\nMarkdown==3.10.3\nmarkdown-it-py==4.2.0\nMarkupSafe==3.0.3\nmdurl==0.1.2\nmodelscope==1.40.1\nmodelscope-hub==0.4.3\nmore-itertools==11.1.0\nmpmath==1.3.0\nmultidict==6.8.0\nmultiprocess==0.70.19\nnarwhals==2.26.0\nnltk==3.10.3\nnumpy==2.5.3\nopenai==2.54.0\noss2==2.19.1\npackaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1785888127/work\npandas==3.0.5\npillow==12.3.0\nplotly==7.1.0\nportalocker==4.3.2\npropcache==0.5.4\npyarrow==25.0.1\npycparser==3.0\npycryptodome==3.23.0\npydantic==2.13.5\npydantic-settings==2.15.0\npydantic_core==2.46.5\nPygments==2.21.0\npylatexenc==2.11\npython-dateutil==2.9.0.post0\npython-dotenv==1.2.3\nPyYAML==6.0.3\nreferencing==0.37.0\nregex==2026.9.10\nrequests==2.34.2\nrich==15.0.0\nrouge-chinese==1.0.3\nrouge_score==0.1.2\nrpds-py==2026.6.3\ns3transfer==0.19.2\nsacrebleu==2.6.0\nsafetensors==0.8.0\nscipy==1.18.1\nsetuptools==84.0.0\nsimplejson==4.1.2\nsix==1.17.0\nsniffio==1.3.1\nsortedcontainers==2.4.0\nsse-starlette==3.4.11\nstarlette==1.6.0\nsympy==1.14.0\ntabulate==0.10.0\ntiktoken==0.14.0\ntokenizers==0.22.2\ntqdm==4.70.1\ntransformers==4.57.6\ntyping-inspection==0.4.4\ntyping_extensions==4.16.0\nurllib3==2.8.0\nuvicorn==0.53.0\nuvloop==0.22.1\nwheel==0.48.0\nword2number==1.1\nxxhash==4.0.1\nyarl==1.25.1\nzhconv==1.4.3\nzipp==4.1.0",
+    "serve_packages": "agent-detector==2.0.0\naiohappyeyeballs==2.7.1\naiohttp==3.14.3\naiosignal==1.4.0\nannotated-doc==0.0.5\nannotated-types==0.8.0\nanthropic==1.6.0\nanyio==4.15.1\napache-tvm-ffi==0.1.9\nastor==0.8.1\nattrs==26.1.0\nblake3==1.0.9\nbuild==1.6.1\ncachetools==7.2.0\ncbor2==6.1.4\ncertifi==2026.7.22\ncffi==2.1.1\ncharset-normalizer==3.5.1\nclick==8.5.0\ncloudpickle==3.1.2\ncmake==3.31.6\ncompressed-tensors==0.17.0\ncryptography==50.0.1\ncuda-bindings==12.9.7\ncuda-pathfinder==1.6.0\ncuda-python==12.9.7\ncuda-tile==1.3.0\ncuda-toolkit==12.6.3\ndepyf==0.20.0\ndetect-installer==0.2.1\ndill==0.4.1\ndiskcache==5.6.3\ndnspython==2.8.0\ndocstring_parser==0.18.0\neinops==0.8.2\nemail-validator==2.3.0\nfastapi==0.136.3\nfastapi-cli==0.0.32\nfastapi-cloud-cli==0.26.0\nfastar==0.12.0\nfastsafetensors==0.4.0\nfilelock==3.32.3\nflashinfer-cubin==0.6.12\nflashinfer-python==0.6.12\nfrozenlist==1.8.0\nfsspec==2026.7.0\ngguf==0.19.0\ngoogleapis-common-protos==1.75.3\ngrpcio==1.84.0\nh11==0.16.0\nhf-xet==1.6.0\nhttpcore==1.0.9\nhttpcore2==2.13.0\nhttptools==0.8.0\nhttpx==0.28.1\nhttpx2==2.13.0\nhuggingface_hub==0.36.2\nhumming-kernels==0.1.4\nidna==3.19\nijson==3.5.1\ninteregular==0.3.3\nJinja2==3.1.6\njiter==0.17.0\njmespath==1.1.0\njsonschema==4.26.0\njsonschema-specifications==2025.9.1\nlark==1.2.2\nllguidance==1.7.6\nllvmlite==0.47.0\nlm-format-enforcer==0.11.3\nloguru==0.7.3\nmarkdown-it-py==4.2.0\nMarkupSafe==3.0.3\nmcp==2.2.0\nmcp-types==2.2.0\nmdurl==0.1.2\nmistral_common==1.11.7\nml_dtypes==0.6.0\nmodel-hosting-container-standards==0.1.16\nmpmath==1.3.0\nmsgspec==0.21.1\nmultidict==6.8.0\nnetworkx==3.6.1\nninja==1.13.2\nnumba==0.65.0\nnumpy==2.3.5\nnvidia-cublas-cu12==12.6.4.1\nnvidia-cuda-cccl-cu12==12.9.27\nnvidia-cuda-crt==13.4.92\nnvidia-cuda-cupti-cu12==12.6.80\nnvidia-cuda-nvcc==13.2.86\nnvidia-cuda-nvcc-cu12==12.9.86\nnvidia-cuda-nvrtc-cu12==12.6.85\nnvidia-cuda-runtime==13.4.92\nnvidia-cuda-runtime-cu12==12.6.77\nnvidia-cuda-tileiras==13.2.86\nnvidia-cudnn-cu12==9.10.2.21\nnvidia-cudnn-frontend==1.28.0\nnvidia-cufft-cu12==11.3.0.4\nnvidia-cufile-cu12==1.11.1.6\nnvidia-curand-cu12==10.3.7.77\nnvidia-cusolver-cu12==11.7.1.2\nnvidia-cusparse-cu12==12.5.4.2\nnvidia-cusparselt-cu12==0.7.1\nnvidia-cutlass-dsl==4.5.2\nnvidia-cutlass-dsl-libs-base==4.5.2\nnvidia-ml-py==13.610.43\nnvidia-nccl-cu12==2.28.9\nnvidia-nvjitlink==13.4.92\nnvidia-nvjitlink-cu12==12.6.85\nnvidia-nvshmem-cu12==3.4.5\nnvidia-nvtx-cu12==12.6.77\nnvidia-nvvm==13.2.86\nopenai==3.14.1\nopenai-harmony==0.0.8\nopencv-python-headless==5.0.0.93\nopentelemetry-api==1.44.0\nopentelemetry-exporter-otlp==1.44.0\nopentelemetry-exporter-otlp-proto-common==1.44.0\nopentelemetry-exporter-otlp-proto-grpc==1.44.0\nopentelemetry-exporter-otlp-proto-http==1.44.0\nopentelemetry-proto==1.44.0\nopentelemetry-sdk==1.44.0\nopentelemetry-semantic-conventions==0.65b0\nopentelemetry-semantic-conventions-ai==0.5.1\noutlines_core==0.2.14\npackaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1785888127/work\npartial-json-parser==0.2.1.1.post7\npillow==12.3.0\nprometheus-fastapi-instrumentator==8.1.0\nprometheus_client==0.26.0\npropcache==0.5.4\nprotobuf==7.36.1\npsutil==7.2.2\npy-cpuinfo==9.0.0\npybase64==1.5.0\npycountry==26.2.16\npycparser==3.0\npydantic==2.13.5\npydantic-extra-types==2.11.1\npydantic-settings==2.15.0\npydantic_core==2.46.5\npyelftools==0.33\nPygments==2.21.0\nPyJWT==2.14.0\npyproject_hooks==1.3.3\npython-dotenv==1.2.3\npython-json-logger==4.2.0\npython-multipart==0.0.32\nPyYAML==6.0.3\npyzmq==27.2.0\nquack-kernels==0.5.0\nreferencing==0.37.0\nregex==2026.9.10\nrequests==2.34.2\nrich==15.0.0\nrich-toolkit==0.20.5\nrignore==0.8.1\nrpds-py==2026.6.3\nsafetensors==0.8.0\nsemantic-version==2.10.0\nsentencepiece==0.2.2\nsentry-sdk==2.69.2\nsetproctitle==1.3.7\nsetuptools==80.9.0\nsetuptools-rust==1.13.0\nsetuptools-scm==10.2.3\nshellingham==1.5.4\nsix==1.17.0\nsniffio==1.3.1\nsse-starlette==3.4.11\nstarlette==1.6.0\nsupervisor==4.3.0\nsympy==1.14.0\ntabulate==0.10.0\ntiktoken==0.14.0\ntilelang==0.1.9\ntokenizers==0.22.2\ntokenspeed-mla==0.1.2\ntokenspeed-triton==3.8.10.post20260906\ntorch==2.11.0+cu126\ntorch_c_dlpack_ext==0.1.5\ntorchaudio==2.11.0+cu126\ntorchvision==0.26.0+cu126\ntqdm==4.70.1\ntransformers==4.57.6\ntriton==3.6.0\ntruststore==0.10.4\ntyper==0.27.2\ntyping-inspection==0.4.4\ntyping_extensions==4.16.0\nurllib3==2.8.0\nuvicorn==0.53.0\nuvloop==0.22.1\nvcs-versioning==2.4.1\n-e git+https://github.com/huawei-csl/KVarN.git@7586257f1c632e63187bfacbbe21ccb51540f7b3#egg=vllm\nwatchfiles==1.2.0\nwebsockets==17.1\nwheel==0.48.0\nxgrammar==0.2.5.post1\nyarl==1.25.1\nz3-solver==4.15.4.0",
+    "gpu": "GPU-f2631dea-f7eb-2e6f-c767-1a3f926c5e5f, NVIDIA GeForce RTX 3090, 560.35.05, 24576, 350.00",
+    "source": {
+      "module": "/home/wanglin/kvbench-3090-cu126/src/KVarN/vllm/__init__.py",
+      "torch": "2.11.0+cu126",
+      "cuda": "12.6",
+      "commit": "7586257f1c632e63187bfacbbe21ccb51540f7b3\n",
+      "status": "",
+      "diff": ""
+    }
+  },
+  "choices": {
+    "math_500:apc0": {
+      "per_method": {
+        "fp16": null,
+        "tq4": null,
+        "kvarn": null
+      },
+      "common": null,
+      "eligible_levels": {
+        "fp16": [],
+        "tq4": [],
+        "kvarn": []
+      },
+      "evidence": [],
+      "warning": "Pilot-only empirical choice, not a proven capacity or latency guarantee."
+    },
+    "humaneval:apc0": {
+      "per_method": {
+        "fp16": null,
+        "tq4": null,
+        "kvarn": null
+      },
+      "common": null,
+      "eligible_levels": {
+        "fp16": [],
+        "tq4": [],
+        "kvarn": []
+      },
+      "evidence": [],
+      "warning": "Pilot-only empirical choice, not a proven capacity or latency guarantee."
+    }
+  },
+  "selection_objective": "successful requests/s subject to observed completion/cap/SLO criteria; accuracy not used until offline grading",
+  "slo_configured": false
+}

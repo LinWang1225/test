@@ -1,0 +1,17 @@
+{
+    "wall_start": 9924690.419657417,
+    "points": [
+        {
+            "t": 17.050723,
+            "cum_completion": 1224,
+            "cum_new_prompt": 103,
+            "cum_cached_prompt": 0
+        },
+        {
+            "t": 58.253041,
+            "cum_completion": 5581,
+            "cum_new_prompt": 198,
+            "cum_cached_prompt": 0
+        }
+    ]
+}

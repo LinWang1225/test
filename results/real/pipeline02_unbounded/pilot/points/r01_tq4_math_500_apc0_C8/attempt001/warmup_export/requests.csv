@@ -1,0 +1,3 @@
+﻿dataset,case_id,http_success,finish_reason,is_length_capped,is_length_limit_termination,prompt_tokens,completion_tokens,e2e_s,ttft_s,tpot_s,token_count_source,answer_extraction,raw_response_file
+math_500,test/precalculus/1289.json,True,stop,False,False,103,1465,19.82369759120047,0.23100212775170803,0.013382988704541505,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00000_db5517191980.json.gz
+math_500,test/counting_and_probability/377.json,True,length,True,True,95,2048,27.46622976101935,0.23025108501315117,0.01330531444846419,evalscope_fallback_or_missing,no_closed_think_or_server_reasoning_channel,raw_responses/00001_645af47f56cb.json.gz

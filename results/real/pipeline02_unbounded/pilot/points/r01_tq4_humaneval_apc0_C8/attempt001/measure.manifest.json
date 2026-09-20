@@ -1,0 +1,1474 @@
+[
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/127",
+    "source_index": 127,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef intersection(interval1, interval2):\n    \"\"\"You are given two intervals,\n    where each interval is a pair of integers. For example, interval = (start, end) = (1, 2).\n    The given intervals are closed which means that the interval (start, end)\n    includes both start and end.\n    For each given interval, it is assumed that its start is less or equal its end.\n    Your task is to determine whether the length of intersection of these two \n    intervals is a prime number.\n    Example, the intersection of the intervals (1, 3), (2, 4) is (2, 3)\n    which its length is 1, which not a prime number.\n    If the length of the intersection is a prime number, return \"YES\",\n    otherwise, return \"NO\".\n    If the two intervals don't intersect, return \"NO\".\n\n\n    [input/output] samples:\n    intersection((1, 2), (2, 3)) ==> \"NO\"\n    intersection((-1, 1), (0, 4)) ==> \"NO\"\n    intersection((-3, -1), (-5, 5)) ==> \"YES\"\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    def is_prime(num):\n        if num == 1 or num == 0:\n            return False\n        if num == 2:\n            return True\n        for i in range(2, num):\n            if num%i == 0:\n                return False\n        return True\n\n    l = max(interval1[0], interval2[0])\n    r = min(interval1[1], interval2[1])\n    length = r - l\n    if length > 0 and is_prime(length):\n        return \"YES\"\n    return \"NO\"\n",
+    "original_record": {
+      "task_id": "HumanEval/127",
+      "prompt": "\ndef intersection(interval1, interval2):\n    \"\"\"You are given two intervals,\n    where each interval is a pair of integers. For example, interval = (start, end) = (1, 2).\n    The given intervals are closed which means that the interval (start, end)\n    includes both start and end.\n    For each given interval, it is assumed that its start is less or equal its end.\n    Your task is to determine whether the length of intersection of these two \n    intervals is a prime number.\n    Example, the intersection of the intervals (1, 3), (2, 4) is (2, 3)\n    which its length is 1, which not a prime number.\n    If the length of the intersection is a prime number, return \"YES\",\n    otherwise, return \"NO\".\n    If the two intervals don't intersect, return \"NO\".\n\n\n    [input/output] samples:\n    intersection((1, 2), (2, 3)) ==> \"NO\"\n    intersection((-1, 1), (0, 4)) ==> \"NO\"\n    intersection((-3, -1), (-5, 5)) ==> \"YES\"\n    \"\"\"\n",
+      "canonical_solution": "    def is_prime(num):\n        if num == 1 or num == 0:\n            return False\n        if num == 2:\n            return True\n        for i in range(2, num):\n            if num%i == 0:\n                return False\n        return True\n\n    l = max(interval1[0], interval2[0])\n    r = min(interval1[1], interval2[1])\n    length = r - l\n    if length > 0 and is_prime(length):\n        return \"YES\"\n    return \"NO\"\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate((1, 2), (2, 3)) == \"NO\"\n    assert candidate((-1, 1), (0, 4)) == \"NO\"\n    assert candidate((-3, -1), (-5, 5)) == \"YES\"\n    assert candidate((-2, 2), (-4, 0)) == \"YES\"\n\n    # Check some edge cases that are easy to work out by hand.\n    assert candidate((-11, 2), (-1, -1)) == \"NO\"\n    assert candidate((1, 2), (3, 5)) == \"NO\"\n    assert candidate((1, 2), (1, 2)) == \"NO\"\n    assert candidate((-2, -2), (-3, -2)) == \"NO\"\n\n",
+      "entry_point": "intersection"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef intersection(interval1, interval2):\n    \"\"\"You are given two intervals,\n    where each interval is a pair of integers. For example, interval = (start, end) = (1, 2).\n    The given intervals are closed which means that the interval (start, end)\n    includes both start and end.\n    For each given interval, it is assumed that its start is less or equal its end.\n    Your task is to determine whether the length of intersection of these two \n    intervals is a prime number.\n    Example, the intersection of the intervals (1, 3), (2, 4) is (2, 3)\n    which its length is 1, which not a prime number.\n    If the length of the intersection is a prime number, return \"YES\",\n    otherwise, return \"NO\".\n    If the two intervals don't intersect, return \"NO\".\n\n\n    [input/output] samples:\n    intersection((1, 2), (2, 3)) ==> \"NO\"\n    intersection((-1, 1), (0, 4)) ==> \"NO\"\n    intersection((-3, -1), (-5, 5)) ==> \"YES\"\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 967339111,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 283,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/27",
+    "source_index": 27,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef flip_case(string: str) -> str:\n    \"\"\" For a given string, flip lowercase characters to uppercase and uppercase to lowercase.\n    >>> flip_case('Hello')\n    'hELLO'\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    return string.swapcase()\n",
+    "original_record": {
+      "task_id": "HumanEval/27",
+      "prompt": "\n\ndef flip_case(string: str) -> str:\n    \"\"\" For a given string, flip lowercase characters to uppercase and uppercase to lowercase.\n    >>> flip_case('Hello')\n    'hELLO'\n    \"\"\"\n",
+      "canonical_solution": "    return string.swapcase()\n",
+      "test": "\n\nMETADATA = {\n    'author': 'jt',\n    'dataset': 'test'\n}\n\n\ndef check(candidate):\n    assert candidate('') == ''\n    assert candidate('Hello!') == 'hELLO!'\n    assert candidate('These violent delights have violent ends') == 'tHESE VIOLENT DELIGHTS HAVE VIOLENT ENDS'\n",
+      "entry_point": "flip_case"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef flip_case(string: str) -> str:\n    \"\"\" For a given string, flip lowercase characters to uppercase and uppercase to lowercase.\n    >>> flip_case('Hello')\n    'hELLO'\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 140297738,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 77,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/10",
+    "source_index": 10,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    if not string:\n        return ''\n\n    beginning_of_suffix = 0\n\n    while not is_palindrome(string[beginning_of_suffix:]):\n        beginning_of_suffix += 1\n\n    return string + string[:beginning_of_suffix][::-1]\n",
+    "original_record": {
+      "task_id": "HumanEval/10",
+      "prompt": "\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n",
+      "canonical_solution": "    if not string:\n        return ''\n\n    beginning_of_suffix = 0\n\n    while not is_palindrome(string[beginning_of_suffix:]):\n        beginning_of_suffix += 1\n\n    return string + string[:beginning_of_suffix][::-1]\n",
+      "test": "\n\nMETADATA = {\n    'author': 'jt',\n    'dataset': 'test'\n}\n\n\ndef check(candidate):\n    assert candidate('') == ''\n    assert candidate('x') == 'x'\n    assert candidate('xyz') == 'xyzyx'\n    assert candidate('xyx') == 'xyx'\n    assert candidate('jerry') == 'jerryrrej'\n",
+      "entry_point": "make_palindrome"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef is_palindrome(string: str) -> bool:\n    \"\"\" Test if given string is a palindrome \"\"\"\n    return string == string[::-1]\n\n\ndef make_palindrome(string: str) -> str:\n    \"\"\" Find the shortest palindrome that begins with a supplied string.\n    Algorithm idea is simple:\n    - Find the longest postfix of supplied string that is a palindrome.\n    - Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n    >>> make_palindrome('')\n    ''\n    >>> make_palindrome('cat')\n    'catac'\n    >>> make_palindrome('cata')\n    'catac'\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 806289818,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 171,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/38",
+    "source_index": 38,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef encode_cyclic(s: str):\n    \"\"\"\n    returns encoded string by cycling groups of three characters.\n    \"\"\"\n    # split string to groups. Each of length 3.\n    groups = [s[(3 * i):min((3 * i + 3), len(s))] for i in range((len(s) + 2) // 3)]\n    # cycle elements in each group. Unless group has fewer elements than 3.\n    groups = [(group[1:] + group[0]) if len(group) == 3 else group for group in groups]\n    return \"\".join(groups)\n\n\ndef decode_cyclic(s: str):\n    \"\"\"\n    takes as input string encoded with encode_cyclic function. Returns decoded string.\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    return encode_cyclic(encode_cyclic(s))\n",
+    "original_record": {
+      "task_id": "HumanEval/38",
+      "prompt": "\n\ndef encode_cyclic(s: str):\n    \"\"\"\n    returns encoded string by cycling groups of three characters.\n    \"\"\"\n    # split string to groups. Each of length 3.\n    groups = [s[(3 * i):min((3 * i + 3), len(s))] for i in range((len(s) + 2) // 3)]\n    # cycle elements in each group. Unless group has fewer elements than 3.\n    groups = [(group[1:] + group[0]) if len(group) == 3 else group for group in groups]\n    return \"\".join(groups)\n\n\ndef decode_cyclic(s: str):\n    \"\"\"\n    takes as input string encoded with encode_cyclic function. Returns decoded string.\n    \"\"\"\n",
+      "canonical_solution": "    return encode_cyclic(encode_cyclic(s))\n",
+      "test": "\n\nMETADATA = {}\n\n\ndef check(candidate):\n    from random import randint, choice\n    import string\n\n    letters = string.ascii_lowercase\n    for _ in range(100):\n        str = ''.join(choice(letters) for i in range(randint(10, 20)))\n        encoded_str = encode_cyclic(str)\n        assert candidate(encoded_str) == str\n\n",
+      "entry_point": "decode_cyclic"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef encode_cyclic(s: str):\n    \"\"\"\n    returns encoded string by cycling groups of three characters.\n    \"\"\"\n    # split string to groups. Each of length 3.\n    groups = [s[(3 * i):min((3 * i + 3), len(s))] for i in range((len(s) + 2) // 3)]\n    # cycle elements in each group. Unless group has fewer elements than 3.\n    groups = [(group[1:] + group[0]) if len(group) == 3 else group for group in groups]\n    return \"\".join(groups)\n\n\ndef decode_cyclic(s: str):\n    \"\"\"\n    takes as input string encoded with encode_cyclic function. Returns decoded string.\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 106699416,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 187,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/117",
+    "source_index": 117,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef select_words(s, n):\n    \"\"\"Given a string s and a natural number n, you have been tasked to implement \n    a function that returns a list of all words from string s that contain exactly \n    n consonants, in order these words appear in the string s.\n    If the string s is empty then the function should return an empty list.\n    Note: you may assume the input string contains only letters and spaces.\n    Examples:\n    select_words(\"Mary had a little lamb\", 4) ==> [\"little\"]\n    select_words(\"Mary had a little lamb\", 3) ==> [\"Mary\", \"lamb\"]\n    select_words(\"simple white space\", 2) ==> []\n    select_words(\"Hello world\", 4) ==> [\"world\"]\n    select_words(\"Uncle sam\", 3) ==> [\"Uncle\"]\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    result = []\n    for word in s.split():\n        n_consonants = 0\n        for i in range(0, len(word)):\n            if word[i].lower() not in [\"a\",\"e\",\"i\",\"o\",\"u\"]:\n                n_consonants += 1 \n        if n_consonants == n:\n            result.append(word)\n    return result\n\n",
+    "original_record": {
+      "task_id": "HumanEval/117",
+      "prompt": "\ndef select_words(s, n):\n    \"\"\"Given a string s and a natural number n, you have been tasked to implement \n    a function that returns a list of all words from string s that contain exactly \n    n consonants, in order these words appear in the string s.\n    If the string s is empty then the function should return an empty list.\n    Note: you may assume the input string contains only letters and spaces.\n    Examples:\n    select_words(\"Mary had a little lamb\", 4) ==> [\"little\"]\n    select_words(\"Mary had a little lamb\", 3) ==> [\"Mary\", \"lamb\"]\n    select_words(\"simple white space\", 2) ==> []\n    select_words(\"Hello world\", 4) ==> [\"world\"]\n    select_words(\"Uncle sam\", 3) ==> [\"Uncle\"]\n    \"\"\"\n",
+      "canonical_solution": "    result = []\n    for word in s.split():\n        n_consonants = 0\n        for i in range(0, len(word)):\n            if word[i].lower() not in [\"a\",\"e\",\"i\",\"o\",\"u\"]:\n                n_consonants += 1 \n        if n_consonants == n:\n            result.append(word)\n    return result\n\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate(\"Mary had a little lamb\", 4) == [\"little\"], \"First test error: \" + str(candidate(\"Mary had a little lamb\", 4))      \n    assert candidate(\"Mary had a little lamb\", 3) == [\"Mary\", \"lamb\"], \"Second test error: \" + str(candidate(\"Mary had a little lamb\", 3))  \n    assert candidate(\"simple white space\", 2) == [], \"Third test error: \" + str(candidate(\"simple white space\", 2))      \n    assert candidate(\"Hello world\", 4) == [\"world\"], \"Fourth test error: \" + str(candidate(\"Hello world\", 4))  \n    assert candidate(\"Uncle sam\", 3) == [\"Uncle\"], \"Fifth test error: \" + str(candidate(\"Uncle sam\", 3))\n\n\n    # Check some edge cases that are easy to work out by hand.\n    assert candidate(\"\", 4) == [], \"1st edge test error: \" + str(candidate(\"\", 4))\n    assert candidate(\"a b c d e f\", 1) == [\"b\", \"c\", \"d\", \"f\"], \"2nd edge test error: \" + str(candidate(\"a b c d e f\", 1))\n\n",
+      "entry_point": "select_words"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef select_words(s, n):\n    \"\"\"Given a string s and a natural number n, you have been tasked to implement \n    a function that returns a list of all words from string s that contain exactly \n    n consonants, in order these words appear in the string s.\n    If the string s is empty then the function should return an empty list.\n    Note: you may assume the input string contains only letters and spaces.\n    Examples:\n    select_words(\"Mary had a little lamb\", 4) ==> [\"little\"]\n    select_words(\"Mary had a little lamb\", 3) ==> [\"Mary\", \"lamb\"]\n    select_words(\"simple white space\", 2) ==> []\n    select_words(\"Hello world\", 4) ==> [\"world\"]\n    select_words(\"Uncle sam\", 3) ==> [\"Uncle\"]\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 32101732,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 210,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/56",
+    "source_index": 56,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef correct_bracketing(brackets: str):\n    \"\"\" brackets is a string of \"<\" and \">\".\n    return True if every opening bracket has a corresponding closing bracket.\n\n    >>> correct_bracketing(\"<\")\n    False\n    >>> correct_bracketing(\"<>\")\n    True\n    >>> correct_bracketing(\"<<><>>\")\n    True\n    >>> correct_bracketing(\"><<>\")\n    False\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    depth = 0\n    for b in brackets:\n        if b == \"<\":\n            depth += 1\n        else:\n            depth -= 1\n        if depth < 0:\n            return False\n    return depth == 0\n",
+    "original_record": {
+      "task_id": "HumanEval/56",
+      "prompt": "\n\ndef correct_bracketing(brackets: str):\n    \"\"\" brackets is a string of \"<\" and \">\".\n    return True if every opening bracket has a corresponding closing bracket.\n\n    >>> correct_bracketing(\"<\")\n    False\n    >>> correct_bracketing(\"<>\")\n    True\n    >>> correct_bracketing(\"<<><>>\")\n    True\n    >>> correct_bracketing(\"><<>\")\n    False\n    \"\"\"\n",
+      "canonical_solution": "    depth = 0\n    for b in brackets:\n        if b == \"<\":\n            depth += 1\n        else:\n            depth -= 1\n        if depth < 0:\n            return False\n    return depth == 0\n",
+      "test": "\n\nMETADATA = {}\n\n\ndef check(candidate):\n    assert candidate(\"<>\")\n    assert candidate(\"<<><>>\")\n    assert candidate(\"<><><<><>><>\")\n    assert candidate(\"<><><<<><><>><>><<><><<>>>\")\n    assert not candidate(\"<<<><>>>>\")\n    assert not candidate(\"><<>\")\n    assert not candidate(\"<\")\n    assert not candidate(\"<<<<\")\n    assert not candidate(\">\")\n    assert not candidate(\"<<>\")\n    assert not candidate(\"<><><<><>><>><<>\")\n    assert not candidate(\"<><><<><>><>>><>\")\n\n",
+      "entry_point": "correct_bracketing"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef correct_bracketing(brackets: str):\n    \"\"\" brackets is a string of \"<\" and \">\".\n    return True if every opening bracket has a corresponding closing bracket.\n\n    >>> correct_bracketing(\"<\")\n    False\n    >>> correct_bracketing(\"<>\")\n    True\n    >>> correct_bracketing(\"<<><>>\")\n    True\n    >>> correct_bracketing(\"><<>\")\n    False\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 218242275,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 121,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/111",
+    "source_index": 111,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef histogram(test):\n    \"\"\"Given a string representing a space separated lowercase letters, return a dictionary\n    of the letter with the most repetition and containing the corresponding count.\n    If several letters have the same occurrence, return all of them.\n    \n    Example:\n    histogram('a b c') == {'a': 1, 'b': 1, 'c': 1}\n    histogram('a b b a') == {'a': 2, 'b': 2}\n    histogram('a b c a b') == {'a': 2, 'b': 2}\n    histogram('b b b b a') == {'b': 4}\n    histogram('') == {}\n\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    dict1={}\n    list1=test.split(\" \")\n    t=0\n\n    for i in list1:\n        if(list1.count(i)>t) and i!='':\n            t=list1.count(i)\n    if t>0:\n        for i in list1:\n            if(list1.count(i)==t):\n                \n                dict1[i]=t\n    return dict1\n",
+    "original_record": {
+      "task_id": "HumanEval/111",
+      "prompt": "\ndef histogram(test):\n    \"\"\"Given a string representing a space separated lowercase letters, return a dictionary\n    of the letter with the most repetition and containing the corresponding count.\n    If several letters have the same occurrence, return all of them.\n    \n    Example:\n    histogram('a b c') == {'a': 1, 'b': 1, 'c': 1}\n    histogram('a b b a') == {'a': 2, 'b': 2}\n    histogram('a b c a b') == {'a': 2, 'b': 2}\n    histogram('b b b b a') == {'b': 4}\n    histogram('') == {}\n\n    \"\"\"\n",
+      "canonical_solution": "    dict1={}\n    list1=test.split(\" \")\n    t=0\n\n    for i in list1:\n        if(list1.count(i)>t) and i!='':\n            t=list1.count(i)\n    if t>0:\n        for i in list1:\n            if(list1.count(i)==t):\n                \n                dict1[i]=t\n    return dict1\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate('a b b a') == {'a':2,'b': 2}, \"This prints if this assert fails 1 (good for debugging!)\"\n    assert candidate('a b c a b') == {'a': 2, 'b': 2}, \"This prints if this assert fails 2 (good for debugging!)\"\n    assert candidate('a b c d g') == {'a': 1, 'b': 1, 'c': 1, 'd': 1, 'g': 1}, \"This prints if this assert fails 3 (good for debugging!)\"\n    assert candidate('r t g') == {'r': 1,'t': 1,'g': 1}, \"This prints if this assert fails 4 (good for debugging!)\"\n    assert candidate('b b b b a') == {'b': 4}, \"This prints if this assert fails 5 (good for debugging!)\"\n    assert candidate('r t g') == {'r': 1,'t': 1,'g': 1}, \"This prints if this assert fails 6 (good for debugging!)\"\n    \n    \n    # Check some edge cases that are easy to work out by hand.\n    assert candidate('') == {}, \"This prints if this assert fails 7 (also good for debugging!)\"\n    assert candidate('a') == {'a': 1}, \"This prints if this assert fails 8 (also good for debugging!)\"\n\n",
+      "entry_point": "histogram"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef histogram(test):\n    \"\"\"Given a string representing a space separated lowercase letters, return a dictionary\n    of the letter with the most repetition and containing the corresponding count.\n    If several letters have the same occurrence, return all of them.\n    \n    Example:\n    histogram('a b c') == {'a': 1, 'b': 1, 'c': 1}\n    histogram('a b b a') == {'a': 2, 'b': 2}\n    histogram('a b c a b') == {'a': 2, 'b': 2}\n    histogram('b b b b a') == {'b': 4}\n    histogram('') == {}\n\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1900771697,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 180,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/50",
+    "source_index": 50,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef encode_shift(s: str):\n    \"\"\"\n    returns encoded string by shifting every character by 5 in the alphabet.\n    \"\"\"\n    return \"\".join([chr(((ord(ch) + 5 - ord(\"a\")) % 26) + ord(\"a\")) for ch in s])\n\n\ndef decode_shift(s: str):\n    \"\"\"\n    takes as input string encoded with encode_shift function. Returns decoded string.\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    return \"\".join([chr(((ord(ch) - 5 - ord(\"a\")) % 26) + ord(\"a\")) for ch in s])\n",
+    "original_record": {
+      "task_id": "HumanEval/50",
+      "prompt": "\n\ndef encode_shift(s: str):\n    \"\"\"\n    returns encoded string by shifting every character by 5 in the alphabet.\n    \"\"\"\n    return \"\".join([chr(((ord(ch) + 5 - ord(\"a\")) % 26) + ord(\"a\")) for ch in s])\n\n\ndef decode_shift(s: str):\n    \"\"\"\n    takes as input string encoded with encode_shift function. Returns decoded string.\n    \"\"\"\n",
+      "canonical_solution": "    return \"\".join([chr(((ord(ch) - 5 - ord(\"a\")) % 26) + ord(\"a\")) for ch in s])\n",
+      "test": "\n\nMETADATA = {}\n\n\ndef check(candidate):\n    from random import randint, choice\n    import copy\n    import string\n\n    letters = string.ascii_lowercase\n    for _ in range(100):\n        str = ''.join(choice(letters) for i in range(randint(10, 20)))\n        encoded_str = encode_shift(str)\n        assert candidate(copy.deepcopy(encoded_str)) == str\n\n",
+      "entry_point": "decode_shift"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef encode_shift(s: str):\n    \"\"\"\n    returns encoded string by shifting every character by 5 in the alphabet.\n    \"\"\"\n    return \"\".join([chr(((ord(ch) + 5 - ord(\"a\")) % 26) + ord(\"a\")) for ch in s])\n\n\ndef decode_shift(s: str):\n    \"\"\"\n    takes as input string encoded with encode_shift function. Returns decoded string.\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 672274025,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 120,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/26",
+    "source_index": 26,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef remove_duplicates(numbers: List[int]) -> List[int]:\n    \"\"\" From a list of integers, remove all elements that occur more than once.\n    Keep order of elements left the same as in the input.\n    >>> remove_duplicates([1, 2, 3, 2, 4])\n    [1, 3, 4]\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    import collections\n    c = collections.Counter(numbers)\n    return [n for n in numbers if c[n] <= 1]\n",
+    "original_record": {
+      "task_id": "HumanEval/26",
+      "prompt": "from typing import List\n\n\ndef remove_duplicates(numbers: List[int]) -> List[int]:\n    \"\"\" From a list of integers, remove all elements that occur more than once.\n    Keep order of elements left the same as in the input.\n    >>> remove_duplicates([1, 2, 3, 2, 4])\n    [1, 3, 4]\n    \"\"\"\n",
+      "canonical_solution": "    import collections\n    c = collections.Counter(numbers)\n    return [n for n in numbers if c[n] <= 1]\n",
+      "test": "\n\nMETADATA = {\n    'author': 'jt',\n    'dataset': 'test'\n}\n\n\ndef check(candidate):\n    assert candidate([]) == []\n    assert candidate([1, 2, 3, 4]) == [1, 2, 3, 4]\n    assert candidate([1, 2, 3, 2, 4, 3, 5]) == [1, 4, 5]\n",
+      "entry_point": "remove_duplicates"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef remove_duplicates(numbers: List[int]) -> List[int]:\n    \"\"\" From a list of integers, remove all elements that occur more than once.\n    Keep order of elements left the same as in the input.\n    >>> remove_duplicates([1, 2, 3, 2, 4])\n    [1, 3, 4]\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 115875961,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 113,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/0",
+    "source_index": 0,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef has_close_elements(numbers: List[float], threshold: float) -> bool:\n    \"\"\" Check if in given list of numbers, are any two numbers closer to each other than\n    given threshold.\n    >>> has_close_elements([1.0, 2.0, 3.0], 0.5)\n    False\n    >>> has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3)\n    True\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    for idx, elem in enumerate(numbers):\n        for idx2, elem2 in enumerate(numbers):\n            if idx != idx2:\n                distance = abs(elem - elem2)\n                if distance < threshold:\n                    return True\n\n    return False\n",
+    "original_record": {
+      "task_id": "HumanEval/0",
+      "prompt": "from typing import List\n\n\ndef has_close_elements(numbers: List[float], threshold: float) -> bool:\n    \"\"\" Check if in given list of numbers, are any two numbers closer to each other than\n    given threshold.\n    >>> has_close_elements([1.0, 2.0, 3.0], 0.5)\n    False\n    >>> has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3)\n    True\n    \"\"\"\n",
+      "canonical_solution": "    for idx, elem in enumerate(numbers):\n        for idx2, elem2 in enumerate(numbers):\n            if idx != idx2:\n                distance = abs(elem - elem2)\n                if distance < threshold:\n                    return True\n\n    return False\n",
+      "test": "\n\nMETADATA = {\n    'author': 'jt',\n    'dataset': 'test'\n}\n\n\ndef check(candidate):\n    assert candidate([1.0, 2.0, 3.9, 4.0, 5.0, 2.2], 0.3) == True\n    assert candidate([1.0, 2.0, 3.9, 4.0, 5.0, 2.2], 0.05) == False\n    assert candidate([1.0, 2.0, 5.9, 4.0, 5.0], 0.95) == True\n    assert candidate([1.0, 2.0, 5.9, 4.0, 5.0], 0.8) == False\n    assert candidate([1.0, 2.0, 3.0, 4.0, 5.0, 2.0], 0.1) == True\n    assert candidate([1.1, 2.2, 3.1, 4.1, 5.1], 1.0) == True\n    assert candidate([1.1, 2.2, 3.1, 4.1, 5.1], 0.5) == False\n\n",
+      "entry_point": "has_close_elements"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef has_close_elements(numbers: List[float], threshold: float) -> bool:\n    \"\"\" Check if in given list of numbers, are any two numbers closer to each other than\n    given threshold.\n    >>> has_close_elements([1.0, 2.0, 3.0], 0.5)\n    False\n    >>> has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3)\n    True\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1801241304,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 153,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/101",
+    "source_index": 101,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef words_string(s):\n    \"\"\"\n    You will be given a string of words separated by commas or spaces. Your task is\n    to split the string into words and return an array of the words.\n    \n    For example:\n    words_string(\"Hi, my name is John\") == [\"Hi\", \"my\", \"name\", \"is\", \"John\"]\n    words_string(\"One, two, three, four, five, six\") == [\"One\", \"two\", \"three\", \"four\", \"five\", \"six\"]\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    if not s:\n        return []\n\n    s_list = []\n\n    for letter in s:\n        if letter == ',':\n            s_list.append(' ')\n        else:\n            s_list.append(letter)\n\n    s_list = \"\".join(s_list)\n    return s_list.split()\n",
+    "original_record": {
+      "task_id": "HumanEval/101",
+      "prompt": "\ndef words_string(s):\n    \"\"\"\n    You will be given a string of words separated by commas or spaces. Your task is\n    to split the string into words and return an array of the words.\n    \n    For example:\n    words_string(\"Hi, my name is John\") == [\"Hi\", \"my\", \"name\", \"is\", \"John\"]\n    words_string(\"One, two, three, four, five, six\") == [\"One\", \"two\", \"three\", \"four\", \"five\", \"six\"]\n    \"\"\"\n",
+      "canonical_solution": "    if not s:\n        return []\n\n    s_list = []\n\n    for letter in s:\n        if letter == ',':\n            s_list.append(' ')\n        else:\n            s_list.append(letter)\n\n    s_list = \"\".join(s_list)\n    return s_list.split()\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert True, \"This prints if this assert fails 1 (good for debugging!)\"\n    assert candidate(\"Hi, my name is John\") == [\"Hi\", \"my\", \"name\", \"is\", \"John\"]\n    assert candidate(\"One, two, three, four, five, six\") == [\"One\", \"two\", \"three\", \"four\", \"five\", \"six\"]\n    assert candidate(\"Hi, my name\") == [\"Hi\", \"my\", \"name\"]\n    assert candidate(\"One,, two, three, four, five, six,\") == [\"One\", \"two\", \"three\", \"four\", \"five\", \"six\"]\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True, \"This prints if this assert fails 2 (also good for debugging!)\"\n    assert candidate(\"\") == []\n    assert candidate(\"ahmed     , gamal\") == [\"ahmed\", \"gamal\"]\n\n",
+      "entry_point": "words_string"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef words_string(s):\n    \"\"\"\n    You will be given a string of words separated by commas or spaces. Your task is\n    to split the string into words and return an array of the words.\n    \n    For example:\n    words_string(\"Hi, my name is John\") == [\"Hi\", \"my\", \"name\", \"is\", \"John\"]\n    words_string(\"One, two, three, four, five, six\") == [\"One\", \"two\", \"three\", \"four\", \"five\", \"six\"]\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1819676313,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 145,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/161",
+    "source_index": 161,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef solve(s):\n    \"\"\"You are given a string s.\n    if s[i] is a letter, reverse its case from lower to upper or vise versa, \n    otherwise keep it as it is.\n    If the string contains no letters, reverse the string.\n    The function should return the resulted string.\n    Examples\n    solve(\"1234\") = \"4321\"\n    solve(\"ab\") = \"AB\"\n    solve(\"#a@C\") = \"#A@c\"\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    flg = 0\n    idx = 0\n    new_str = list(s)\n    for i in s:\n        if i.isalpha():\n            new_str[idx] = i.swapcase()\n            flg = 1\n        idx += 1\n    s = \"\"\n    for i in new_str:\n        s += i\n    if flg == 0:\n        return s[len(s)::-1]\n    return s\n",
+    "original_record": {
+      "task_id": "HumanEval/161",
+      "prompt": "\ndef solve(s):\n    \"\"\"You are given a string s.\n    if s[i] is a letter, reverse its case from lower to upper or vise versa, \n    otherwise keep it as it is.\n    If the string contains no letters, reverse the string.\n    The function should return the resulted string.\n    Examples\n    solve(\"1234\") = \"4321\"\n    solve(\"ab\") = \"AB\"\n    solve(\"#a@C\") = \"#A@c\"\n    \"\"\"\n",
+      "canonical_solution": "    flg = 0\n    idx = 0\n    new_str = list(s)\n    for i in s:\n        if i.isalpha():\n            new_str[idx] = i.swapcase()\n            flg = 1\n        idx += 1\n    s = \"\"\n    for i in new_str:\n        s += i\n    if flg == 0:\n        return s[len(s)::-1]\n    return s\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate(\"AsDf\") == \"aSdF\"\n    assert candidate(\"1234\") == \"4321\"\n    assert candidate(\"ab\") == \"AB\"\n    assert candidate(\"#a@C\") == \"#A@c\"\n    assert candidate(\"#AsdfW^45\") == \"#aSDFw^45\"\n    assert candidate(\"#6@2\") == \"2@6#\"\n\n    # Check some edge cases that are easy to work out by hand.\n    assert candidate(\"#$a^D\") == \"#$A^d\"\n    assert candidate(\"#ccc\") == \"#CCC\"\n\n    # Don't remove this line:\n",
+      "entry_point": "solve"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef solve(s):\n    \"\"\"You are given a string s.\n    if s[i] is a letter, reverse its case from lower to upper or vise versa, \n    otherwise keep it as it is.\n    If the string contains no letters, reverse the string.\n    The function should return the resulted string.\n    Examples\n    solve(\"1234\") = \"4321\"\n    solve(\"ab\") = \"AB\"\n    solve(\"#a@C\") = \"#A@c\"\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1894361781,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 140,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/115",
+    "source_index": 115,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef max_fill(grid, capacity):\n    import math\n    \"\"\"\n    You are given a rectangular grid of wells. Each row represents a single well,\n    and each 1 in a row represents a single unit of water.\n    Each well has a corresponding bucket that can be used to extract water from it, \n    and all buckets have the same capacity.\n    Your task is to use the buckets to empty the wells.\n    Output the number of times you need to lower the buckets.\n\n    Example 1:\n        Input: \n            grid : [[0,0,1,0], [0,1,0,0], [1,1,1,1]]\n            bucket_capacity : 1\n        Output: 6\n\n    Example 2:\n        Input: \n            grid : [[0,0,1,1], [0,0,0,0], [1,1,1,1], [0,1,1,1]]\n            bucket_capacity : 2\n        Output: 5\n    \n    Example 3:\n        Input: \n            grid : [[0,0,0], [0,0,0]]\n            bucket_capacity : 5\n        Output: 0\n\n    Constraints:\n        * all wells have the same length\n        * 1 <= grid.length <= 10^2\n        * 1 <= grid[:,1].length <= 10^2\n        * grid[i][j] -> 0 | 1\n        * 1 <= capacity <= 10\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    return sum([math.ceil(sum(arr)/capacity) for arr in grid])\n",
+    "original_record": {
+      "task_id": "HumanEval/115",
+      "prompt": "\ndef max_fill(grid, capacity):\n    import math\n    \"\"\"\n    You are given a rectangular grid of wells. Each row represents a single well,\n    and each 1 in a row represents a single unit of water.\n    Each well has a corresponding bucket that can be used to extract water from it, \n    and all buckets have the same capacity.\n    Your task is to use the buckets to empty the wells.\n    Output the number of times you need to lower the buckets.\n\n    Example 1:\n        Input: \n            grid : [[0,0,1,0], [0,1,0,0], [1,1,1,1]]\n            bucket_capacity : 1\n        Output: 6\n\n    Example 2:\n        Input: \n            grid : [[0,0,1,1], [0,0,0,0], [1,1,1,1], [0,1,1,1]]\n            bucket_capacity : 2\n        Output: 5\n    \n    Example 3:\n        Input: \n            grid : [[0,0,0], [0,0,0]]\n            bucket_capacity : 5\n        Output: 0\n\n    Constraints:\n        * all wells have the same length\n        * 1 <= grid.length <= 10^2\n        * 1 <= grid[:,1].length <= 10^2\n        * grid[i][j] -> 0 | 1\n        * 1 <= capacity <= 10\n    \"\"\"\n",
+      "canonical_solution": "    return sum([math.ceil(sum(arr)/capacity) for arr in grid])\n",
+      "test": "def check(candidate):\n\n\n    # Check some simple cases\n    assert True, \"This prints if this assert fails 1 (good for debugging!)\"\n    assert candidate([[0,0,1,0], [0,1,0,0], [1,1,1,1]], 1) == 6, \"Error\"\n    assert candidate([[0,0,1,1], [0,0,0,0], [1,1,1,1], [0,1,1,1]], 2) == 5, \"Error\"\n    assert candidate([[0,0,0], [0,0,0]], 5) == 0, \"Error\"\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True, \"This prints if this assert fails 2 (also good for debugging!)\"\n    assert candidate([[1,1,1,1], [1,1,1,1]], 2) == 4, \"Error\"\n    assert candidate([[1,1,1,1], [1,1,1,1]], 9) == 2, \"Error\"\n\n",
+      "entry_point": "max_fill"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef max_fill(grid, capacity):\n    import math\n    \"\"\"\n    You are given a rectangular grid of wells. Each row represents a single well,\n    and each 1 in a row represents a single unit of water.\n    Each well has a corresponding bucket that can be used to extract water from it, \n    and all buckets have the same capacity.\n    Your task is to use the buckets to empty the wells.\n    Output the number of times you need to lower the buckets.\n\n    Example 1:\n        Input: \n            grid : [[0,0,1,0], [0,1,0,0], [1,1,1,1]]\n            bucket_capacity : 1\n        Output: 6\n\n    Example 2:\n        Input: \n            grid : [[0,0,1,1], [0,0,0,0], [1,1,1,1], [0,1,1,1]]\n            bucket_capacity : 2\n        Output: 5\n    \n    Example 3:\n        Input: \n            grid : [[0,0,0], [0,0,0]]\n            bucket_capacity : 5\n        Output: 0\n\n    Constraints:\n        * all wells have the same length\n        * 1 <= grid.length <= 10^2\n        * 1 <= grid[:,1].length <= 10^2\n        * grid[i][j] -> 0 | 1\n        * 1 <= capacity <= 10\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 2147084832,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 355,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/69",
+    "source_index": 69,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef search(lst):\n    '''\n    You are given a non-empty list of positive integers. Return the greatest integer that is greater than \n    zero, and has a frequency greater than or equal to the value of the integer itself. \n    The frequency of an integer is the number of times it appears in the list.\n    If no such a value exist, return -1.\n    Examples:\n        search([4, 1, 2, 2, 3, 1]) == 2\n        search([1, 2, 2, 3, 3, 3, 4, 4, 4]) == 3\n        search([5, 5, 4, 4, 4]) == -1\n    '''\n"
+      }
+    ],
+    "reference": "    frq = [0] * (max(lst) + 1)\n    for i in lst:\n        frq[i] += 1;\n\n    ans = -1\n    for i in range(1, len(frq)):\n        if frq[i] >= i:\n            ans = i\n    \n    return ans\n",
+    "original_record": {
+      "task_id": "HumanEval/69",
+      "prompt": "\ndef search(lst):\n    '''\n    You are given a non-empty list of positive integers. Return the greatest integer that is greater than \n    zero, and has a frequency greater than or equal to the value of the integer itself. \n    The frequency of an integer is the number of times it appears in the list.\n    If no such a value exist, return -1.\n    Examples:\n        search([4, 1, 2, 2, 3, 1]) == 2\n        search([1, 2, 2, 3, 3, 3, 4, 4, 4]) == 3\n        search([5, 5, 4, 4, 4]) == -1\n    '''\n",
+      "canonical_solution": "    frq = [0] * (max(lst) + 1)\n    for i in lst:\n        frq[i] += 1;\n\n    ans = -1\n    for i in range(1, len(frq)):\n        if frq[i] >= i:\n            ans = i\n    \n    return ans\n",
+      "test": "def check(candidate):\n\n    # manually generated tests\n    assert candidate([5, 5, 5, 5, 1]) == 1\n    assert candidate([4, 1, 4, 1, 4, 4]) == 4\n    assert candidate([3, 3]) == -1\n    assert candidate([8, 8, 8, 8, 8, 8, 8, 8]) == 8\n    assert candidate([2, 3, 3, 2, 2]) == 2\n\n    # automatically generated tests\n    assert candidate([2, 7, 8, 8, 4, 8, 7, 3, 9, 6, 5, 10, 4, 3, 6, 7, 1, 7, 4, 10, 8, 1]) == 1\n    assert candidate([3, 2, 8, 2]) == 2\n    assert candidate([6, 7, 1, 8, 8, 10, 5, 8, 5, 3, 10]) == 1\n    assert candidate([8, 8, 3, 6, 5, 6, 4]) == -1\n    assert candidate([6, 9, 6, 7, 1, 4, 7, 1, 8, 8, 9, 8, 10, 10, 8, 4, 10, 4, 10, 1, 2, 9, 5, 7, 9]) == 1\n    assert candidate([1, 9, 10, 1, 3]) == 1\n    assert candidate([6, 9, 7, 5, 8, 7, 5, 3, 7, 5, 10, 10, 3, 6, 10, 2, 8, 6, 5, 4, 9, 5, 3, 10]) == 5\n    assert candidate([1]) == 1\n    assert candidate([8, 8, 10, 6, 4, 3, 5, 8, 2, 4, 2, 8, 4, 6, 10, 4, 2, 1, 10, 2, 1, 1, 5]) == 4\n    assert candidate([2, 10, 4, 8, 2, 10, 5, 1, 2, 9, 5, 5, 6, 3, 8, 6, 4, 10]) == 2\n    assert candidate([1, 6, 10, 1, 6, 9, 10, 8, 6, 8, 7, 3]) == 1\n    assert candidate([9, 2, 4, 1, 5, 1, 5, 2, 5, 7, 7, 7, 3, 10, 1, 5, 4, 2, 8, 4, 1, 9, 10, 7, 10, 2, 8, 10, 9, 4]) == 4\n    assert candidate([2, 6, 4, 2, 8, 7, 5, 6, 4, 10, 4, 6, 3, 7, 8, 8, 3, 1, 4, 2, 2, 10, 7]) == 4\n    assert candidate([9, 8, 6, 10, 2, 6, 10, 2, 7, 8, 10, 3, 8, 2, 6, 2, 3, 1]) == 2\n    assert candidate([5, 5, 3, 9, 5, 6, 3, 2, 8, 5, 6, 10, 10, 6, 8, 4, 10, 7, 7, 10, 8]) == -1\n    assert candidate([10]) == -1\n    assert candidate([9, 7, 7, 2, 4, 7, 2, 10, 9, 7, 5, 7, 2]) == 2\n    assert candidate([5, 4, 10, 2, 1, 1, 10, 3, 6, 1, 8]) == 1\n    assert candidate([7, 9, 9, 9, 3, 4, 1, 5, 9, 1, 2, 1, 1, 10, 7, 5, 6, 7, 6, 7, 7, 6]) == 1\n    assert candidate([3, 10, 10, 9, 2]) == -1\n\n",
+      "entry_point": "search"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef search(lst):\n    '''\n    You are given a non-empty list of positive integers. Return the greatest integer that is greater than \n    zero, and has a frequency greater than or equal to the value of the integer itself. \n    The frequency of an integer is the number of times it appears in the list.\n    If no such a value exist, return -1.\n    Examples:\n        search([4, 1, 2, 2, 3, 1]) == 2\n        search([1, 2, 2, 3, 3, 3, 4, 4, 4]) == 3\n        search([5, 5, 4, 4, 4]) == -1\n    '''\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 129518468,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 194,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/159",
+    "source_index": 159,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef eat(number, need, remaining):\n    \"\"\"\n    You're a hungry rabbit, and you already have eaten a certain number of carrots,\n    but now you need to eat more carrots to complete the day's meals.\n    you should return an array of [ total number of eaten carrots after your meals,\n                                    the number of carrots left after your meals ]\n    if there are not enough remaining carrots, you will eat all remaining carrots, but will still be hungry.\n    \n    Example:\n    * eat(5, 6, 10) -> [11, 4]\n    * eat(4, 8, 9) -> [12, 1]\n    * eat(1, 10, 10) -> [11, 0]\n    * eat(2, 11, 5) -> [7, 0]\n    \n    Variables:\n    @number : integer\n        the number of carrots that you have eaten.\n    @need : integer\n        the number of carrots that you need to eat.\n    @remaining : integer\n        the number of remaining carrots thet exist in stock\n    \n    Constrain:\n    * 0 <= number <= 1000\n    * 0 <= need <= 1000\n    * 0 <= remaining <= 1000\n\n    Have fun :)\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    if(need <= remaining):\n        return [ number + need , remaining-need ]\n    else:\n        return [ number + remaining , 0]\n",
+    "original_record": {
+      "task_id": "HumanEval/159",
+      "prompt": "\ndef eat(number, need, remaining):\n    \"\"\"\n    You're a hungry rabbit, and you already have eaten a certain number of carrots,\n    but now you need to eat more carrots to complete the day's meals.\n    you should return an array of [ total number of eaten carrots after your meals,\n                                    the number of carrots left after your meals ]\n    if there are not enough remaining carrots, you will eat all remaining carrots, but will still be hungry.\n    \n    Example:\n    * eat(5, 6, 10) -> [11, 4]\n    * eat(4, 8, 9) -> [12, 1]\n    * eat(1, 10, 10) -> [11, 0]\n    * eat(2, 11, 5) -> [7, 0]\n    \n    Variables:\n    @number : integer\n        the number of carrots that you have eaten.\n    @need : integer\n        the number of carrots that you need to eat.\n    @remaining : integer\n        the number of remaining carrots thet exist in stock\n    \n    Constrain:\n    * 0 <= number <= 1000\n    * 0 <= need <= 1000\n    * 0 <= remaining <= 1000\n\n    Have fun :)\n    \"\"\"\n",
+      "canonical_solution": "    if(need <= remaining):\n        return [ number + need , remaining-need ]\n    else:\n        return [ number + remaining , 0]\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert True, \"This prints if this assert fails 1 (good for debugging!)\"\n    assert candidate(5, 6, 10) == [11, 4], \"Error\"\n    assert candidate(4, 8, 9) == [12, 1], \"Error\"\n    assert candidate(1, 10, 10) == [11, 0], \"Error\"\n    assert candidate(2, 11, 5) == [7, 0], \"Error\"\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True, \"This prints if this assert fails 2 (also good for debugging!)\"\n    assert candidate(4, 5, 7) == [9, 2], \"Error\"\n    assert candidate(4, 5, 1) == [5, 0], \"Error\"\n\n",
+      "entry_point": "eat"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef eat(number, need, remaining):\n    \"\"\"\n    You're a hungry rabbit, and you already have eaten a certain number of carrots,\n    but now you need to eat more carrots to complete the day's meals.\n    you should return an array of [ total number of eaten carrots after your meals,\n                                    the number of carrots left after your meals ]\n    if there are not enough remaining carrots, you will eat all remaining carrots, but will still be hungry.\n    \n    Example:\n    * eat(5, 6, 10) -> [11, 4]\n    * eat(4, 8, 9) -> [12, 1]\n    * eat(1, 10, 10) -> [11, 0]\n    * eat(2, 11, 5) -> [7, 0]\n    \n    Variables:\n    @number : integer\n        the number of carrots that you have eaten.\n    @need : integer\n        the number of carrots that you need to eat.\n    @remaining : integer\n        the number of remaining carrots thet exist in stock\n    \n    Constrain:\n    * 0 <= number <= 1000\n    * 0 <= need <= 1000\n    * 0 <= remaining <= 1000\n\n    Have fun :)\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1914488221,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 319,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/87",
+    "source_index": 87,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef get_row(lst, x):\n    \"\"\"\n    You are given a 2 dimensional data, as a nested lists,\n    which is similar to matrix, however, unlike matrices,\n    each row may contain a different number of columns.\n    Given lst, and integer x, find integers x in the list,\n    and return list of tuples, [(x1, y1), (x2, y2) ...] such that\n    each tuple is a coordinate - (row, columns), starting with 0.\n    Sort coordinates initially by rows in ascending order.\n    Also, sort coordinates of the row by columns in descending order.\n    \n    Examples:\n    get_row([\n      [1,2,3,4,5,6],\n      [1,2,3,4,1,6],\n      [1,2,3,4,5,1]\n    ], 1) == [(0, 0), (1, 4), (1, 0), (2, 5), (2, 0)]\n    get_row([], 1) == []\n    get_row([[], [1], [1, 2, 3]], 3) == [(2, 2)]\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    coords = [(i, j) for i in range(len(lst)) for j in range(len(lst[i])) if lst[i][j] == x]\n    return sorted(sorted(coords, key=lambda x: x[1], reverse=True), key=lambda x: x[0])\n",
+    "original_record": {
+      "task_id": "HumanEval/87",
+      "prompt": "\ndef get_row(lst, x):\n    \"\"\"\n    You are given a 2 dimensional data, as a nested lists,\n    which is similar to matrix, however, unlike matrices,\n    each row may contain a different number of columns.\n    Given lst, and integer x, find integers x in the list,\n    and return list of tuples, [(x1, y1), (x2, y2) ...] such that\n    each tuple is a coordinate - (row, columns), starting with 0.\n    Sort coordinates initially by rows in ascending order.\n    Also, sort coordinates of the row by columns in descending order.\n    \n    Examples:\n    get_row([\n      [1,2,3,4,5,6],\n      [1,2,3,4,1,6],\n      [1,2,3,4,5,1]\n    ], 1) == [(0, 0), (1, 4), (1, 0), (2, 5), (2, 0)]\n    get_row([], 1) == []\n    get_row([[], [1], [1, 2, 3]], 3) == [(2, 2)]\n    \"\"\"\n",
+      "canonical_solution": "    coords = [(i, j) for i in range(len(lst)) for j in range(len(lst[i])) if lst[i][j] == x]\n    return sorted(sorted(coords, key=lambda x: x[1], reverse=True), key=lambda x: x[0])\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate([\n        [1,2,3,4,5,6],\n        [1,2,3,4,1,6],\n        [1,2,3,4,5,1]\n    ], 1) == [(0, 0), (1, 4), (1, 0), (2, 5), (2, 0)]\n    assert candidate([\n        [1,2,3,4,5,6],\n        [1,2,3,4,5,6],\n        [1,2,3,4,5,6],\n        [1,2,3,4,5,6],\n        [1,2,3,4,5,6],\n        [1,2,3,4,5,6]\n    ], 2) == [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1)]\n    assert candidate([\n        [1,2,3,4,5,6],\n        [1,2,3,4,5,6],\n        [1,1,3,4,5,6],\n        [1,2,1,4,5,6],\n        [1,2,3,1,5,6],\n        [1,2,3,4,1,6],\n        [1,2,3,4,5,1]\n    ], 1) == [(0, 0), (1, 0), (2, 1), (2, 0), (3, 2), (3, 0), (4, 3), (4, 0), (5, 4), (5, 0), (6, 5), (6, 0)]\n    assert candidate([], 1) == []\n    assert candidate([[1]], 2) == []\n    assert candidate([[], [1], [1, 2, 3]], 3) == [(2, 2)]\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True\n\n",
+      "entry_point": "get_row"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef get_row(lst, x):\n    \"\"\"\n    You are given a 2 dimensional data, as a nested lists,\n    which is similar to matrix, however, unlike matrices,\n    each row may contain a different number of columns.\n    Given lst, and integer x, find integers x in the list,\n    and return list of tuples, [(x1, y1), (x2, y2) ...] such that\n    each tuple is a coordinate - (row, columns), starting with 0.\n    Sort coordinates initially by rows in ascending order.\n    Also, sort coordinates of the row by columns in descending order.\n    \n    Examples:\n    get_row([\n      [1,2,3,4,5,6],\n      [1,2,3,4,1,6],\n      [1,2,3,4,5,1]\n    ], 1) == [(0, 0), (1, 4), (1, 0), (2, 5), (2, 0)]\n    get_row([], 1) == []\n    get_row([[], [1], [1, 2, 3]], 3) == [(2, 2)]\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 2099076732,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 288,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/28",
+    "source_index": 28,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef concatenate(strings: List[str]) -> str:\n    \"\"\" Concatenate list of strings into a single string\n    >>> concatenate([])\n    ''\n    >>> concatenate(['a', 'b', 'c'])\n    'abc'\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    return ''.join(strings)\n",
+    "original_record": {
+      "task_id": "HumanEval/28",
+      "prompt": "from typing import List\n\n\ndef concatenate(strings: List[str]) -> str:\n    \"\"\" Concatenate list of strings into a single string\n    >>> concatenate([])\n    ''\n    >>> concatenate(['a', 'b', 'c'])\n    'abc'\n    \"\"\"\n",
+      "canonical_solution": "    return ''.join(strings)\n",
+      "test": "\n\nMETADATA = {\n    'author': 'jt',\n    'dataset': 'test'\n}\n\n\ndef check(candidate):\n    assert candidate([]) == ''\n    assert candidate(['x', 'y', 'z']) == 'xyz'\n    assert candidate(['x', 'y', 'z', 'w', 'k']) == 'xyzwk'\n",
+      "entry_point": "concatenate"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef concatenate(strings: List[str]) -> str:\n    \"\"\" Concatenate list of strings into a single string\n    >>> concatenate([])\n    ''\n    >>> concatenate(['a', 'b', 'c'])\n    'abc'\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 349218736,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 86,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/118",
+    "source_index": 118,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef get_closest_vowel(word):\n    \"\"\"You are given a word. Your task is to find the closest vowel that stands between \n    two consonants from the right side of the word (case sensitive).\n    \n    Vowels in the beginning and ending doesn't count. Return empty string if you didn't\n    find any vowel met the above condition. \n\n    You may assume that the given string contains English letter only.\n\n    Example:\n    get_closest_vowel(\"yogurt\") ==> \"u\"\n    get_closest_vowel(\"FULL\") ==> \"U\"\n    get_closest_vowel(\"quick\") ==> \"\"\n    get_closest_vowel(\"ab\") ==> \"\"\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    if len(word) < 3:\n        return \"\"\n\n    vowels = {\"a\", \"e\", \"i\", \"o\", \"u\", \"A\", \"E\", 'O', 'U', 'I'}\n    for i in range(len(word)-2, 0, -1):\n        if word[i] in vowels:\n            if (word[i+1] not in vowels) and (word[i-1] not in vowels):\n                return word[i]\n    return \"\"\n",
+    "original_record": {
+      "task_id": "HumanEval/118",
+      "prompt": "\ndef get_closest_vowel(word):\n    \"\"\"You are given a word. Your task is to find the closest vowel that stands between \n    two consonants from the right side of the word (case sensitive).\n    \n    Vowels in the beginning and ending doesn't count. Return empty string if you didn't\n    find any vowel met the above condition. \n\n    You may assume that the given string contains English letter only.\n\n    Example:\n    get_closest_vowel(\"yogurt\") ==> \"u\"\n    get_closest_vowel(\"FULL\") ==> \"U\"\n    get_closest_vowel(\"quick\") ==> \"\"\n    get_closest_vowel(\"ab\") ==> \"\"\n    \"\"\"\n",
+      "canonical_solution": "    if len(word) < 3:\n        return \"\"\n\n    vowels = {\"a\", \"e\", \"i\", \"o\", \"u\", \"A\", \"E\", 'O', 'U', 'I'}\n    for i in range(len(word)-2, 0, -1):\n        if word[i] in vowels:\n            if (word[i+1] not in vowels) and (word[i-1] not in vowels):\n                return word[i]\n    return \"\"\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate(\"yogurt\") == \"u\"\n    assert candidate(\"full\") == \"u\"\n    assert candidate(\"easy\") == \"\"\n    assert candidate(\"eAsy\") == \"\"\n    assert candidate(\"ali\") == \"\"\n    assert candidate(\"bad\") == \"a\"\n    assert candidate(\"most\") == \"o\"\n    assert candidate(\"ab\") == \"\"\n    assert candidate(\"ba\") == \"\"\n    assert candidate(\"quick\") == \"\"\n    assert candidate(\"anime\") == \"i\"\n    assert candidate(\"Asia\") == \"\"\n    assert candidate(\"Above\") == \"o\"\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True\n\n",
+      "entry_point": "get_closest_vowel"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef get_closest_vowel(word):\n    \"\"\"You are given a word. Your task is to find the closest vowel that stands between \n    two consonants from the right side of the word (case sensitive).\n    \n    Vowels in the beginning and ending doesn't count. Return empty string if you didn't\n    find any vowel met the above condition. \n\n    You may assume that the given string contains English letter only.\n\n    Example:\n    get_closest_vowel(\"yogurt\") ==> \"u\"\n    get_closest_vowel(\"FULL\") ==> \"U\"\n    get_closest_vowel(\"quick\") ==> \"\"\n    get_closest_vowel(\"ab\") ==> \"\"\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 980490054,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 178,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/29",
+    "source_index": 29,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef filter_by_prefix(strings: List[str], prefix: str) -> List[str]:\n    \"\"\" Filter an input list of strings only for ones that start with a given prefix.\n    >>> filter_by_prefix([], 'a')\n    []\n    >>> filter_by_prefix(['abc', 'bcd', 'cde', 'array'], 'a')\n    ['abc', 'array']\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    return [x for x in strings if x.startswith(prefix)]\n",
+    "original_record": {
+      "task_id": "HumanEval/29",
+      "prompt": "from typing import List\n\n\ndef filter_by_prefix(strings: List[str], prefix: str) -> List[str]:\n    \"\"\" Filter an input list of strings only for ones that start with a given prefix.\n    >>> filter_by_prefix([], 'a')\n    []\n    >>> filter_by_prefix(['abc', 'bcd', 'cde', 'array'], 'a')\n    ['abc', 'array']\n    \"\"\"\n",
+      "canonical_solution": "    return [x for x in strings if x.startswith(prefix)]\n",
+      "test": "\n\nMETADATA = {\n    'author': 'jt',\n    'dataset': 'test'\n}\n\n\ndef check(candidate):\n    assert candidate([], 'john') == []\n    assert candidate(['xxx', 'asd', 'xxy', 'john doe', 'xxxAAA', 'xxx'], 'xxx') == ['xxx', 'xxxAAA', 'xxx']\n",
+      "entry_point": "filter_by_prefix"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef filter_by_prefix(strings: List[str], prefix: str) -> List[str]:\n    \"\"\" Filter an input list of strings only for ones that start with a given prefix.\n    >>> filter_by_prefix([], 'a')\n    []\n    >>> filter_by_prefix(['abc', 'bcd', 'cde', 'array'], 'a')\n    ['abc', 'array']\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 2120051612,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 116,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/105",
+    "source_index": 105,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef by_length(arr):\n    \"\"\"\n    Given an array of integers, sort the integers that are between 1 and 9 inclusive,\n    reverse the resulting array, and then replace each digit by its corresponding name from\n    \"One\", \"Two\", \"Three\", \"Four\", \"Five\", \"Six\", \"Seven\", \"Eight\", \"Nine\".\n\n    For example:\n      arr = [2, 1, 1, 4, 5, 8, 2, 3]   \n            -> sort arr -> [1, 1, 2, 2, 3, 4, 5, 8] \n            -> reverse arr -> [8, 5, 4, 3, 2, 2, 1, 1]\n      return [\"Eight\", \"Five\", \"Four\", \"Three\", \"Two\", \"Two\", \"One\", \"One\"]\n    \n      If the array is empty, return an empty array:\n      arr = []\n      return []\n    \n      If the array has any strange number ignore it:\n      arr = [1, -1 , 55] \n            -> sort arr -> [-1, 1, 55]\n            -> reverse arr -> [55, 1, -1]\n      return = ['One']\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    dic = {\n        1: \"One\",\n        2: \"Two\",\n        3: \"Three\",\n        4: \"Four\",\n        5: \"Five\",\n        6: \"Six\",\n        7: \"Seven\",\n        8: \"Eight\",\n        9: \"Nine\",\n    }\n    sorted_arr = sorted(arr, reverse=True)\n    new_arr = []\n    for var in sorted_arr:\n        try:\n            new_arr.append(dic[var])\n        except:\n            pass\n    return new_arr\n",
+    "original_record": {
+      "task_id": "HumanEval/105",
+      "prompt": "\ndef by_length(arr):\n    \"\"\"\n    Given an array of integers, sort the integers that are between 1 and 9 inclusive,\n    reverse the resulting array, and then replace each digit by its corresponding name from\n    \"One\", \"Two\", \"Three\", \"Four\", \"Five\", \"Six\", \"Seven\", \"Eight\", \"Nine\".\n\n    For example:\n      arr = [2, 1, 1, 4, 5, 8, 2, 3]   \n            -> sort arr -> [1, 1, 2, 2, 3, 4, 5, 8] \n            -> reverse arr -> [8, 5, 4, 3, 2, 2, 1, 1]\n      return [\"Eight\", \"Five\", \"Four\", \"Three\", \"Two\", \"Two\", \"One\", \"One\"]\n    \n      If the array is empty, return an empty array:\n      arr = []\n      return []\n    \n      If the array has any strange number ignore it:\n      arr = [1, -1 , 55] \n            -> sort arr -> [-1, 1, 55]\n            -> reverse arr -> [55, 1, -1]\n      return = ['One']\n    \"\"\"\n",
+      "canonical_solution": "    dic = {\n        1: \"One\",\n        2: \"Two\",\n        3: \"Three\",\n        4: \"Four\",\n        5: \"Five\",\n        6: \"Six\",\n        7: \"Seven\",\n        8: \"Eight\",\n        9: \"Nine\",\n    }\n    sorted_arr = sorted(arr, reverse=True)\n    new_arr = []\n    for var in sorted_arr:\n        try:\n            new_arr.append(dic[var])\n        except:\n            pass\n    return new_arr\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert True, \"This prints if this assert fails 1 (good for debugging!)\"\n    assert candidate([2, 1, 1, 4, 5, 8, 2, 3]) == [\"Eight\", \"Five\", \"Four\", \"Three\", \"Two\", \"Two\", \"One\", \"One\"], \"Error\"\n    assert candidate([]) == [], \"Error\"\n    assert candidate([1, -1 , 55]) == ['One'], \"Error\"\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True, \"This prints if this assert fails 2 (also good for debugging!)\"\n    assert candidate([1, -1, 3, 2]) == [\"Three\", \"Two\", \"One\"]\n    assert candidate([9, 4, 8]) == [\"Nine\", \"Eight\", \"Four\"]\n\n",
+      "entry_point": "by_length"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef by_length(arr):\n    \"\"\"\n    Given an array of integers, sort the integers that are between 1 and 9 inclusive,\n    reverse the resulting array, and then replace each digit by its corresponding name from\n    \"One\", \"Two\", \"Three\", \"Four\", \"Five\", \"Six\", \"Seven\", \"Eight\", \"Nine\".\n\n    For example:\n      arr = [2, 1, 1, 4, 5, 8, 2, 3]   \n            -> sort arr -> [1, 1, 2, 2, 3, 4, 5, 8] \n            -> reverse arr -> [8, 5, 4, 3, 2, 2, 1, 1]\n      return [\"Eight\", \"Five\", \"Four\", \"Three\", \"Two\", \"Two\", \"One\", \"One\"]\n    \n      If the array is empty, return an empty array:\n      arr = []\n      return []\n    \n      If the array has any strange number ignore it:\n      arr = [1, -1 , 55] \n            -> sort arr -> [-1, 1, 55]\n            -> reverse arr -> [55, 1, -1]\n      return = ['One']\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 328081417,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 308,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/78",
+    "source_index": 78,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef hex_key(num):\n    \"\"\"You have been tasked to write a function that receives \n    a hexadecimal number as a string and counts the number of hexadecimal \n    digits that are primes (prime number, or a prime, is a natural number \n    greater than 1 that is not a product of two smaller natural numbers).\n    Hexadecimal digits are 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F.\n    Prime numbers are 2, 3, 5, 7, 11, 13, 17,...\n    So you have to determine a number of the following digits: 2, 3, 5, 7, \n    B (=decimal 11), D (=decimal 13).\n    Note: you may assume the input is always correct or empty string, \n    and symbols A,B,C,D,E,F are always uppercase.\n    Examples:\n    For num = \"AB\" the output should be 1.\n    For num = \"1077E\" the output should be 2.\n    For num = \"ABED1A33\" the output should be 4.\n    For num = \"123456789ABCDEF0\" the output should be 6.\n    For num = \"2020\" the output should be 2.\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    primes = ('2', '3', '5', '7', 'B', 'D')\n    total = 0\n    for i in range(0, len(num)):\n        if num[i] in primes:\n            total += 1\n    return total\n",
+    "original_record": {
+      "task_id": "HumanEval/78",
+      "prompt": "\ndef hex_key(num):\n    \"\"\"You have been tasked to write a function that receives \n    a hexadecimal number as a string and counts the number of hexadecimal \n    digits that are primes (prime number, or a prime, is a natural number \n    greater than 1 that is not a product of two smaller natural numbers).\n    Hexadecimal digits are 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F.\n    Prime numbers are 2, 3, 5, 7, 11, 13, 17,...\n    So you have to determine a number of the following digits: 2, 3, 5, 7, \n    B (=decimal 11), D (=decimal 13).\n    Note: you may assume the input is always correct or empty string, \n    and symbols A,B,C,D,E,F are always uppercase.\n    Examples:\n    For num = \"AB\" the output should be 1.\n    For num = \"1077E\" the output should be 2.\n    For num = \"ABED1A33\" the output should be 4.\n    For num = \"123456789ABCDEF0\" the output should be 6.\n    For num = \"2020\" the output should be 2.\n    \"\"\"\n",
+      "canonical_solution": "    primes = ('2', '3', '5', '7', 'B', 'D')\n    total = 0\n    for i in range(0, len(num)):\n        if num[i] in primes:\n            total += 1\n    return total\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate(\"AB\") == 1, \"First test error: \" + str(candidate(\"AB\"))      \n    assert candidate(\"1077E\") == 2, \"Second test error: \" + str(candidate(\"1077E\"))  \n    assert candidate(\"ABED1A33\") == 4, \"Third test error: \" + str(candidate(\"ABED1A33\"))      \n    assert candidate(\"2020\") == 2, \"Fourth test error: \" + str(candidate(\"2020\"))  \n    assert candidate(\"123456789ABCDEF0\") == 6, \"Fifth test error: \" + str(candidate(\"123456789ABCDEF0\"))      \n    assert candidate(\"112233445566778899AABBCCDDEEFF00\") == 12, \"Sixth test error: \" + str(candidate(\"112233445566778899AABBCCDDEEFF00\"))  \n\n\n    # Check some edge cases that are easy to work out by hand.\n    assert candidate([]) == 0\n\n",
+      "entry_point": "hex_key"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef hex_key(num):\n    \"\"\"You have been tasked to write a function that receives \n    a hexadecimal number as a string and counts the number of hexadecimal \n    digits that are primes (prime number, or a prime, is a natural number \n    greater than 1 that is not a product of two smaller natural numbers).\n    Hexadecimal digits are 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F.\n    Prime numbers are 2, 3, 5, 7, 11, 13, 17,...\n    So you have to determine a number of the following digits: 2, 3, 5, 7, \n    B (=decimal 11), D (=decimal 13).\n    Note: you may assume the input is always correct or empty string, \n    and symbols A,B,C,D,E,F are always uppercase.\n    Examples:\n    For num = \"AB\" the output should be 1.\n    For num = \"1077E\" the output should be 2.\n    For num = \"ABED1A33\" the output should be 4.\n    For num = \"123456789ABCDEF0\" the output should be 6.\n    For num = \"2020\" the output should be 2.\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 2002567200,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 344,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/39",
+    "source_index": 39,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef prime_fib(n: int):\n    \"\"\"\n    prime_fib returns n-th number that is a Fibonacci number and it's also prime.\n    >>> prime_fib(1)\n    2\n    >>> prime_fib(2)\n    3\n    >>> prime_fib(3)\n    5\n    >>> prime_fib(4)\n    13\n    >>> prime_fib(5)\n    89\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    import math\n\n    def is_prime(p):\n        if p < 2:\n            return False\n        for k in range(2, min(int(math.sqrt(p)) + 1, p - 1)):\n            if p % k == 0:\n                return False\n        return True\n    f = [0, 1]\n    while True:\n        f.append(f[-1] + f[-2])\n        if is_prime(f[-1]):\n            n -= 1\n        if n == 0:\n            return f[-1]\n",
+    "original_record": {
+      "task_id": "HumanEval/39",
+      "prompt": "\n\ndef prime_fib(n: int):\n    \"\"\"\n    prime_fib returns n-th number that is a Fibonacci number and it's also prime.\n    >>> prime_fib(1)\n    2\n    >>> prime_fib(2)\n    3\n    >>> prime_fib(3)\n    5\n    >>> prime_fib(4)\n    13\n    >>> prime_fib(5)\n    89\n    \"\"\"\n",
+      "canonical_solution": "    import math\n\n    def is_prime(p):\n        if p < 2:\n            return False\n        for k in range(2, min(int(math.sqrt(p)) + 1, p - 1)):\n            if p % k == 0:\n                return False\n        return True\n    f = [0, 1]\n    while True:\n        f.append(f[-1] + f[-2])\n        if is_prime(f[-1]):\n            n -= 1\n        if n == 0:\n            return f[-1]\n",
+      "test": "\n\nMETADATA = {}\n\n\ndef check(candidate):\n    assert candidate(1) == 2\n    assert candidate(2) == 3\n    assert candidate(3) == 5\n    assert candidate(4) == 13\n    assert candidate(5) == 89\n    assert candidate(6) == 233\n    assert candidate(7) == 1597\n    assert candidate(8) == 28657\n    assert candidate(9) == 514229\n    assert candidate(10) == 433494437\n\n",
+      "entry_point": "prime_fib"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef prime_fib(n: int):\n    \"\"\"\n    prime_fib returns n-th number that is a Fibonacci number and it's also prime.\n    >>> prime_fib(1)\n    2\n    >>> prime_fib(2)\n    3\n    >>> prime_fib(3)\n    5\n    >>> prime_fib(4)\n    13\n    >>> prime_fib(5)\n    89\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 71496313,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 128,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/123",
+    "source_index": 123,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef get_odd_collatz(n):\n    \"\"\"\n    Given a positive integer n, return a sorted list that has the odd numbers in collatz sequence.\n\n    The Collatz conjecture is a conjecture in mathematics that concerns a sequence defined\n    as follows: start with any positive integer n. Then each term is obtained from the \n    previous term as follows: if the previous term is even, the next term is one half of \n    the previous term. If the previous term is odd, the next term is 3 times the previous\n    term plus 1. The conjecture is that no matter what value of n, the sequence will always reach 1.\n\n    Note: \n        1. Collatz(1) is [1].\n        2. returned list sorted in increasing order.\n\n    For example:\n    get_odd_collatz(5) returns [1, 5] # The collatz sequence for 5 is [5, 16, 8, 4, 2, 1], so the odd numbers are only 1, and 5.\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    if n%2==0:\n        odd_collatz = [] \n    else:\n        odd_collatz = [n]\n    while n > 1:\n        if n % 2 == 0:\n            n = n/2\n        else:\n            n = n*3 + 1\n            \n        if n%2 == 1:\n            odd_collatz.append(int(n))\n\n    return sorted(odd_collatz)\n",
+    "original_record": {
+      "task_id": "HumanEval/123",
+      "prompt": "\ndef get_odd_collatz(n):\n    \"\"\"\n    Given a positive integer n, return a sorted list that has the odd numbers in collatz sequence.\n\n    The Collatz conjecture is a conjecture in mathematics that concerns a sequence defined\n    as follows: start with any positive integer n. Then each term is obtained from the \n    previous term as follows: if the previous term is even, the next term is one half of \n    the previous term. If the previous term is odd, the next term is 3 times the previous\n    term plus 1. The conjecture is that no matter what value of n, the sequence will always reach 1.\n\n    Note: \n        1. Collatz(1) is [1].\n        2. returned list sorted in increasing order.\n\n    For example:\n    get_odd_collatz(5) returns [1, 5] # The collatz sequence for 5 is [5, 16, 8, 4, 2, 1], so the odd numbers are only 1, and 5.\n    \"\"\"\n",
+      "canonical_solution": "    if n%2==0:\n        odd_collatz = [] \n    else:\n        odd_collatz = [n]\n    while n > 1:\n        if n % 2 == 0:\n            n = n/2\n        else:\n            n = n*3 + 1\n            \n        if n%2 == 1:\n            odd_collatz.append(int(n))\n\n    return sorted(odd_collatz)\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate(14) == [1, 5, 7, 11, 13, 17]\n    assert candidate(5) == [1, 5]\n    assert candidate(12) == [1, 3, 5], \"This prints if this assert fails 1 (good for debugging!)\"\n\n    # Check some edge cases that are easy to work out by hand.\n    assert candidate(1) == [1], \"This prints if this assert fails 2 (also good for debugging!)\"\n\n",
+      "entry_point": "get_odd_collatz"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef get_odd_collatz(n):\n    \"\"\"\n    Given a positive integer n, return a sorted list that has the odd numbers in collatz sequence.\n\n    The Collatz conjecture is a conjecture in mathematics that concerns a sequence defined\n    as follows: start with any positive integer n. Then each term is obtained from the \n    previous term as follows: if the previous term is even, the next term is one half of \n    the previous term. If the previous term is odd, the next term is 3 times the previous\n    term plus 1. The conjecture is that no matter what value of n, the sequence will always reach 1.\n\n    Note: \n        1. Collatz(1) is [1].\n        2. returned list sorted in increasing order.\n\n    For example:\n    get_odd_collatz(5) returns [1, 5] # The collatz sequence for 5 is [5, 16, 8, 4, 2, 1], so the odd numbers are only 1, and 5.\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 416212809,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 261,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/95",
+    "source_index": 95,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef check_dict_case(dict):\n    \"\"\"\n    Given a dictionary, return True if all keys are strings in lower \n    case or all keys are strings in upper case, else return False.\n    The function should return False is the given dictionary is empty.\n    Examples:\n    check_dict_case({\"a\":\"apple\", \"b\":\"banana\"}) should return True.\n    check_dict_case({\"a\":\"apple\", \"A\":\"banana\", \"B\":\"banana\"}) should return False.\n    check_dict_case({\"a\":\"apple\", 8:\"banana\", \"a\":\"apple\"}) should return False.\n    check_dict_case({\"Name\":\"John\", \"Age\":\"36\", \"City\":\"Houston\"}) should return False.\n    check_dict_case({\"STATE\":\"NC\", \"ZIP\":\"12345\" }) should return True.\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    if len(dict.keys()) == 0:\n        return False\n    else:\n        state = \"start\"\n        for key in dict.keys():\n\n            if isinstance(key, str) == False:\n                state = \"mixed\"\n                break\n            if state == \"start\":\n                if key.isupper():\n                    state = \"upper\"\n                elif key.islower():\n                    state = \"lower\"\n                else:\n                    break\n            elif (state == \"upper\" and not key.isupper()) or (state == \"lower\" and not key.islower()):\n                    state = \"mixed\"\n                    break\n            else:\n                break\n        return state == \"upper\" or state == \"lower\" \n",
+    "original_record": {
+      "task_id": "HumanEval/95",
+      "prompt": "\ndef check_dict_case(dict):\n    \"\"\"\n    Given a dictionary, return True if all keys are strings in lower \n    case or all keys are strings in upper case, else return False.\n    The function should return False is the given dictionary is empty.\n    Examples:\n    check_dict_case({\"a\":\"apple\", \"b\":\"banana\"}) should return True.\n    check_dict_case({\"a\":\"apple\", \"A\":\"banana\", \"B\":\"banana\"}) should return False.\n    check_dict_case({\"a\":\"apple\", 8:\"banana\", \"a\":\"apple\"}) should return False.\n    check_dict_case({\"Name\":\"John\", \"Age\":\"36\", \"City\":\"Houston\"}) should return False.\n    check_dict_case({\"STATE\":\"NC\", \"ZIP\":\"12345\" }) should return True.\n    \"\"\"\n",
+      "canonical_solution": "    if len(dict.keys()) == 0:\n        return False\n    else:\n        state = \"start\"\n        for key in dict.keys():\n\n            if isinstance(key, str) == False:\n                state = \"mixed\"\n                break\n            if state == \"start\":\n                if key.isupper():\n                    state = \"upper\"\n                elif key.islower():\n                    state = \"lower\"\n                else:\n                    break\n            elif (state == \"upper\" and not key.isupper()) or (state == \"lower\" and not key.islower()):\n                    state = \"mixed\"\n                    break\n            else:\n                break\n        return state == \"upper\" or state == \"lower\" \n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate({\"p\":\"pineapple\", \"b\":\"banana\"}) == True, \"First test error: \" + str(candidate({\"p\":\"pineapple\", \"b\":\"banana\"}))\n    assert candidate({\"p\":\"pineapple\", \"A\":\"banana\", \"B\":\"banana\"}) == False, \"Second test error: \" + str(candidate({\"p\":\"pineapple\", \"A\":\"banana\", \"B\":\"banana\"}))\n    assert candidate({\"p\":\"pineapple\", 5:\"banana\", \"a\":\"apple\"}) == False, \"Third test error: \" + str(candidate({\"p\":\"pineapple\", 5:\"banana\", \"a\":\"apple\"}))\n    assert candidate({\"Name\":\"John\", \"Age\":\"36\", \"City\":\"Houston\"}) == False, \"Fourth test error: \" + str(candidate({\"Name\":\"John\", \"Age\":\"36\", \"City\":\"Houston\"}))\n    assert candidate({\"STATE\":\"NC\", \"ZIP\":\"12345\" }) == True, \"Fifth test error: \" + str(candidate({\"STATE\":\"NC\", \"ZIP\":\"12345\" }))      \n    assert candidate({\"fruit\":\"Orange\", \"taste\":\"Sweet\" }) == True, \"Fourth test error: \" + str(candidate({\"fruit\":\"Orange\", \"taste\":\"Sweet\" }))      \n\n\n    # Check some edge cases that are easy to work out by hand.\n    assert candidate({}) == False, \"1st edge test error: \" + str(candidate({}))\n\n",
+      "entry_point": "check_dict_case"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef check_dict_case(dict):\n    \"\"\"\n    Given a dictionary, return True if all keys are strings in lower \n    case or all keys are strings in upper case, else return False.\n    The function should return False is the given dictionary is empty.\n    Examples:\n    check_dict_case({\"a\":\"apple\", \"b\":\"banana\"}) should return True.\n    check_dict_case({\"a\":\"apple\", \"A\":\"banana\", \"B\":\"banana\"}) should return False.\n    check_dict_case({\"a\":\"apple\", 8:\"banana\", \"a\":\"apple\"}) should return False.\n    check_dict_case({\"Name\":\"John\", \"Age\":\"36\", \"City\":\"Houston\"}) should return False.\n    check_dict_case({\"STATE\":\"NC\", \"ZIP\":\"12345\" }) should return True.\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1214526330,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 202,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/55",
+    "source_index": 55,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef fib(n: int):\n    \"\"\"Return n-th Fibonacci number.\n    >>> fib(10)\n    55\n    >>> fib(1)\n    1\n    >>> fib(8)\n    21\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    if n == 0:\n        return 0\n    if n == 1:\n        return 1\n    return fib(n - 1) + fib(n - 2)\n",
+    "original_record": {
+      "task_id": "HumanEval/55",
+      "prompt": "\n\ndef fib(n: int):\n    \"\"\"Return n-th Fibonacci number.\n    >>> fib(10)\n    55\n    >>> fib(1)\n    1\n    >>> fib(8)\n    21\n    \"\"\"\n",
+      "canonical_solution": "    if n == 0:\n        return 0\n    if n == 1:\n        return 1\n    return fib(n - 1) + fib(n - 2)\n",
+      "test": "\n\nMETADATA = {}\n\n\ndef check(candidate):\n    assert candidate(10) == 55\n    assert candidate(1) == 1\n    assert candidate(8) == 21\n    assert candidate(11) == 89\n    assert candidate(12) == 144\n\n",
+      "entry_point": "fib"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef fib(n: int):\n    \"\"\"Return n-th Fibonacci number.\n    >>> fib(10)\n    55\n    >>> fib(1)\n    1\n    >>> fib(8)\n    21\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 2043285684,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 84,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/61",
+    "source_index": 61,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef correct_bracketing(brackets: str):\n    \"\"\" brackets is a string of \"(\" and \")\".\n    return True if every opening bracket has a corresponding closing bracket.\n\n    >>> correct_bracketing(\"(\")\n    False\n    >>> correct_bracketing(\"()\")\n    True\n    >>> correct_bracketing(\"(()())\")\n    True\n    >>> correct_bracketing(\")(()\")\n    False\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    depth = 0\n    for b in brackets:\n        if b == \"(\":\n            depth += 1\n        else:\n            depth -= 1\n        if depth < 0:\n            return False\n    return depth == 0\n",
+    "original_record": {
+      "task_id": "HumanEval/61",
+      "prompt": "\n\ndef correct_bracketing(brackets: str):\n    \"\"\" brackets is a string of \"(\" and \")\".\n    return True if every opening bracket has a corresponding closing bracket.\n\n    >>> correct_bracketing(\"(\")\n    False\n    >>> correct_bracketing(\"()\")\n    True\n    >>> correct_bracketing(\"(()())\")\n    True\n    >>> correct_bracketing(\")(()\")\n    False\n    \"\"\"\n",
+      "canonical_solution": "    depth = 0\n    for b in brackets:\n        if b == \"(\":\n            depth += 1\n        else:\n            depth -= 1\n        if depth < 0:\n            return False\n    return depth == 0\n",
+      "test": "\n\nMETADATA = {}\n\n\ndef check(candidate):\n    assert candidate(\"()\")\n    assert candidate(\"(()())\")\n    assert candidate(\"()()(()())()\")\n    assert candidate(\"()()((()()())())(()()(()))\")\n    assert not candidate(\"((()())))\")\n    assert not candidate(\")(()\")\n    assert not candidate(\"(\")\n    assert not candidate(\"((((\")\n    assert not candidate(\")\")\n    assert not candidate(\"(()\")\n    assert not candidate(\"()()(()())())(()\")\n    assert not candidate(\"()()(()())()))()\")\n\n",
+      "entry_point": "correct_bracketing"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef correct_bracketing(brackets: str):\n    \"\"\" brackets is a string of \"(\" and \")\".\n    return True if every opening bracket has a corresponding closing bracket.\n\n    >>> correct_bracketing(\"(\")\n    False\n    >>> correct_bracketing(\"()\")\n    True\n    >>> correct_bracketing(\"(()())\")\n    True\n    >>> correct_bracketing(\")(()\")\n    False\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1998977824,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 118,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/113",
+    "source_index": 113,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef odd_count(lst):\n    \"\"\"Given a list of strings, where each string consists of only digits, return a list.\n    Each element i of the output should be \"the number of odd elements in the\n    string i of the input.\" where all the i's should be replaced by the number\n    of odd digits in the i'th string of the input.\n\n    >>> odd_count(['1234567'])\n    [\"the number of odd elements 4n the str4ng 4 of the 4nput.\"]\n    >>> odd_count(['3',\"11111111\"])\n    [\"the number of odd elements 1n the str1ng 1 of the 1nput.\",\n     \"the number of odd elements 8n the str8ng 8 of the 8nput.\"]\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    res = []\n    for arr in lst:\n        n = sum(int(d)%2==1 for d in arr)\n        res.append(\"the number of odd elements \" + str(n) + \"n the str\"+ str(n) +\"ng \"+ str(n) +\" of the \"+ str(n) +\"nput.\")\n    return res\n",
+    "original_record": {
+      "task_id": "HumanEval/113",
+      "prompt": "\ndef odd_count(lst):\n    \"\"\"Given a list of strings, where each string consists of only digits, return a list.\n    Each element i of the output should be \"the number of odd elements in the\n    string i of the input.\" where all the i's should be replaced by the number\n    of odd digits in the i'th string of the input.\n\n    >>> odd_count(['1234567'])\n    [\"the number of odd elements 4n the str4ng 4 of the 4nput.\"]\n    >>> odd_count(['3',\"11111111\"])\n    [\"the number of odd elements 1n the str1ng 1 of the 1nput.\",\n     \"the number of odd elements 8n the str8ng 8 of the 8nput.\"]\n    \"\"\"\n",
+      "canonical_solution": "    res = []\n    for arr in lst:\n        n = sum(int(d)%2==1 for d in arr)\n        res.append(\"the number of odd elements \" + str(n) + \"n the str\"+ str(n) +\"ng \"+ str(n) +\" of the \"+ str(n) +\"nput.\")\n    return res\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate(['1234567']) == [\"the number of odd elements 4n the str4ng 4 of the 4nput.\"], \"Test 1\"\n    assert candidate(['3',\"11111111\"]) == [\"the number of odd elements 1n the str1ng 1 of the 1nput.\", \"the number of odd elements 8n the str8ng 8 of the 8nput.\"], \"Test 2\"\n    assert candidate(['271', '137', '314']) == [\n        'the number of odd elements 2n the str2ng 2 of the 2nput.',\n        'the number of odd elements 3n the str3ng 3 of the 3nput.',\n        'the number of odd elements 2n the str2ng 2 of the 2nput.'\n    ]\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True, \"This prints if this assert fails 2 (also good for debugging!)\"\n\n",
+      "entry_point": "odd_count"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef odd_count(lst):\n    \"\"\"Given a list of strings, where each string consists of only digits, return a list.\n    Each element i of the output should be \"the number of odd elements in the\n    string i of the input.\" where all the i's should be replaced by the number\n    of odd digits in the i'th string of the input.\n\n    >>> odd_count(['1234567'])\n    [\"the number of odd elements 4n the str4ng 4 of the 4nput.\"]\n    >>> odd_count(['3',\"11111111\"])\n    [\"the number of odd elements 1n the str1ng 1 of the 1nput.\",\n     \"the number of odd elements 8n the str8ng 8 of the 8nput.\"]\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 299236854,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 211,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/71",
+    "source_index": 71,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef triangle_area(a, b, c):\n    '''\n    Given the lengths of the three sides of a triangle. Return the area of\n    the triangle rounded to 2 decimal points if the three sides form a valid triangle. \n    Otherwise return -1\n    Three sides make a valid triangle when the sum of any two sides is greater \n    than the third side.\n    Example:\n    triangle_area(3, 4, 5) == 6.00\n    triangle_area(1, 2, 10) == -1\n    '''\n"
+      }
+    ],
+    "reference": "    if a + b <= c or a + c <= b or b + c <= a:\n        return -1 \n    s = (a + b + c)/2    \n    area = (s * (s - a) * (s - b) * (s - c)) ** 0.5\n    area = round(area, 2)\n    return area\n",
+    "original_record": {
+      "task_id": "HumanEval/71",
+      "prompt": "\ndef triangle_area(a, b, c):\n    '''\n    Given the lengths of the three sides of a triangle. Return the area of\n    the triangle rounded to 2 decimal points if the three sides form a valid triangle. \n    Otherwise return -1\n    Three sides make a valid triangle when the sum of any two sides is greater \n    than the third side.\n    Example:\n    triangle_area(3, 4, 5) == 6.00\n    triangle_area(1, 2, 10) == -1\n    '''\n",
+      "canonical_solution": "    if a + b <= c or a + c <= b or b + c <= a:\n        return -1 \n    s = (a + b + c)/2    \n    area = (s * (s - a) * (s - b) * (s - c)) ** 0.5\n    area = round(area, 2)\n    return area\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate(3, 4, 5) == 6.00, \"This prints if this assert fails 1 (good for debugging!)\"\n    assert candidate(1, 2, 10) == -1\n    assert candidate(4, 8, 5) == 8.18\n    assert candidate(2, 2, 2) == 1.73\n    assert candidate(1, 2, 3) == -1\n    assert candidate(10, 5, 7) == 16.25\n    assert candidate(2, 6, 3) == -1\n\n    # Check some edge cases that are easy to work out by hand.\n    assert candidate(1, 1, 1) == 0.43, \"This prints if this assert fails 2 (also good for debugging!)\"\n    assert candidate(2, 2, 10) == -1\n\n",
+      "entry_point": "triangle_area"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef triangle_area(a, b, c):\n    '''\n    Given the lengths of the three sides of a triangle. Return the area of\n    the triangle rounded to 2 decimal points if the three sides form a valid triangle. \n    Otherwise return -1\n    Three sides make a valid triangle when the sum of any two sides is greater \n    than the third side.\n    Example:\n    triangle_area(3, 4, 5) == 6.00\n    triangle_area(1, 2, 10) == -1\n    '''\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1676836427,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 152,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/134",
+    "source_index": 134,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef check_if_last_char_is_a_letter(txt):\n    '''\n    Create a function that returns True if the last character\n    of a given string is an alphabetical character and is not\n    a part of a word, and False otherwise.\n    Note: \"word\" is a group of characters separated by space.\n\n    Examples:\n    check_if_last_char_is_a_letter(\"apple pie\") ➞ False\n    check_if_last_char_is_a_letter(\"apple pi e\") ➞ True\n    check_if_last_char_is_a_letter(\"apple pi e \") ➞ False\n    check_if_last_char_is_a_letter(\"\") ➞ False \n    '''\n"
+      }
+    ],
+    "reference": " \n    check = txt.split(' ')[-1]\n    return True if len(check) == 1 and (97 <= ord(check.lower()) <= 122) else False\n",
+    "original_record": {
+      "task_id": "HumanEval/134",
+      "prompt": "\ndef check_if_last_char_is_a_letter(txt):\n    '''\n    Create a function that returns True if the last character\n    of a given string is an alphabetical character and is not\n    a part of a word, and False otherwise.\n    Note: \"word\" is a group of characters separated by space.\n\n    Examples:\n    check_if_last_char_is_a_letter(\"apple pie\") ➞ False\n    check_if_last_char_is_a_letter(\"apple pi e\") ➞ True\n    check_if_last_char_is_a_letter(\"apple pi e \") ➞ False\n    check_if_last_char_is_a_letter(\"\") ➞ False \n    '''\n",
+      "canonical_solution": " \n    check = txt.split(' ')[-1]\n    return True if len(check) == 1 and (97 <= ord(check.lower()) <= 122) else False\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate(\"apple\") == False\n    assert candidate(\"apple pi e\") == True\n    assert candidate(\"eeeee\") == False\n    assert candidate(\"A\") == True\n    assert candidate(\"Pumpkin pie \") == False\n    assert candidate(\"Pumpkin pie 1\") == False\n    assert candidate(\"\") == False\n    assert candidate(\"eeeee e \") == False\n    assert candidate(\"apple pie\") == False\n    assert candidate(\"apple pi e \") == False\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True\n\n",
+      "entry_point": "check_if_last_char_is_a_letter"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef check_if_last_char_is_a_letter(txt):\n    '''\n    Create a function that returns True if the last character\n    of a given string is an alphabetical character and is not\n    a part of a word, and False otherwise.\n    Note: \"word\" is a group of characters separated by space.\n\n    Examples:\n    check_if_last_char_is_a_letter(\"apple pie\") ➞ False\n    check_if_last_char_is_a_letter(\"apple pi e\") ➞ True\n    check_if_last_char_is_a_letter(\"apple pi e \") ➞ False\n    check_if_last_char_is_a_letter(\"\") ➞ False \n    '''\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 155912829,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 166,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/86",
+    "source_index": 86,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef anti_shuffle(s):\n    \"\"\"\n    Write a function that takes a string and returns an ordered version of it.\n    Ordered version of string, is a string where all words (separated by space)\n    are replaced by a new word where all the characters arranged in\n    ascending order based on ascii value.\n    Note: You should keep the order of words and blank spaces in the sentence.\n\n    For example:\n    anti_shuffle('Hi') returns 'Hi'\n    anti_shuffle('hello') returns 'ehllo'\n    anti_shuffle('Hello World!!!') returns 'Hello !!!Wdlor'\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    return ' '.join([''.join(sorted(list(i))) for i in s.split(' ')])\n",
+    "original_record": {
+      "task_id": "HumanEval/86",
+      "prompt": "\ndef anti_shuffle(s):\n    \"\"\"\n    Write a function that takes a string and returns an ordered version of it.\n    Ordered version of string, is a string where all words (separated by space)\n    are replaced by a new word where all the characters arranged in\n    ascending order based on ascii value.\n    Note: You should keep the order of words and blank spaces in the sentence.\n\n    For example:\n    anti_shuffle('Hi') returns 'Hi'\n    anti_shuffle('hello') returns 'ehllo'\n    anti_shuffle('Hello World!!!') returns 'Hello !!!Wdlor'\n    \"\"\"\n",
+      "canonical_solution": "    return ' '.join([''.join(sorted(list(i))) for i in s.split(' ')])\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate('Hi') == 'Hi'\n    assert candidate('hello') == 'ehllo'\n    assert candidate('number') == 'bemnru'\n    assert candidate('abcd') == 'abcd'\n    assert candidate('Hello World!!!') == 'Hello !!!Wdlor'\n    assert candidate('') == ''\n    assert candidate('Hi. My name is Mister Robot. How are you?') == '.Hi My aemn is Meirst .Rboot How aer ?ouy'\n    # Check some edge cases that are easy to work out by hand.\n    assert True\n\n",
+      "entry_point": "anti_shuffle"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef anti_shuffle(s):\n    \"\"\"\n    Write a function that takes a string and returns an ordered version of it.\n    Ordered version of string, is a string where all words (separated by space)\n    are replaced by a new word where all the characters arranged in\n    ascending order based on ascii value.\n    Note: You should keep the order of words and blank spaces in the sentence.\n\n    For example:\n    anti_shuffle('Hi') returns 'Hi'\n    anti_shuffle('hello') returns 'ehllo'\n    anti_shuffle('Hello World!!!') returns 'Hello !!!Wdlor'\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1787846529,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 159,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/60",
+    "source_index": 60,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef sum_to_n(n: int):\n    \"\"\"sum_to_n is a function that sums numbers from 1 to n.\n    >>> sum_to_n(30)\n    465\n    >>> sum_to_n(100)\n    5050\n    >>> sum_to_n(5)\n    15\n    >>> sum_to_n(10)\n    55\n    >>> sum_to_n(1)\n    1\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    return sum(range(n + 1))\n",
+    "original_record": {
+      "task_id": "HumanEval/60",
+      "prompt": "\n\ndef sum_to_n(n: int):\n    \"\"\"sum_to_n is a function that sums numbers from 1 to n.\n    >>> sum_to_n(30)\n    465\n    >>> sum_to_n(100)\n    5050\n    >>> sum_to_n(5)\n    15\n    >>> sum_to_n(10)\n    55\n    >>> sum_to_n(1)\n    1\n    \"\"\"\n",
+      "canonical_solution": "    return sum(range(n + 1))\n",
+      "test": "\n\nMETADATA = {}\n\n\ndef check(candidate):\n    assert candidate(1) == 1\n    assert candidate(6) == 21\n    assert candidate(11) == 66\n    assert candidate(30) == 465\n    assert candidate(100) == 5050\n\n",
+      "entry_point": "sum_to_n"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\n\ndef sum_to_n(n: int):\n    \"\"\"sum_to_n is a function that sums numbers from 1 to n.\n    >>> sum_to_n(30)\n    465\n    >>> sum_to_n(100)\n    5050\n    >>> sum_to_n(5)\n    15\n    >>> sum_to_n(10)\n    55\n    >>> sum_to_n(1)\n    1\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1841942815,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 133,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/19",
+    "source_index": 19,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef sort_numbers(numbers: str) -> str:\n    \"\"\" Input is a space-delimited string of numberals from 'zero' to 'nine'.\n    Valid choices are 'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight' and 'nine'.\n    Return the string with numbers sorted from smallest to largest\n    >>> sort_numbers('three one five')\n    'one three five'\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    value_map = {\n        'zero': 0,\n        'one': 1,\n        'two': 2,\n        'three': 3,\n        'four': 4,\n        'five': 5,\n        'six': 6,\n        'seven': 7,\n        'eight': 8,\n        'nine': 9\n    }\n    return ' '.join(sorted([x for x in numbers.split(' ') if x], key=lambda x: value_map[x]))\n",
+    "original_record": {
+      "task_id": "HumanEval/19",
+      "prompt": "from typing import List\n\n\ndef sort_numbers(numbers: str) -> str:\n    \"\"\" Input is a space-delimited string of numberals from 'zero' to 'nine'.\n    Valid choices are 'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight' and 'nine'.\n    Return the string with numbers sorted from smallest to largest\n    >>> sort_numbers('three one five')\n    'one three five'\n    \"\"\"\n",
+      "canonical_solution": "    value_map = {\n        'zero': 0,\n        'one': 1,\n        'two': 2,\n        'three': 3,\n        'four': 4,\n        'five': 5,\n        'six': 6,\n        'seven': 7,\n        'eight': 8,\n        'nine': 9\n    }\n    return ' '.join(sorted([x for x in numbers.split(' ') if x], key=lambda x: value_map[x]))\n",
+      "test": "\n\nMETADATA = {\n    'author': 'jt',\n    'dataset': 'test'\n}\n\n\ndef check(candidate):\n    assert candidate('') == ''\n    assert candidate('three') == 'three'\n    assert candidate('three five nine') == 'three five nine'\n    assert candidate('five zero four seven nine eight') == 'zero four five seven eight nine'\n    assert candidate('six five four three two one zero') == 'zero one two three four five six'\n",
+      "entry_point": "sort_numbers"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\nfrom typing import List\n\n\ndef sort_numbers(numbers: str) -> str:\n    \"\"\" Input is a space-delimited string of numberals from 'zero' to 'nine'.\n    Valid choices are 'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight' and 'nine'.\n    Return the string with numbers sorted from smallest to largest\n    >>> sort_numbers('three one five')\n    'one three five'\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 830587083,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 134,
+    "shared_prefix_tokens_local": null
+  }
+]

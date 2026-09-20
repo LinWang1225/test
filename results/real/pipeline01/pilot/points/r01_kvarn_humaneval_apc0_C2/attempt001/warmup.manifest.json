@@ -1,0 +1,110 @@
+[
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/70",
+    "source_index": 70,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef strange_sort_list(lst):\n    '''\n    Given list of integers, return list in strange order.\n    Strange sorting, is when you start with the minimum value,\n    then maximum of the remaining integers, then minimum and so on.\n\n    Examples:\n    strange_sort_list([1, 2, 3, 4]) == [1, 4, 2, 3]\n    strange_sort_list([5, 5, 5, 5]) == [5, 5, 5, 5]\n    strange_sort_list([]) == []\n    '''\n"
+      }
+    ],
+    "reference": "    res, switch = [], True\n    while lst:\n        res.append(min(lst) if switch else max(lst))\n        lst.remove(res[-1])\n        switch = not switch\n    return res\n",
+    "original_record": {
+      "task_id": "HumanEval/70",
+      "prompt": "\ndef strange_sort_list(lst):\n    '''\n    Given list of integers, return list in strange order.\n    Strange sorting, is when you start with the minimum value,\n    then maximum of the remaining integers, then minimum and so on.\n\n    Examples:\n    strange_sort_list([1, 2, 3, 4]) == [1, 4, 2, 3]\n    strange_sort_list([5, 5, 5, 5]) == [5, 5, 5, 5]\n    strange_sort_list([]) == []\n    '''\n",
+      "canonical_solution": "    res, switch = [], True\n    while lst:\n        res.append(min(lst) if switch else max(lst))\n        lst.remove(res[-1])\n        switch = not switch\n    return res\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert candidate([1, 2, 3, 4]) == [1, 4, 2, 3]\n    assert candidate([5, 6, 7, 8, 9]) == [5, 9, 6, 8, 7]\n    assert candidate([1, 2, 3, 4, 5]) == [1, 5, 2, 4, 3]\n    assert candidate([5, 6, 7, 8, 9, 1]) == [1, 9, 5, 8, 6, 7]\n    assert candidate([5, 5, 5, 5]) == [5, 5, 5, 5]\n    assert candidate([]) == []\n    assert candidate([1,2,3,4,5,6,7,8]) == [1, 8, 2, 7, 3, 6, 4, 5]\n    assert candidate([0,2,2,2,5,5,-5,-5]) == [-5, 5, -5, 5, 0, 2, 2, 2]\n    assert candidate([111111]) == [111111]\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True\n\n",
+      "entry_point": "strange_sort_list"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Independent warm-up r01_kvarn_humaneval_apc0_C2 0. Solve the user task."
+        },
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef strange_sort_list(lst):\n    '''\n    Given list of integers, return list in strange order.\n    Strange sorting, is when you start with the minimum value,\n    then maximum of the remaining integers, then minimum and so on.\n\n    Examples:\n    strange_sort_list([1, 2, 3, 4]) == [1, 4, 2, 3]\n    strange_sort_list([5, 5, 5, 5]) == [5, 5, 5, 5]\n    strange_sort_list([]) == []\n    '''\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "max_tokens": 8192,
+      "min_tokens": 0,
+      "ignore_eos": false,
+      "stop": [],
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1109008040,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 184,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "humaneval",
+    "case_id": "HumanEval/128",
+    "source_index": 128,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef prod_signs(arr):\n    \"\"\"\n    You are given an array arr of integers and you need to return\n    sum of magnitudes of integers multiplied by product of all signs\n    of each number in the array, represented by 1, -1 or 0.\n    Note: return None for empty arr.\n\n    Example:\n    >>> prod_signs([1, 2, 2, -4]) == -9\n    >>> prod_signs([0, 1]) == 0\n    >>> prod_signs([]) == None\n    \"\"\"\n"
+      }
+    ],
+    "reference": "    if not arr: return None\n    prod = 0 if 0 in arr else (-1) ** len(list(filter(lambda x: x < 0, arr)))\n    return prod * sum([abs(i) for i in arr])\n",
+    "original_record": {
+      "task_id": "HumanEval/128",
+      "prompt": "\ndef prod_signs(arr):\n    \"\"\"\n    You are given an array arr of integers and you need to return\n    sum of magnitudes of integers multiplied by product of all signs\n    of each number in the array, represented by 1, -1 or 0.\n    Note: return None for empty arr.\n\n    Example:\n    >>> prod_signs([1, 2, 2, -4]) == -9\n    >>> prod_signs([0, 1]) == 0\n    >>> prod_signs([]) == None\n    \"\"\"\n",
+      "canonical_solution": "    if not arr: return None\n    prod = 0 if 0 in arr else (-1) ** len(list(filter(lambda x: x < 0, arr)))\n    return prod * sum([abs(i) for i in arr])\n",
+      "test": "def check(candidate):\n\n    # Check some simple cases\n    assert True, \"This prints if this assert fails 1 (good for debugging!)\"\n    assert candidate([1, 2, 2, -4]) == -9\n    assert candidate([0, 1]) == 0\n    assert candidate([1, 1, 1, 2, 3, -1, 1]) == -10\n    assert candidate([]) == None\n    assert candidate([2, 4,1, 2, -1, -1, 9]) == 20\n    assert candidate([-1, 1, -1, 1]) == 4\n    assert candidate([-1, 1, 1, 1]) == -4\n    assert candidate([-1, 1, 1, 0]) == 0\n\n    # Check some edge cases that are easy to work out by hand.\n    assert True, \"This prints if this assert fails 2 (also good for debugging!)\"\n\n",
+      "entry_point": "prod_signs"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Independent warm-up r01_kvarn_humaneval_apc0_C2 1. Solve the user task."
+        },
+        {
+          "role": "user",
+          "content": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n\ndef prod_signs(arr):\n    \"\"\"\n    You are given an array arr of integers and you need to return\n    sum of magnitudes of integers multiplied by product of all signs\n    of each number in the array, represented by 1, -1 or 0.\n    Note: return None for empty arr.\n\n    Example:\n    >>> prod_signs([1, 2, 2, -4]) == -9\n    >>> prod_signs([0, 1]) == 0\n    >>> prod_signs([]) == None\n    \"\"\"\n"
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "max_tokens": 8192,
+      "min_tokens": 0,
+      "ignore_eos": false,
+      "stop": [],
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1549770240,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 182,
+    "shared_prefix_tokens_local": null
+  }
+]

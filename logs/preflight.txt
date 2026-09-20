@@ -1,0 +1,21 @@
+Python: 3.12.13 | packaged by conda-forge | (main, Aug 11 2026, 10:27:28) [GCC 14.4.0]
+Executable: /home/wanglin/miniconda3/envs/kvarn-serve/bin/python
+OS/arch: Linux x86_64
+libc: ('glibc', '2.36')
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2024 NVIDIA Corporation
+Built on Tue_Oct_29_23:50:19_PDT_2024
+Cuda compilation tools, release 12.6, V12.6.85
+Build cuda_12.6.r12.6/compiler.35059454_0
+ptxas: NVIDIA (R) Ptx optimizing assembler
+Copyright (c) 2005-2024 NVIDIA Corporation
+Built on Tue_Oct_29_23:47:06_PDT_2024
+Cuda compilation tools, release 12.6, V12.6.85
+Build cuda_12.6.r12.6/compiler.35059454_0
+NVIDIA GeForce RTX 3090, 560.35.05, 24576 MiB
+CUDA_HOME=/usr/local/cuda-12.6
+CC=gcc-12
+CXX=g++-12
+TORCH_CUDA_ARCH_LIST=8.6
+TRITON_PTXAS_PATH=/usr/local/cuda-12.6/bin/ptxas
+Preflight passed. 下一步仍需检查 PyTorch、Triton 和实际模型服务。

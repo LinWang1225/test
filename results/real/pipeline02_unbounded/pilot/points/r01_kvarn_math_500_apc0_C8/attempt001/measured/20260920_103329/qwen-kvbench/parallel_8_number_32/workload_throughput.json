@@ -1,0 +1,32 @@
+{
+    "n_samples": 32,
+    "wall_time_s": 148.9925,
+    "last_window_s": 30.0,
+    "warmup_frac": 0.2,
+    "rows": [
+        {
+            "metric": "Total Prompt tok/s",
+            "overall": 18.282802520914004,
+            "last_window": 13.20968490832553,
+            "steady_state": 22.940967249391647
+        },
+        {
+            "metric": "New Prompt tok/s",
+            "overall": 18.282802520914004,
+            "last_window": 13.20968490832553,
+            "steady_state": 22.940967249391647
+        },
+        {
+            "metric": "Cached Prompt tok/s",
+            "overall": 0.0,
+            "last_window": 0.0,
+            "steady_state": 0.0
+        },
+        {
+            "metric": "Completion tok/s",
+            "overall": 430.5653687662093,
+            "last_window": 417.431456908377,
+            "steady_state": 557.1775084430855
+        }
+    ]
+}

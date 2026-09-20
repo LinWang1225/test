@@ -1,0 +1,11 @@
+/home/wanglin/miniconda3/envs/kvarn-serve/lib/python3.12/site-packages/transformers/utils/hub.py:110: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+Python: 3.12.13 | packaged by conda-forge | (main, Aug 11 2026, 10:27:28) [GCC 14.4.0]
+torch: 2.11.0+cu126 CUDA: 12.6 Triton: 3.6.0
+TRITON_PTXAS_PATH: /usr/local/cuda-12.6/bin/ptxas
+GPU: NVIDIA GeForce RTX 3090 (8, 6)
+PyTorch CUDA + Triton JIT: PASS
+WARNING 09-17 19:14:41 [config.py:71] Support for Transformers v4 is deprecated. The Transformers v4 codepath will become unmaintained in vLLM v0.22.0 and will be removed in vLLM v0.24.0. Please upgrade to Transformers v5: pip install --upgrade transformers
+vllm: 0.1.dev227+g7586257f1.cu126 /home/wanglin/kvbench-3090-cu126/src/KVarN/vllm/__init__.py
+vLLM CUDA extensions + dtype declarations: PASS
+注意：这不是完整 KVarN/TurboQuant 推理验证；继续逐个启动模型服务。

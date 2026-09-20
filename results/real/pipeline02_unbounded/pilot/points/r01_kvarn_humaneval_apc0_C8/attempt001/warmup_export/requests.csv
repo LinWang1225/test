@@ -1,0 +1,3 @@
+﻿dataset,case_id,http_success,finish_reason,is_length_capped,is_length_limit_termination,prompt_tokens,completion_tokens,e2e_s,ttft_s,tpot_s,token_count_source,answer_extraction,raw_response_file
+humaneval,HumanEval/70,True,stop,False,False,184,2017,28.84463301114738,0.16286621801555157,0.014227066861672534,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00000_75d23a82966d.json.gz
+humaneval,HumanEval/128,True,length,True,True,182,2048,29.247899316251278,0.16454699635505676,0.01420779302388677,evalscope_fallback_or_missing,no_closed_think_or_server_reasoning_channel,raw_responses/00001_6ced7fed3976.json.gz

@@ -1,0 +1,292 @@
+{
+  "native_log_evidence": [
+    "(APIServer pid=3936351) INFO 09-18 14:29:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:29:19 [loggers.py:271] Engine 000: Avg prompt throughput: 79.9 tokens/s, Avg generation throughput: 104.1 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 2.7%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:29:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 606.3 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 10.0%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:29:39 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 558.4 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 16.3%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:29:49 [loggers.py:271] Engine 000: Avg prompt throughput: 16.4 tokens/s, Avg generation throughput: 521.5 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 17.5%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:29:59 [loggers.py:271] Engine 000: Avg prompt throughput: 7.1 tokens/s, Avg generation throughput: 525.1 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 20.5%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:30:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 507.1 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 26.5%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:30:19 [loggers.py:271] Engine 000: Avg prompt throughput: 5.6 tokens/s, Avg generation throughput: 484.4 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 30.3%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:30:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 466.3 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 36.0%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:30:39 [loggers.py:271] Engine 000: Avg prompt throughput: 4.2 tokens/s, Avg generation throughput: 461.8 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 35.6%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:30:49 [loggers.py:271] Engine 000: Avg prompt throughput: 10.3 tokens/s, Avg generation throughput: 454.3 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 34.7%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:30:59 [loggers.py:271] Engine 000: Avg prompt throughput: 5.8 tokens/s, Avg generation throughput: 458.7 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 32.6%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:31:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 459.2 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 38.2%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:31:19 [loggers.py:271] Engine 000: Avg prompt throughput: 11.9 tokens/s, Avg generation throughput: 447.9 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 35.6%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:31:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 447.1 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 40.9%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:31:39 [loggers.py:271] Engine 000: Avg prompt throughput: 8.4 tokens/s, Avg generation throughput: 431.6 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 43.4%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:31:49 [loggers.py:271] Engine 000: Avg prompt throughput: 33.8 tokens/s, Avg generation throughput: 423.2 tokens/s, Running: 7 reqs, Waiting: 0 reqs, GPU KV cache usage: 41.5%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:31:59 [loggers.py:271] Engine 000: Avg prompt throughput: 7.6 tokens/s, Avg generation throughput: 423.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 46.5%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:32:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 409.5 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 51.3%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:32:19 [loggers.py:271] Engine 000: Avg prompt throughput: 7.2 tokens/s, Avg generation throughput: 396.4 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 54.0%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:32:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 390.3 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 58.7%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:32:39 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 376.8 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 62.9%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:32:49 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 364.8 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 67.3%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:32:59 [loggers.py:271] Engine 000: Avg prompt throughput: 25.4 tokens/s, Avg generation throughput: 364.2 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 52.0%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:33:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 395.2 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 56.7%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:33:19 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 381.6 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 61.2%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:33:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 368.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 65.8%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:33:39 [loggers.py:271] Engine 000: Avg prompt throughput: 13.6 tokens/s, Avg generation throughput: 379.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 56.0%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:33:49 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 384.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 60.3%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:33:59 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 372.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 64.9%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:34:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 360.8 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 68.9%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:34:19 [loggers.py:271] Engine 000: Avg prompt throughput: 4.3 tokens/s, Avg generation throughput: 352.1 tokens/s, Running: 7 reqs, Waiting: 0 reqs, GPU KV cache usage: 62.4%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:34:29 [loggers.py:271] Engine 000: Avg prompt throughput: 30.9 tokens/s, Avg generation throughput: 493.1 tokens/s, Running: 7 reqs, Waiting: 0 reqs, GPU KV cache usage: 16.6%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:34:39 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 442.7 tokens/s, Running: 6 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.8%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:34:49 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 360.8 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.7%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:34:59 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 241.4 tokens/s, Running: 3 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.8%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:35:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 207.9 tokens/s, Running: 3 reqs, Waiting: 0 reqs, GPU KV cache usage: 12.2%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:35:19 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 153.7 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.8%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:35:30 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 142.4 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 11.5%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:35:40 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 139.4 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 13.1%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:35:50 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 91.9 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 7.4%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:36:00 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 76.0 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 8.3%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:36:10 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 74.3 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.2%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:36:20 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 74.1 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 10.1%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:36:30 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 73.8 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 10.9%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:36:40 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 72.0 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 11.8%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:36:50 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 71.8 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 12.7%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:37:00 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 71.6 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 13.4%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:37:10 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 70.2 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 14.3%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:37:20 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 69.7 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 15.1%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:37:30 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 69.5 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 16.0%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:37:40 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 68.7 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 16.7%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:37:50 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 67.7 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 17.5%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:38:00 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 67.6 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 18.4%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:38:10 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 67.4 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 19.2%, Prefix cache hit rate: 0.0%",
+    "(APIServer pid=3936351) INFO 09-18 14:38:20 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 30.1 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%"
+  ],
+  "kv_capacity_tokens_log_values": [],
+  "available_kv_memory_log_values": [],
+  "num_gpu_blocks_log_values": [],
+  "native_prefix_rates": [
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:29:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:29:19 [loggers.py:271] Engine 000: Avg prompt throughput: 79.9 tokens/s, Avg generation throughput: 104.1 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 2.7%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:29:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 606.3 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 10.0%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:29:39 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 558.4 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 16.3%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:29:49 [loggers.py:271] Engine 000: Avg prompt throughput: 16.4 tokens/s, Avg generation throughput: 521.5 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 17.5%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:29:59 [loggers.py:271] Engine 000: Avg prompt throughput: 7.1 tokens/s, Avg generation throughput: 525.1 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 20.5%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:30:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 507.1 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 26.5%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:30:19 [loggers.py:271] Engine 000: Avg prompt throughput: 5.6 tokens/s, Avg generation throughput: 484.4 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 30.3%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:30:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 466.3 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 36.0%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:30:39 [loggers.py:271] Engine 000: Avg prompt throughput: 4.2 tokens/s, Avg generation throughput: 461.8 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 35.6%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:30:49 [loggers.py:271] Engine 000: Avg prompt throughput: 10.3 tokens/s, Avg generation throughput: 454.3 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 34.7%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:30:59 [loggers.py:271] Engine 000: Avg prompt throughput: 5.8 tokens/s, Avg generation throughput: 458.7 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 32.6%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:31:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 459.2 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 38.2%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:31:19 [loggers.py:271] Engine 000: Avg prompt throughput: 11.9 tokens/s, Avg generation throughput: 447.9 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 35.6%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:31:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 447.1 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 40.9%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:31:39 [loggers.py:271] Engine 000: Avg prompt throughput: 8.4 tokens/s, Avg generation throughput: 431.6 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 43.4%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:31:49 [loggers.py:271] Engine 000: Avg prompt throughput: 33.8 tokens/s, Avg generation throughput: 423.2 tokens/s, Running: 7 reqs, Waiting: 0 reqs, GPU KV cache usage: 41.5%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:31:59 [loggers.py:271] Engine 000: Avg prompt throughput: 7.6 tokens/s, Avg generation throughput: 423.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 46.5%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:32:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 409.5 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 51.3%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:32:19 [loggers.py:271] Engine 000: Avg prompt throughput: 7.2 tokens/s, Avg generation throughput: 396.4 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 54.0%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:32:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 390.3 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 58.7%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:32:39 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 376.8 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 62.9%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:32:49 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 364.8 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 67.3%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:32:59 [loggers.py:271] Engine 000: Avg prompt throughput: 25.4 tokens/s, Avg generation throughput: 364.2 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 52.0%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:33:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 395.2 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 56.7%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:33:19 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 381.6 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 61.2%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:33:29 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 368.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 65.8%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:33:39 [loggers.py:271] Engine 000: Avg prompt throughput: 13.6 tokens/s, Avg generation throughput: 379.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 56.0%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:33:49 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 384.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 60.3%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:33:59 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 372.0 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 64.9%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:34:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 360.8 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 68.9%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:34:19 [loggers.py:271] Engine 000: Avg prompt throughput: 4.3 tokens/s, Avg generation throughput: 352.1 tokens/s, Running: 7 reqs, Waiting: 0 reqs, GPU KV cache usage: 62.4%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:34:29 [loggers.py:271] Engine 000: Avg prompt throughput: 30.9 tokens/s, Avg generation throughput: 493.1 tokens/s, Running: 7 reqs, Waiting: 0 reqs, GPU KV cache usage: 16.6%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:34:39 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 442.7 tokens/s, Running: 6 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.8%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:34:49 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 360.8 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.7%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:34:59 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 241.4 tokens/s, Running: 3 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.8%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:35:09 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 207.9 tokens/s, Running: 3 reqs, Waiting: 0 reqs, GPU KV cache usage: 12.2%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:35:19 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 153.7 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.8%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:35:30 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 142.4 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 11.5%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:35:40 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 139.4 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 13.1%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:35:50 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 91.9 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 7.4%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:36:00 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 76.0 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 8.3%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:36:10 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 74.3 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 9.2%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:36:20 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 74.1 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 10.1%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:36:30 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 73.8 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 10.9%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:36:40 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 72.0 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 11.8%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:36:50 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 71.8 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 12.7%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:37:00 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 71.6 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 13.4%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:37:10 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 70.2 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 14.3%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:37:20 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 69.7 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 15.1%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:37:30 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 69.5 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 16.0%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:37:40 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 68.7 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 16.7%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:37:50 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 67.7 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 17.5%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:38:00 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 67.6 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 18.4%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:38:10 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 67.4 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 19.2%, Prefix cache hit rate: 0.0%"
+    },
+    {
+      "rate_percent": 0.0,
+      "native_log_line": "(APIServer pid=3936351) INFO 09-18 14:38:20 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 30.1 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%"
+    }
+  ],
+  "kv_capacity_tokens_single_gpu_log": null,
+  "prefix_native_last_percent": 0.0,
+  "prefix_native_last_is_run_aggregate": false
+}

@@ -1,0 +1,112 @@
+[
+  {
+    "dataset": "math_500",
+    "case_id": "test/counting_and_probability/377.json",
+    "source_index": 92,
+    "messages": [
+      {
+        "role": "user",
+        "content": "A pirate searches seven islands for buried treasure. If each island has a $\\frac{1}{5}$ chance of having treasure, what is the probability that exactly 4 of the islands have treasure?\nPlease reason step by step, and put your final answer within \\boxed{}."
+      }
+    ],
+    "reference": "\\frac{448}{15625}",
+    "original_record": {
+      "problem": "A pirate searches seven islands for buried treasure. If each island has a $\\frac{1}{5}$ chance of having treasure, what is the probability that exactly 4 of the islands have treasure?",
+      "solution": "There are $\\binom{7}{4}=35$ ways to choose 4 of the islands. For each choice, there is a probability of $\\left( \\frac{1}{5} \\right)^4 \\left( \\frac{4}{5} \\right)^3$ that those 4 islands will have treasure and the others will not. Therefore, the total probability that exactly 4 of the islands have treasure is $35 \\left( \\frac{1}{5} \\right)^4 \\left( \\frac{4}{5} \\right)^3 = \\boxed{\\frac{448}{15625}}$.",
+      "answer": "\\frac{448}{15625}",
+      "subject": "Counting & Probability",
+      "level": 4,
+      "unique_id": "test/counting_and_probability/377.json"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Independent warm-up r01_tq4_math_500_apc0_C2 0. Solve the user task."
+        },
+        {
+          "role": "user",
+          "content": "A pirate searches seven islands for buried treasure. If each island has a $\\frac{1}{5}$ chance of having treasure, what is the probability that exactly 4 of the islands have treasure?\nPlease reason step by step, and put your final answer within \\boxed{}."
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "max_tokens": 16384,
+      "min_tokens": 0,
+      "ignore_eos": false,
+      "stop": [],
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 484401220,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 95,
+    "shared_prefix_tokens_local": null
+  },
+  {
+    "dataset": "math_500",
+    "case_id": "test/precalculus/1289.json",
+    "source_index": 370,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Find the dot product of $\\begin{pmatrix} -2 \\\\ 0 \\\\ 7 \\end{pmatrix}$ and $\\begin{pmatrix} 3 \\\\ 4 \\\\ -5 \\end{pmatrix}.$\nPlease reason step by step, and put your final answer within \\boxed{}."
+      }
+    ],
+    "reference": "-41",
+    "original_record": {
+      "problem": "Find the dot product of $\\begin{pmatrix} -2 \\\\ 0 \\\\ 7 \\end{pmatrix}$ and $\\begin{pmatrix} 3 \\\\ 4 \\\\ -5 \\end{pmatrix}.$",
+      "solution": "The dot product of $\\begin{pmatrix} -2 \\\\ 0 \\\\ 7 \\end{pmatrix}$ and $\\begin{pmatrix} 3 \\\\ 4 \\\\ -5 \\end{pmatrix}$ is\n\\[(-2)(3) + (0)(4) + (7)(-5) = \\boxed{-41}.\\]",
+      "answer": "-41",
+      "subject": "Precalculus",
+      "level": 1,
+      "unique_id": "test/precalculus/1289.json"
+    },
+    "request": {
+      "model": "qwen-kvbench",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Independent warm-up r01_tq4_math_500_apc0_C2 1. Solve the user task."
+        },
+        {
+          "role": "user",
+          "content": "Find the dot product of $\\begin{pmatrix} -2 \\\\ 0 \\\\ 7 \\end{pmatrix}$ and $\\begin{pmatrix} 3 \\\\ 4 \\\\ -5 \\end{pmatrix}.$\nPlease reason step by step, and put your final answer within \\boxed{}."
+        }
+      ],
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "n": 1,
+      "repetition_penalty": 1.0,
+      "frequency_penalty": 0.0,
+      "presence_penalty": 0.0,
+      "max_tokens": 16384,
+      "min_tokens": 0,
+      "ignore_eos": false,
+      "stop": [],
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "seed": 1561548901,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "input_tokens_local": 103,
+    "shared_prefix_tokens_local": null
+  }
+]

@@ -1,0 +1,6 @@
+Python: 3.12.13 | packaged by conda-forge | (main, Aug 11 2026, 10:27:28) [GCC 14.4.0]
+torch: 2.11.0+cu126 CUDA: 12.6 Triton: 3.6.0
+TRITON_PTXAS_PATH: /usr/local/cuda-12.6/bin/ptxas
+GPU: NVIDIA GeForce RTX 3090 (8, 6)
+PyTorch CUDA + Triton JIT: PASS
+注意：这不是完整 KVarN/TurboQuant 推理验证；继续逐个启动模型服务。
