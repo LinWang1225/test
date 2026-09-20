@@ -1,0 +1,268 @@
+usage: evalscope <command> [<args>] perf [-h] [--model MODEL]
+                                         [--attn-implementation ATTN_IMPLEMENTATION]
+                                         [--api API]
+                                         [--tokenizer-path TOKENIZER_PATH]
+                                         [--url URL] [--port PORT]
+                                         [--headers HEADERS [HEADERS ...]]
+                                         [--api-key API_KEY]
+                                         [--connect-timeout CONNECT_TIMEOUT]
+                                         [--read-timeout READ_TIMEOUT]
+                                         [--total-timeout TOTAL_TIMEOUT]
+                                         [--no-test-connection]
+                                         [--scenario SCENARIO]
+                                         [-n NUMBER [NUMBER ...]]
+                                         [--parallel PARALLEL [PARALLEL ...]]
+                                         [--rate RATE [RATE ...]]
+                                         [--warmup-num WARMUP_NUM]
+                                         [--enable-pd-metrics] [--open-loop]
+                                         [--sleep-interval SLEEP_INTERVAL]
+                                         [--duration DURATION]
+                                         [--sla-auto-tune]
+                                         [--sla-variable {parallel,rate}]
+                                         [--sla-params SLA_PARAMS]
+                                         [--sla-num-runs SLA_NUM_RUNS]
+                                         [--sla-upper-bound SLA_UPPER_BOUND]
+                                         [--sla-lower-bound SLA_LOWER_BOUND]
+                                         [--sla-fixed-parallel SLA_FIXED_PARALLEL]
+                                         [--sla-number-multiplier SLA_NUMBER_MULTIPLIER]
+                                         [--db-commit-interval DB_COMMIT_INTERVAL]
+                                         [--queue-size-multiplier QUEUE_SIZE_MULTIPLIER]
+                                         [--in-flight-task-multiplier IN_FLIGHT_TASK_MULTIPLIER]
+                                         [--num-workers NUM_WORKERS]
+                                         [--log-every-n-query LOG_EVERY_N_QUERY]
+                                         [--debug]
+                                         [--visualizer {wandb,swanlab,clearml,None}]
+                                         [--wandb-api-key WANDB_API_KEY]
+                                         [--swanlab-api-key SWANLAB_API_KEY]
+                                         [--swanlab-host SWANLAB_HOST]
+                                         [--name NAME]
+                                         [--enable-progress-tracker]
+                                         [--max-prompt-length MAX_PROMPT_LENGTH]
+                                         [--min-prompt-length MIN_PROMPT_LENGTH]
+                                         [--prefix-length PREFIX_LENGTH]
+                                         [--prompt PROMPT]
+                                         [--query-template QUERY_TEMPLATE]
+                                         [--apply-chat-template | --no-apply-chat-template]
+                                         [--image-width IMAGE_WIDTH]
+                                         [--image-height IMAGE_HEIGHT]
+                                         [--image-format IMAGE_FORMAT]
+                                         [--image-num IMAGE_NUM]
+                                         [--image-patch-size IMAGE_PATCH_SIZE]
+                                         [--outputs-dir OUTPUTS_DIR]
+                                         [--no-timestamp] [--dataset DATASET]
+                                         [--dataset-path DATASET_PATH]
+                                         [--data-source {modelscope,huggingface,local}]
+                                         [--dataset-offset DATASET_OFFSET]
+                                         [--dataset-args DATASET_ARGS]
+                                         [--frequency-penalty FREQUENCY_PENALTY]
+                                         [--repetition-penalty REPETITION_PENALTY]
+                                         [--logprobs]
+                                         [--max-tokens MAX_TOKENS [MAX_TOKENS ...]]
+                                         [--min-tokens MIN_TOKENS]
+                                         [--n-choices N_CHOICES] [--seed SEED]
+                                         [--stop [STOP ...]]
+                                         [--stop-token-ids [STOP_TOKEN_IDS ...]]
+                                         [--stream | --no-stream]
+                                         [--temperature TEMPERATURE]
+                                         [--top-p TOP_P] [--top-k TOP_K]
+                                         [--extra-args EXTRA_ARGS]
+                                         [--tokenize-prompt] [--multi-turn]
+                                         [--min-turns MIN_TURNS]
+                                         [--max-turns MAX_TURNS]
+                                         [--multi-turn-args MULTI_TURN_ARGS]
+
+options:
+  -h, --help            show this help message and exit
+  --model MODEL         The test model name.
+  --attn-implementation ATTN_IMPLEMENTATION
+                        Attention implementation
+  --api API             Service API protocol: openai |
+                        openai_responses/responses |
+                        openai_embedding/embedding | openai_rerank/rerank |
+                        local/local_vllm. Determines the auto-appended
+                        endpoint path on --url.
+  --tokenizer-path TOKENIZER_PATH
+                        Specify the tokenizer weight path
+  --url URL
+  --port PORT           The port for local inference
+  --headers HEADERS [HEADERS ...]
+                        Extra HTTP headers
+  --api-key API_KEY     The API key for authentication
+  --connect-timeout CONNECT_TIMEOUT
+                        The network connection timeout
+  --read-timeout READ_TIMEOUT
+                        The network read timeout
+  --total-timeout TOTAL_TIMEOUT
+                        The total timeout for each request
+  --no-test-connection  Do not test the connection before starting the
+                        benchmark
+  --scenario SCENARIO   External performance scenario: "agentx" or an AgentX
+                        JSON object.
+  -n NUMBER [NUMBER ...], --number NUMBER [NUMBER ...]
+                        How many requests to be made
+  --parallel PARALLEL [PARALLEL ...]
+                        Set number of concurrency requests, default 1
+  --rate RATE [RATE ...]
+                        Number of requests per second. default -1 means no
+                        rate limit. Accepts multiple values for open-loop
+                        multi-run sweeps, e.g. --rate 5 10 20
+  --warmup-num WARMUP_NUM
+                        Number or ratio of warmup requests. >=1: absolute
+                        count. 0<value<1: ratio of --number. 0: disabled.
+                        Default: 0
+  --enable-pd-metrics   Enable PD-disaggregation handoff metrics based on
+                        streaming inter-output chunk latencies.
+  --open-loop           Enable open-loop rate mode: dispatch requests at the
+                        scheduled rate without semaphore backpressure. Use
+                        with --rate (list) and matching --number (list).
+  --sleep-interval SLEEP_INTERVAL
+                        Sleep interval between performance runs, in seconds.
+                        Default 5
+  --duration DURATION   Wall-clock budget in seconds for one benchmark run
+                        (applies to all modes). Soft exit: once reached, no
+                        new requests are dispatched but in-flight ones run to
+                        completion (multi-turn finishes every remaining turn
+                        of any already-claimed trace, matching trie). Warmup
+                        ignores this. When both --number and --duration are
+                        set, whichever limit is reached first ends the run.
+  --sla-auto-tune       Enable SLA auto-tuning
+  --sla-variable {parallel,rate}
+                        The variable to tune, can be parallel or rate
+  --sla-params SLA_PARAMS
+                        SLA constraints in JSON format
+  --sla-num-runs SLA_NUM_RUNS
+                        Number of runs to average for each configuration in
+                        SLA auto-tuning
+  --sla-upper-bound SLA_UPPER_BOUND
+                        Upper bound of the tuned SLA variable search range
+  --sla-lower-bound SLA_LOWER_BOUND
+                        Lower bound of the tuned SLA variable search range
+  --sla-fixed-parallel SLA_FIXED_PARALLEL
+                        Fixed parallel workers used when --sla-variable=rate.
+                        Defaults to --sla-upper-bound for backward
+                        compatibility.
+  --sla-number-multiplier SLA_NUMBER_MULTIPLIER
+                        Multiplier for number of requests relative to
+                        parallel/rate in SLA auto-tuning. number = round(val *
+                        N). Defaults to 2 if not set.
+  --db-commit-interval DB_COMMIT_INTERVAL
+                        Rows buffered before SQLite commit
+  --queue-size-multiplier QUEUE_SIZE_MULTIPLIER
+                        Queue maxsize = parallel * multiplier
+  --in-flight-task-multiplier IN_FLIGHT_TASK_MULTIPLIER
+                        Max scheduled tasks = parallel * multiplier
+  --num-workers NUM_WORKERS
+                        Worker processes for CPU-bound dataset/request
+                        generation. 0=auto from CPU affinity, 1=serial,
+                        >1=explicit worker count.
+  --log-every-n-query LOG_EVERY_N_QUERY
+                        Logging every n query
+  --debug               Debug request send
+  --visualizer {wandb,swanlab,clearml,None}
+                        The visualizer to use, default None
+  --wandb-api-key WANDB_API_KEY
+                        The wandb API key
+  --swanlab-api-key SWANLAB_API_KEY
+                        The swanlab API key
+  --swanlab-host SWANLAB_HOST
+                        SwanLab host URL for self-hosted deployments (also
+                        reads SWANLAB_HOST env var)
+  --name NAME           The wandb/swanlab/clearml result name and result db
+                        name
+  --enable-progress-tracker
+                        Enable progress tracker
+  --max-prompt-length MAX_PROMPT_LENGTH
+                        Maximum input prompt length
+  --min-prompt-length MIN_PROMPT_LENGTH
+                        Minimum input prompt length
+  --prefix-length PREFIX_LENGTH
+                        The prefix length
+  --prompt PROMPT       Specified the request prompt
+  --query-template QUERY_TEMPLATE
+                        Specify the query template
+  --apply-chat-template, --no-apply-chat-template
+                        Apply chat template to the prompt
+  --image-width IMAGE_WIDTH
+                        Width of the image for random VL dataset
+  --image-height IMAGE_HEIGHT
+                        Height of the image for random VL dataset
+  --image-format IMAGE_FORMAT
+                        Image format for random VL dataset
+  --image-num IMAGE_NUM
+                        Number of images for random VL dataset
+  --image-patch-size IMAGE_PATCH_SIZE
+                        Patch size for image tokenizer, only for local image
+                        token calculation
+  --outputs-dir OUTPUTS_DIR
+                        Outputs dir.
+  --no-timestamp        Do not add timestamp to output directory
+  --dataset DATASET     Specify the dataset
+  --dataset-path DATASET_PATH
+                        Path to the dataset file or directory
+  --data-source {modelscope,huggingface,local}
+                        Data source for dataset loading: modelscope,
+                        huggingface, or local (default: modelscope)
+  --dataset-offset DATASET_OFFSET
+                        Global token-sequence offset for random datasets.
+                        Automatically incremented between runs to avoid KV-
+                        cache hits. Default 0.
+  --dataset-args DATASET_ARGS
+                        Per-dataset arguments as a JSON string, validated
+                        against the selected dataset schema. Example:
+                        '{"target_input_len": 2048, "input_len_mode": "cap"}'.
+                        Supersedes the deprecated --multi-turn-args.
+  --frequency-penalty FREQUENCY_PENALTY
+                        The frequency_penalty value
+  --repetition-penalty REPETITION_PENALTY
+                        The repetition_penalty value
+  --logprobs            The logprobs
+  --max-tokens MAX_TOKENS [MAX_TOKENS ...]
+                        The maximum number of tokens that can be generated.
+                        Accepts 1 value (fixed) or 2 values min max for
+                        uniform sampling per request.
+  --min-tokens MIN_TOKENS
+                        The minimum number of tokens that can be generated
+  --n-choices N_CHOICES
+                        How many completion choices to generate
+  --seed SEED           The random seed
+  --stop [STOP ...]     The stop tokens
+  --stop-token-ids [STOP_TOKEN_IDS ...]
+                        Set the stop token IDs
+  --stream, --no-stream
+                        Stream output with SSE
+  --temperature TEMPERATURE
+                        The sample temperature
+  --top-p TOP_P         Sampling top p
+  --top-k TOP_K         Sampling top k
+  --extra-args EXTRA_ARGS
+                        Extra arguments, should in JSON format
+  --tokenize-prompt     Tokenize prompt client-side and send token IDs
+                        directly via /v1/completions, avoiding the token ID →
+                        text → token ID re-tokenization inflation. Requires
+                        --tokenizer-path to be set.
+  --multi-turn          Enable multi-turn conversation benchmark mode. In this
+                        mode --number is the total number of conversations to
+                        run and --parallel is the number of conversations
+                        executed concurrently. Use a multi-turn compatible
+                        dataset: random_multi_turn, share_gpt_zh_multi_turn,
+                        or share_gpt_en_multi_turn.
+  --min-turns MIN_TURNS
+                        Minimum number of user turns per conversation
+                        (random_multi_turn only). Default: 1.
+  --max-turns MAX_TURNS
+                        Maximum number of user turns per conversation. For
+                        random_multi_turn: required, caps the sampled turn
+                        count. For ShareGPT / custom multi-turn datasets:
+                        optional, truncates long conversations. For swe_smith:
+                        upper bound for per-conversation turn count sampling;
+                        defaults to --min-turns when unset.
+  --multi-turn-args MULTI_TURN_ARGS
+                        Advanced multi-turn conversation parameters for
+                        swe_smith (live construction) as a JSON string.
+                        Example: '{"first_turn_length": 65000,
+                        "subsequent_turn_length": 500, "chars_per_token":
+                        3.0}'. Note: min_turns and max_turns are top-level
+                        --min-turns / --max-turns arguments (per-conversation
+                        turn count is sampled from [min_turns, max_turns]);
+                        use top-level --num-workers for live construction
+                        parallelism.

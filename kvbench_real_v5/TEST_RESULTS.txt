@@ -1,0 +1,22 @@
+test_capacity_and_native_log (test_protocol.Tests.test_capacity_and_native_log) ... ok
+test_concurrency_slo_not_oom_only (test_protocol.Tests.test_concurrency_slo_not_oom_only) ... ok
+test_context_not_silently_truncated (test_protocol.Tests.test_context_not_silently_truncated) ... ok
+test_export_variable_length_and_raw (test_protocol.Tests.test_export_variable_length_and_raw) ... ok
+test_full_is_full_and_metadata (test_protocol.Tests.test_full_is_full_and_metadata) ... ok
+test_method_server_group_separates_apc (test_protocol.Tests.test_method_server_group_separates_apc) ... ok
+test_missing_rows_not_success (test_protocol.Tests.test_missing_rows_not_success) ... ok
+test_native_cache_not_estimated (test_protocol.Tests.test_native_cache_not_estimated) ... ok
+test_natural_request_no_answer_leak (test_protocol.Tests.test_natural_request_no_answer_leak) ... ok
+test_non_thinking_code_untouched (test_protocol.Tests.test_non_thinking_code_untouched) ... ok
+test_response_channels (test_protocol.Tests.test_response_channels) ... ok
+test_safe_pickle (test_protocol.Tests.test_safe_pickle) ... ok
+test_truncated_reasoning_not_final (test_protocol.Tests.test_truncated_reasoning_not_final) ... ok
+test_truncation_retained (test_protocol.Tests.test_truncation_retained) ... ok
+test_warmup_no_matching_prefix (test_protocol.Tests.test_warmup_no_matching_prefix) ... ok
+test_one_natural_point_exports_complete_evidence (test_workflow.TestWorkflow.test_one_natural_point_exports_complete_evidence) ... [2026-09-18 01:56:20] 完成 r01_fp16_math_500_apc0_C2：8 请求，RPS=0.8889，输出均值=10.5，达到上限=0
+ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.020s
+
+OK

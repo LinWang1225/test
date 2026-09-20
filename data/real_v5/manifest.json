@@ -1,0 +1,29 @@
+{
+  "evalscope_version": "1.12.0",
+  "datasets": {
+    "math_500": {
+      "source": "modelscope",
+      "revision_requested": null,
+      "revision_resolved": null,
+      "dataset_id": "AI-ModelScope/MATH-500",
+      "note": "Resolved remote revision may be unavailable; frozen local bytes are authoritative.",
+      "count": 500,
+      "template": "{question}\nPlease reason step by step, and put your final answer within \\boxed{{}}.",
+      "template_sha256": "b3a963853b105fd6e890e41330ea71f2c52b1c31a7577b8d260314c31730fcd9",
+      "file": "math_500.jsonl",
+      "sha256": "0834f3374ea929bd3645fc32cbfde32e7269210684244f24c76ea3ce68aecabb"
+    },
+    "humaneval": {
+      "source": "modelscope",
+      "revision_requested": null,
+      "revision_resolved": null,
+      "dataset_id": "opencompass/humaneval",
+      "note": "Resolved remote revision may be unavailable; frozen local bytes are authoritative.",
+      "count": 164,
+      "template": "Read the following function signature and docstring, and fully implement the function described. Your response should only contain the code for this function.\n{question}",
+      "template_sha256": "6d52a22b5257405038e27c07d2f87a3f4a3ccba9f050b19d9a42ab566b498986",
+      "file": "humaneval.jsonl",
+      "sha256": "048f17ed3d16d17d259251b629f16abb9419818fb748ff8f682af81a0572ffc5"
+    }
+  }
+}

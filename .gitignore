@@ -1,0 +1,13 @@
+# Local runtime and package caches
+cache/
+results/
+logs/
+__pycache__/
+*.py[cod]
+
+# Generated files from the KVarN submodule
+src/KVarN/.deps/
+src/KVarN/rust/target/
+src/KVarN/build/
+src/KVarN/vllm/*.so
+src/KVarN/vllm/*.abi3.so
