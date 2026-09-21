@@ -46,8 +46,6 @@ def parser():
     p.add_argument('--max-p95-ttft-ms',type=float);p.add_argument('--max-p95-tpot-ms',type=float)
     p.add_argument('--max-pilot-cap-fraction',type=float,default=None,help='可选：仅在显式设置请求级 max_tokens 时用于筛查；默认不用于并发选择')
     p.add_argument('--max-preemptions',type=int,default=-1,help='-1: only record; otherwise pilot eligibility bound')
-    p.add_argument('--require-native-usage',action='store_true',
-                   help='默认不因流式响应缺少 server usage 淘汰 pilot；开启后才要求原生 usage 完整')
     p.add_argument('--resume',action='store_true');p.add_argument('--continue-on-error',action='store_true')
     p.add_argument('--dry-run',action='store_true')
     return p
@@ -72,7 +70,7 @@ def load_data(cfg):
 def compatibility(cfg):
     keys=['model','methods','datasets','gpu_util','kv_bytes','max_len','max_seqs','batch_tokens','eager',
           'math_max_tokens','human_max_tokens','output_limit_policy','thinking','temperature','top_p','top_k','seed','data_seed',
-          'require_native_usage','data_hashes','prefix_sha256','knobs']
+          'data_hashes','prefix_sha256','knobs']
     return {k:cfg.get(k) for k in keys}
 
 
@@ -98,7 +96,6 @@ def plan_points(cfg,rows):
                     cap=cfg['math_max_tokens'] if dataset=='math_500' else cfg['human_max_tokens']
                     p=dict(id=f'r{rep:02d}_{method}_{dataset}_apc{apc}_C{c}',repeat=rep,method=method,
                         dataset=dataset,apc=apc,concurrency=c,number=n,max_tokens=cap,request_max_tokens=cap,
-                        max_tokens_transport=('explicit_int' if cap is not None else 'json_null_sentinel'),
                         output_limit_policy=('explicit_request_cap' if cap is not None else 'server_context_window_only'),
                         kv_dtype=DTYPES[method],kv_cache_memory_bytes_requested=cfg.get('kv_bytes'),
                         kv_pool_budget_source='explicit_bytes' if cfg.get('kv_bytes') else 'gpu_memory_utilization',
@@ -130,15 +127,11 @@ def build_requests(data,p,cfg,tokenizer=None,warm=False):
              'n':1,'repetition_penalty':1.0,'frequency_penalty':0.0,'presence_penalty':0.0,
              'temperature':cfg['temperature'],'top_p':cfg['top_p'],'top_k':cfg['top_k'],'min_p':0.0,
              'seed':seed,'chat_template_kwargs':{'enable_thinking':cfg['thinking']}}
-        # EvalScope perf v1.12.0 has a CLI default max_tokens=2048.  For complete
-        # line_by_line JSON bodies it fills only MISSING keys (setdefault semantics).
-        # Therefore an explicit JSON null is a transport sentinel, NOT an output cap:
-        # it blocks EvalScope's 2048 default while vLLM receives max_tokens=None and
-        # resolves the real ceiling from max_model_len - prompt_len / platform limits.
+        # Natural generation protocol: by default omit max_tokens/min_tokens/ignore_eos/stop.
+        # serve.sh already uses --generation-config vllm, so absent max_tokens falls back to
+        # the remaining server context window (subject to platform limits).
         if p.get('max_tokens') is not None:
             req['max_tokens']=p['max_tokens']
-        else:
-            req['max_tokens']=None
         tok_count=None;prefix_count=None
         if tokenizer is not None:
             tok_count=len(tokenizer.apply_chat_template(messages,tokenize=True,add_generation_prompt=True,
@@ -157,8 +150,7 @@ def eligible(stat,cfg):
     reasons=[]
     if not stat.get('measurement_complete'):reasons.append('incomplete_or_failed_requests')
     if stat.get('missing_finish_reason',0):reasons.append('missing_finish_reason')
-    if cfg.get('require_native_usage') and stat.get('token_usage_missing',0):
-        reasons.append('missing_native_usage')
+    if stat.get('token_usage_missing',0):reasons.append('missing_native_usage')
     # A context-window 'length' termination is a model/workload outcome, not a concurrency failure.
     # Only enforce a cap fraction when the user explicitly configured a request-level cap threshold.
     if cfg.get('max_pilot_cap_fraction') is not None and (stat.get('length_capped_fraction') or 0)>cfg['max_pilot_cap_fraction']:
@@ -337,9 +329,7 @@ def main():
     cfg['data_hashes']={k:v['sha256'] for k,v in provenance.items()}
     plan=plan_points(cfg,rows)
     log(f"{cfg['stage']}：{len(plan)} 个配置点，自然停止，结果 {cfg['run_dir']}")
-    for p in plan:
-        mt='null-sentinel(no cap)' if p['max_tokens'] is None else str(p['max_tokens'])
-        print(f"  {p['id']} n={p['number']} max_tokens={mt} APC={p['apc']}")
+    for p in plan:print(f"  {p['id']} n={p['number']} max_tokens={'unset' if p['max_tokens'] is None else p['max_tokens']} APC={p['apc']}")
     if cfg['dry_run']:return 0
     if os.environ.get('CONDA_DEFAULT_ENV')!=cfg['eval_env']:raise ValueError('使用 run_real.sh 或激活指定 EvalScope Conda 环境。')
     if port_busy(cfg['port']):raise ValueError('端口已有服务，请手动停止冒烟服务。')

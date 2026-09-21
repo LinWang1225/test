@@ -1,0 +1,34 @@
+--- a/kvbench_real_v6/run_real.py
++++ b/kvbench_real_v6/run_real.py
+@@
+     p.add_argument('--max-preemptions',type=int,default=-1,help='-1: only record; otherwise pilot eligibility bound')
++    p.add_argument('--require-native-usage',action='store_true',
++                   help='默认不因流式响应缺少 server usage 淘汰 pilot；开启后才要求原生 usage 完整')
+@@
+-          'data_hashes','prefix_sha256','knobs']
++          'require_native_usage','data_hashes','prefix_sha256','knobs']
+@@
+-                        dataset=dataset,apc=apc,concurrency=c,number=n,max_tokens=cap,request_max_tokens=cap,
++                        dataset=dataset,apc=apc,concurrency=c,number=n,max_tokens=cap,request_max_tokens=cap,
++                        max_tokens_transport=('explicit_int' if cap is not None else 'json_null_sentinel'),
+@@
+-        # Natural generation protocol: by default omit max_tokens/min_tokens/ignore_eos/stop.
+-        # serve.sh already uses --generation-config vllm, so absent max_tokens falls back to
+-        # the remaining server context window (subject to platform limits).
++        # EvalScope perf v1.12.0 defaults max_tokens to 2048. Complete JSON bodies
++        # preserve existing keys with setdefault semantics. JSON null is therefore
++        # a transport sentinel, not a cap: EvalScope cannot refill 2048, while
++        # vLLM receives max_tokens=None and resolves the remaining context window.
+         if p.get('max_tokens') is not None:
+             req['max_tokens']=p['max_tokens']
++        else:
++            req['max_tokens']=None
+@@
+-    if stat.get('token_usage_missing',0):reasons.append('missing_native_usage')
++    if cfg.get('require_native_usage') and stat.get('token_usage_missing',0):
++        reasons.append('missing_native_usage')
+@@
+-    for p in plan:print(f"  {p['id']} n={p['number']} max_tokens={'unset' if p['max_tokens'] is None else p['max_tokens']} APC={p['apc']}")
++    for p in plan:
++        mt='null-sentinel(no cap)' if p['max_tokens'] is None else str(p['max_tokens'])
++        print(f"  {p['id']} n={p['number']} max_tokens={mt} APC={p['apc']}")

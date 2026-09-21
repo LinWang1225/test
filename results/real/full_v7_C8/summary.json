@@ -253,7 +253,17 @@
     "cache_config_path": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_fp16_math_500_apc0_C8/attempt001/server_capacity.json",
     "request_manifest_path": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_fp16_math_500_apc0_C8/attempt001/measure.manifest.json",
     "shared_prefix_tokens_local": null,
-    "pilot_eligible": true
+    "pilot_eligible": true,
+    "quality_scoring_complete": true,
+    "quality_total_tasks": 500,
+    "quality_scored_tasks": 500,
+    "quality_unscored_tasks": 0,
+    "quality_correct_tasks": 474,
+    "accuracy_all_tasks": 0.948,
+    "humaneval_pass_at_1": null,
+    "known_correct_fraction_lower_bound": 0.948,
+    "quality_metric_note": "n=1 per task; HTTP success is not accuracy; grader errors remain unknown",
+    "correct_tasks_per_second": 0.07379305241507504
   },
   {
     "id": "r01_kvarn_humaneval_apc0_C8",
@@ -509,7 +519,17 @@
     "cache_config_path": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_kvarn_math_500_apc0_C8/attempt001/server_capacity.json",
     "request_manifest_path": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_kvarn_math_500_apc0_C8/attempt001/measure.manifest.json",
     "shared_prefix_tokens_local": null,
-    "pilot_eligible": true
+    "pilot_eligible": true,
+    "quality_scoring_complete": true,
+    "quality_total_tasks": 500,
+    "quality_scored_tasks": 500,
+    "quality_unscored_tasks": 0,
+    "quality_correct_tasks": 473,
+    "accuracy_all_tasks": 0.946,
+    "humaneval_pass_at_1": null,
+    "known_correct_fraction_lower_bound": 0.946,
+    "quality_metric_note": "n=1 per task; HTTP success is not accuracy; grader errors remain unknown",
+    "correct_tasks_per_second": 0.056133435027878695
   },
   {
     "id": "r01_tq4_humaneval_apc0_C8",
@@ -765,6 +785,16 @@
     "cache_config_path": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_tq4_math_500_apc0_C8/attempt001/server_capacity.json",
     "request_manifest_path": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_tq4_math_500_apc0_C8/attempt001/measure.manifest.json",
     "shared_prefix_tokens_local": null,
-    "pilot_eligible": true
+    "pilot_eligible": true,
+    "quality_scoring_complete": true,
+    "quality_total_tasks": 500,
+    "quality_scored_tasks": 500,
+    "quality_unscored_tasks": 0,
+    "quality_correct_tasks": 476,
+    "accuracy_all_tasks": 0.952,
+    "humaneval_pass_at_1": null,
+    "known_correct_fraction_lower_bound": 0.952,
+    "quality_metric_note": "n=1 per task; HTTP success is not accuracy; grader errors remain unknown",
+    "correct_tasks_per_second": 0.04215303429286839
   }
 ]
