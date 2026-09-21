@@ -1,0 +1,9 @@
+﻿dataset,case_id,http_success,finish_reason,is_length_capped,is_length_limit_termination,prompt_tokens,completion_tokens,e2e_s,ttft_s,tpot_s,token_count_source,answer_extraction,raw_response_file
+humaneval,HumanEval/23,True,stop,False,False,103,499,6.713548958301544,0.2272594626992941,0.01302467770201255,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00000_7379f06d5467.json.gz
+humaneval,HumanEval/17,True,stop,False,False,232,1057,14.51362693682313,0.22917037829756737,0.013526947498603753,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00001_711bfa5f51fc.json.gz
+humaneval,HumanEval/84,True,stop,False,False,207,1177,16.204032450914383,0.22810049168765545,0.013584976155805041,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00002_571e52cccb49.json.gz
+humaneval,HumanEval/122,True,stop,False,False,197,1493,20.622319435700774,0.22719866409897804,0.013669651991690212,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00003_be260c12b265.json.gz
+humaneval,HumanEval/34,True,stop,False,False,137,1803,24.859432021155953,0.22739214450120926,0.013669278510907183,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00004_faecf007813b.json.gz
+humaneval,HumanEval/128,True,stop,False,False,182,2107,29.055748008191586,0.277451828122139,0.013664907967744276,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00005_13fd75d80b04.json.gz
+humaneval,HumanEval/141,True,stop,False,False,274,2200,30.29476833716035,0.27775486186146736,0.013650301716825321,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00006_c0a54913462c.json.gz
+humaneval,HumanEval/70,True,stop,False,False,184,2659,35.92187647894025,0.12120000459253788,0.013469028018941953,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00007_9b55938d0784.json.gz

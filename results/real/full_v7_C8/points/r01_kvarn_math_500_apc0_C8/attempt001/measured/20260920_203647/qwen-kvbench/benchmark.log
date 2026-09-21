@@ -1,0 +1,359 @@
+2026-09-20 20:36:47 - evalscope - INFO: Starting benchmark with args: 
+2026-09-20 20:36:47 - evalscope - INFO: {
+    "model": "qwen-kvbench",
+    "model_id": "qwen-kvbench",
+    "attn_implementation": null,
+    "api": "openai",
+    "tokenizer_path": "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+    "port": 8877,
+    "url": "http://127.0.0.1:8000/v1/chat/completions",
+    "headers": {
+        "Authorization": "**********"
+    },
+    "connect_timeout": null,
+    "read_timeout": null,
+    "total_timeout": 3600,
+    "api_key": "**********",
+    "no_test_connection": true,
+    "scenario": null,
+    "number": 500,
+    "parallel": 8,
+    "rate": -1.0,
+    "warmup_num": 0.0,
+    "enable_pd_metrics": false,
+    "open_loop": false,
+    "sleep_interval": 5,
+    "duration": null,
+    "sla_auto_tune": false,
+    "sla_variable": "parallel",
+    "sla_params": null,
+    "sla_num_runs": 3,
+    "sla_upper_bound": 65536,
+    "sla_lower_bound": 1,
+    "sla_fixed_parallel": null,
+    "sla_number_multiplier": null,
+    "db_commit_interval": 1000,
+    "queue_size_multiplier": 5,
+    "in_flight_task_multiplier": 2,
+    "num_workers": 0,
+    "log_every_n_query": 100,
+    "debug": false,
+    "enable_progress_tracker": false,
+    "visualizer": null,
+    "wandb_api_key": null,
+    "swanlab_api_key": null,
+    "swanlab_host": null,
+    "name": null,
+    "outputs_dir": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_203647/qwen-kvbench",
+    "no_timestamp": false,
+    "max_prompt_length": 131072,
+    "min_prompt_length": 0,
+    "prefix_length": 0,
+    "prompt": null,
+    "query_template": null,
+    "apply_chat_template": true,
+    "image_width": 224,
+    "image_height": 224,
+    "image_format": "RGB",
+    "image_num": 1,
+    "image_patch_size": 28,
+    "dataset": "line_by_line",
+    "dataset_path": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_kvarn_math_500_apc0_C8/attempt001/measure.requests.jsonl",
+    "data_source": null,
+    "dataset_offset": 0,
+    "dataset_args": null,
+    "frequency_penalty": null,
+    "repetition_penalty": null,
+    "logprobs": null,
+    "max_tokens": 2048,
+    "min_tokens": null,
+    "n_choices": null,
+    "seed": 42,
+    "stop": null,
+    "stop_token_ids": null,
+    "stream": true,
+    "temperature": 0.0,
+    "top_p": null,
+    "top_k": null,
+    "extra_args": {},
+    "tokenize_prompt": false,
+    "multi_turn": false,
+    "min_turns": 1,
+    "max_turns": null,
+    "multi_turn_args": null
+}
+2026-09-20 20:36:47 - evalscope - INFO: uvloop event loop policy installed (asyncio.sleep precision improved)
+2026-09-20 20:36:49 - evalscope - WARNING: Warmup is disabled, so the first 8 requests are released at once against an idle server. Their TTFT carries the start-up burst and can dominate the reported percentiles. Pass --warmup-num 8 to keep that burst out of the measured window, or 16 if you also read the max column.
+2026-09-20 20:36:49 - evalscope - INFO: Generating[requests] 100%| 499/500 [Elapsed: 00:00 < Remaining: 00:00, 84034.28it/s]
+2026-09-20 20:36:49 - evalscope - INFO: Save the data base to: /home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_203647/qwen-kvbench/parallel_8_number_500/benchmark_data.db
+2026-09-20 20:37:52 - evalscope - INFO: Processing[parallel_8_number_500]   1%| 3/500 [Elapsed: 01:02 < Remaining: 2:18:54, 16.77s/it]
+2026-09-20 20:39:17 - evalscope - INFO: Processing[parallel_8_number_500]   1%| 7/500 [Elapsed: 02:28 < Remaining: 3:06:45, 22.73s/it]
+2026-09-20 20:40:26 - evalscope - INFO: Processing[parallel_8_number_500]   2%| 12/500 [Elapsed: 03:37 < Remaining: 2:22:28, 17.52s/it]
+2026-09-20 20:41:28 - evalscope - INFO: Processing[parallel_8_number_500]   3%| 16/500 [Elapsed: 04:39 < Remaining: 1:48:25, 13.44s/it]
+2026-09-20 20:42:35 - evalscope - INFO: Processing[parallel_8_number_500]   4%| 18/500 [Elapsed: 05:45 < Remaining: 3:19:03, 24.78s/it]
+2026-09-20 20:43:37 - evalscope - INFO: Processing[parallel_8_number_500]   5%| 24/500 [Elapsed: 06:47 < Remaining: 1:33:25, 11.78s/it]
+2026-09-20 20:45:03 - evalscope - INFO: Processing[parallel_8_number_500]   6%| 31/500 [Elapsed: 08:13 < Remaining: 1:47:42, 13.78s/it]
+2026-09-20 20:46:12 - evalscope - INFO: Processing[parallel_8_number_500]   7%| 35/500 [Elapsed: 09:22 < Remaining: 2:43:46, 21.13s/it]
+2026-09-20 20:47:23 - evalscope - INFO: Processing[parallel_8_number_500]   8%| 40/500 [Elapsed: 10:33 < Remaining: 2:07:56, 16.69s/it]
+2026-09-20 20:49:05 - evalscope - INFO: Processing[parallel_8_number_500]   8%| 42/500 [Elapsed: 12:15 < Remaining: 4:05:21, 32.14s/it]
+2026-09-20 20:50:17 - evalscope - INFO: Processing[parallel_8_number_500]   9%| 47/500 [Elapsed: 13:27 < Remaining: 2:37:07, 20.81s/it]
+2026-09-20 20:51:27 - evalscope - INFO: Processing[parallel_8_number_500]  10%| 52/500 [Elapsed: 14:37 < Remaining: 1:39:55, 13.38s/it]
+2026-09-20 20:52:53 - evalscope - INFO: Processing[parallel_8_number_500]  11%| 56/500 [Elapsed: 16:04 < Remaining: 2:40:56, 21.75s/it]
+2026-09-20 20:54:18 - evalscope - INFO: Processing[parallel_8_number_500]  13%| 63/500 [Elapsed: 17:28 < Remaining: 2:04:26, 17.08s/it]
+2026-09-20 20:55:23 - evalscope - INFO: Processing[parallel_8_number_500]  14%| 70/500 [Elapsed: 18:33 < Remaining: 1:32:48, 12.95s/it]
+2026-09-20 20:56:38 - evalscope - INFO: Processing[parallel_8_number_500]  15%| 74/500 [Elapsed: 19:48 < Remaining: 1:52:40, 15.87s/it]
+2026-09-20 20:58:22 - evalscope - INFO: Processing[parallel_8_number_500]  16%| 81/500 [Elapsed: 21:33 < Remaining: 2:28:28, 21.26s/it]
+2026-09-20 20:59:28 - evalscope - INFO: Processing[parallel_8_number_500]  17%| 86/500 [Elapsed: 22:38 < Remaining: 1:20:42, 11.70s/it]
+2026-09-20 21:00:33 - evalscope - INFO: Processing[parallel_8_number_500]  18%| 88/500 [Elapsed: 23:43 < Remaining: 2:52:25, 25.11s/it]
+2026-09-20 21:01:53 - evalscope - INFO: Processing[parallel_8_number_500]  18%| 92/500 [Elapsed: 25:04 < Remaining: 2:25:15, 21.36s/it]
+2026-09-20 21:03:05 - evalscope - INFO: Processing[parallel_8_number_500]  20%| 98/500 [Elapsed: 26:15 < Remaining: 1:42:58, 15.37s/it]
+2026-09-20 21:03:32 - evalscope - INFO: {
+  "Test Duration (s)": 1603.0563,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 100,
+  "Success Requests": 100,
+  "Failed Requests": 0,
+  "Stream Requests": 100,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0624,
+  "Avg Latency (s)": 121.8436,
+  "Avg Input Tokens": 83.7,
+  "Output Throughput (tok/s)": 300.2951,
+  "Total Throughput (tok/s)": 305.5164,
+  "Avg TTFT (ms)": 203.72,
+  "Avg TPOT (ms)": 25.13,
+  "Avg ITL (ms)": 25.33,
+  "Avg Output Tokens": 4813.9,
+  "Avg Decoded Tok/Iter": 1.0026,
+  "Spec. Accept Rate": 0.0025
+}
+2026-09-20 21:04:05 - evalscope - INFO: Processing[parallel_8_number_500]  20%| 102/500 [Elapsed: 27:15 < Remaining: 1:41:23, 15.28s/it]
+2026-09-20 21:05:21 - evalscope - INFO: Processing[parallel_8_number_500]  22%| 108/500 [Elapsed: 28:31 < Remaining: 1:19:53, 12.23s/it]
+2026-09-20 21:06:21 - evalscope - INFO: Processing[parallel_8_number_500]  22%| 111/500 [Elapsed: 29:32 < Remaining: 1:59:35, 18.45s/it]
+2026-09-20 21:07:29 - evalscope - INFO: Processing[parallel_8_number_500]  23%| 113/500 [Elapsed: 30:39 < Remaining: 2:51:15, 26.55s/it]
+2026-09-20 21:08:45 - evalscope - INFO: Processing[parallel_8_number_500]  23%| 114/500 [Elapsed: 31:55 < Remaining: 4:26:10, 41.37s/it]
+2026-09-20 21:10:07 - evalscope - INFO: Processing[parallel_8_number_500]  23%| 117/500 [Elapsed: 33:18 < Remaining: 3:36:54, 33.98s/it]
+2026-09-20 21:11:20 - evalscope - INFO: Processing[parallel_8_number_500]  24%| 120/500 [Elapsed: 34:30 < Remaining: 2:43:33, 25.83s/it]
+2026-09-20 21:12:35 - evalscope - INFO: Processing[parallel_8_number_500]  25%| 124/500 [Elapsed: 35:46 < Remaining: 2:16:04, 21.71s/it]
+2026-09-20 21:13:43 - evalscope - INFO: Processing[parallel_8_number_500]  26%| 130/500 [Elapsed: 36:53 < Remaining: 1:35:50, 15.54s/it]
+2026-09-20 21:14:43 - evalscope - INFO: Processing[parallel_8_number_500]  27%| 134/500 [Elapsed: 37:54 < Remaining: 1:38:23, 16.13s/it]
+2026-09-20 21:15:47 - evalscope - INFO: Processing[parallel_8_number_500]  27%| 137/500 [Elapsed: 38:58 < Remaining: 1:54:14, 18.88s/it]
+2026-09-20 21:18:04 - evalscope - INFO: Processing[parallel_8_number_500]  28%| 141/500 [Elapsed: 41:14 < Remaining: 3:42:25, 37.17s/it]
+2026-09-20 21:20:19 - evalscope - INFO: Processing[parallel_8_number_500]  29%| 145/500 [Elapsed: 43:29 < Remaining: 4:14:25, 43.00s/it]
+2026-09-20 21:21:23 - evalscope - INFO: Processing[parallel_8_number_500]  30%| 149/500 [Elapsed: 44:33 < Remaining: 2:07:43, 21.83s/it]
+2026-09-20 21:22:35 - evalscope - INFO: Processing[parallel_8_number_500]  31%| 153/500 [Elapsed: 45:45 < Remaining: 2:15:06, 23.36s/it]
+2026-09-20 21:23:35 - evalscope - INFO: Processing[parallel_8_number_500]  32%| 160/500 [Elapsed: 46:45 < Remaining: 55:52,  9.86s/it]
+2026-09-20 21:24:43 - evalscope - INFO: Processing[parallel_8_number_500]  33%| 165/500 [Elapsed: 47:53 < Remaining: 1:18:50, 14.12s/it]
+2026-09-20 21:25:55 - evalscope - INFO: Processing[parallel_8_number_500]  35%| 174/500 [Elapsed: 49:05 < Remaining: 56:55, 10.48s/it]
+2026-09-20 21:27:01 - evalscope - INFO: Processing[parallel_8_number_500]  36%| 178/500 [Elapsed: 50:11 < Remaining: 1:49:40, 20.44s/it]
+2026-09-20 21:28:11 - evalscope - INFO: Processing[parallel_8_number_500]  37%| 183/500 [Elapsed: 51:21 < Remaining: 1:33:14, 17.65s/it]
+2026-09-20 21:29:12 - evalscope - INFO: Processing[parallel_8_number_500]  38%| 189/500 [Elapsed: 52:22 < Remaining: 42:54,  8.28s/it]
+2026-09-20 21:30:51 - evalscope - INFO: Processing[parallel_8_number_500]  39%| 197/500 [Elapsed: 54:02 < Remaining: 1:25:43, 16.98s/it]
+2026-09-20 21:31:33 - evalscope - INFO: {
+  "Test Duration (s)": 3283.9235,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 200,
+  "Success Requests": 200,
+  "Failed Requests": 0,
+  "Stream Requests": 200,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0609,
+  "Avg Latency (s)": 128.4398,
+  "Avg Input Tokens": 87.435,
+  "Output Throughput (tok/s)": 303.3776,
+  "Total Throughput (tok/s)": 308.7027,
+  "Avg TTFT (ms)": 207.88,
+  "Avg TPOT (ms)": 25.29,
+  "Avg ITL (ms)": 25.83,
+  "Avg Output Tokens": 4981.345,
+  "Avg Decoded Tok/Iter": 1.0028,
+  "Spec. Accept Rate": 0.0028
+}
+2026-09-20 21:31:59 - evalscope - INFO: Processing[parallel_8_number_500]  41%| 203/500 [Elapsed: 55:09 < Remaining: 1:01:55, 12.51s/it]
+2026-09-20 21:33:07 - evalscope - INFO: Processing[parallel_8_number_500]  42%| 210/500 [Elapsed: 56:17 < Remaining: 42:23,  8.77s/it]
+2026-09-20 21:34:08 - evalscope - INFO: Processing[parallel_8_number_500]  43%| 213/500 [Elapsed: 57:19 < Remaining: 1:17:59, 16.31s/it]
+2026-09-20 21:35:14 - evalscope - INFO: Processing[parallel_8_number_500]  43%| 217/500 [Elapsed: 58:24 < Remaining: 1:20:17, 17.02s/it]
+2026-09-20 21:36:22 - evalscope - INFO: Processing[parallel_8_number_500]  44%| 218/500 [Elapsed: 59:32 < Remaining: 2:31:32, 32.24s/it]
+2026-09-20 21:37:53 - evalscope - INFO: Processing[parallel_8_number_500]  45%| 224/500 [Elapsed: 1:01:03 < Remaining: 1:41:55, 22.16s/it]
+2026-09-20 21:39:03 - evalscope - INFO: Processing[parallel_8_number_500]  45%| 225/500 [Elapsed: 1:02:13 < Remaining: 2:47:03, 36.45s/it]
+2026-09-20 21:41:15 - evalscope - INFO: Processing[parallel_8_number_500]  46%| 228/500 [Elapsed: 1:04:26 < Remaining: 3:36:09, 47.68s/it]
+2026-09-20 21:42:19 - evalscope - INFO: Processing[parallel_8_number_500]  47%| 233/500 [Elapsed: 1:05:29 < Remaining: 1:40:44, 22.64s/it]
+2026-09-20 21:43:20 - evalscope - INFO: Processing[parallel_8_number_500]  47%| 237/500 [Elapsed: 1:06:30 < Remaining: 1:11:13, 16.25s/it]
+2026-09-20 21:44:31 - evalscope - INFO: Processing[parallel_8_number_500]  49%| 244/500 [Elapsed: 1:07:41 < Remaining: 55:14, 12.95s/it]
+2026-09-20 21:46:04 - evalscope - INFO: Processing[parallel_8_number_500]  50%| 249/500 [Elapsed: 1:09:14 < Remaining: 1:42:26, 24.49s/it]
+2026-09-20 21:47:05 - evalscope - INFO: Processing[parallel_8_number_500]  51%| 254/500 [Elapsed: 1:10:15 < Remaining: 58:59, 14.39s/it]
+2026-09-20 21:48:06 - evalscope - INFO: Processing[parallel_8_number_500]  52%| 258/500 [Elapsed: 1:11:16 < Remaining: 1:00:44, 15.06s/it]
+2026-09-20 21:49:21 - evalscope - INFO: Processing[parallel_8_number_500]  53%| 264/500 [Elapsed: 1:12:31 < Remaining: 59:51, 15.22s/it]
+2026-09-20 21:50:37 - evalscope - INFO: Processing[parallel_8_number_500]  54%| 268/500 [Elapsed: 1:13:47 < Remaining: 1:11:21, 18.46s/it]
+2026-09-20 21:51:57 - evalscope - INFO: Processing[parallel_8_number_500]  54%| 270/500 [Elapsed: 1:15:08 < Remaining: 1:58:16, 30.85s/it]
+2026-09-20 21:53:56 - evalscope - INFO: Processing[parallel_8_number_500]  55%| 276/500 [Elapsed: 1:17:07 < Remaining: 1:50:40, 29.64s/it]
+2026-09-20 21:55:42 - evalscope - INFO: Processing[parallel_8_number_500]  57%| 283/500 [Elapsed: 1:18:52 < Remaining: 1:31:30, 25.30s/it]
+2026-09-20 21:56:55 - evalscope - INFO: Processing[parallel_8_number_500]  58%| 291/500 [Elapsed: 1:20:05 < Remaining: 41:13, 11.84s/it]
+2026-09-20 21:57:58 - evalscope - INFO: Processing[parallel_8_number_500]  59%| 294/500 [Elapsed: 1:21:09 < Remaining: 1:08:45, 20.03s/it]
+2026-09-20 21:59:31 - evalscope - INFO: Processing[parallel_8_number_500]  60%| 299/500 [Elapsed: 1:22:41 < Remaining: 1:13:28, 21.93s/it]
+2026-09-20 21:59:32 - evalscope - INFO: {
+  "Test Duration (s)": 4963.0474,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 300,
+  "Success Requests": 300,
+  "Failed Requests": 0,
+  "Stream Requests": 300,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0604,
+  "Avg Latency (s)": 127.9994,
+  "Avg Input Tokens": 90.7733,
+  "Output Throughput (tok/s)": 299.2145,
+  "Total Throughput (tok/s)": 304.7015,
+  "Avg TTFT (ms)": 202.78,
+  "Avg TPOT (ms)": 25.41,
+  "Avg ITL (ms)": 25.9,
+  "Avg Output Tokens": 4950.0533,
+  "Avg Decoded Tok/Iter": 1.0031,
+  "Spec. Accept Rate": 0.0031
+}
+2026-09-20 22:00:36 - evalscope - INFO: Processing[parallel_8_number_500]  61%| 304/500 [Elapsed: 1:23:46 < Remaining: 1:00:23, 18.49s/it]
+2026-09-20 22:02:17 - evalscope - INFO: Processing[parallel_8_number_500]  62%| 308/500 [Elapsed: 1:25:27 < Remaining: 1:39:01, 30.95s/it]
+2026-09-20 22:03:22 - evalscope - INFO: Processing[parallel_8_number_500]  63%| 315/500 [Elapsed: 1:26:32 < Remaining: 36:46, 11.93s/it]
+2026-09-20 22:04:42 - evalscope - INFO: Processing[parallel_8_number_500]  64%| 322/500 [Elapsed: 1:27:52 < Remaining: 30:17, 10.21s/it]
+2026-09-20 22:05:50 - evalscope - INFO: Processing[parallel_8_number_500]  65%| 327/500 [Elapsed: 1:29:00 < Remaining: 39:32, 13.72s/it]
+2026-09-20 22:07:03 - evalscope - INFO: Processing[parallel_8_number_500]  66%| 329/500 [Elapsed: 1:30:13 < Remaining: 1:15:20, 26.44s/it]
+2026-09-20 22:08:08 - evalscope - INFO: Processing[parallel_8_number_500]  66%| 331/500 [Elapsed: 1:31:19 < Remaining: 1:17:14, 27.42s/it]
+2026-09-20 22:09:43 - evalscope - INFO: Processing[parallel_8_number_500]  67%| 335/500 [Elapsed: 1:32:53 < Remaining: 1:12:47, 26.47s/it]
+2026-09-20 22:11:02 - evalscope - INFO: Processing[parallel_8_number_500]  68%| 339/500 [Elapsed: 1:34:12 < Remaining: 1:02:39, 23.35s/it]
+2026-09-20 22:12:14 - evalscope - INFO: Processing[parallel_8_number_500]  69%| 344/500 [Elapsed: 1:35:24 < Remaining: 38:44, 14.90s/it]
+2026-09-20 22:13:39 - evalscope - INFO: Processing[parallel_8_number_500]  69%| 346/500 [Elapsed: 1:36:49 < Remaining: 1:14:47, 29.14s/it]
+2026-09-20 22:15:14 - evalscope - INFO: Processing[parallel_8_number_500]  70%| 349/500 [Elapsed: 1:38:24 < Remaining: 1:19:54, 31.75s/it]
+2026-09-20 22:16:24 - evalscope - INFO: Processing[parallel_8_number_500]  70%| 350/500 [Elapsed: 1:39:34 < Remaining: 1:48:21, 43.34s/it]
+2026-09-20 22:17:50 - evalscope - INFO: Processing[parallel_8_number_500]  71%| 353/500 [Elapsed: 1:41:00 < Remaining: 1:24:38, 34.55s/it]
+2026-09-20 22:19:04 - evalscope - INFO: Processing[parallel_8_number_500]  72%| 358/500 [Elapsed: 1:42:14 < Remaining: 47:43, 20.17s/it]
+2026-09-20 22:20:05 - evalscope - INFO: Processing[parallel_8_number_500]  72%| 362/500 [Elapsed: 1:43:16 < Remaining: 31:15, 13.59s/it]
+2026-09-20 22:21:06 - evalscope - INFO: Processing[parallel_8_number_500]  73%| 365/500 [Elapsed: 1:44:17 < Remaining: 39:04, 17.36s/it]
+2026-09-20 22:22:08 - evalscope - INFO: Processing[parallel_8_number_500]  74%| 369/500 [Elapsed: 1:45:19 < Remaining: 37:03, 16.97s/it]
+2026-09-20 22:23:19 - evalscope - INFO: Processing[parallel_8_number_500]  75%| 373/500 [Elapsed: 1:46:29 < Remaining: 39:10, 18.51s/it]
+2026-09-20 22:24:27 - evalscope - INFO: Processing[parallel_8_number_500]  76%| 378/500 [Elapsed: 1:47:37 < Remaining: 23:33, 11.59s/it]
+2026-09-20 22:25:35 - evalscope - INFO: Processing[parallel_8_number_500]  76%| 382/500 [Elapsed: 1:48:46 < Remaining: 37:39, 19.15s/it]
+2026-09-20 22:27:20 - evalscope - INFO: Processing[parallel_8_number_500]  77%| 387/500 [Elapsed: 1:50:31 < Remaining: 54:50, 29.12s/it]
+2026-09-20 22:28:24 - evalscope - INFO: Processing[parallel_8_number_500]  78%| 391/500 [Elapsed: 1:51:34 < Remaining: 34:53, 19.21s/it]
+2026-09-20 22:29:30 - evalscope - INFO: Processing[parallel_8_number_500]  79%| 395/500 [Elapsed: 1:52:40 < Remaining: 27:26, 15.68s/it]
+2026-09-20 22:30:31 - evalscope - INFO: {
+  "Test Duration (s)": 6821.1767,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 400,
+  "Success Requests": 400,
+  "Failed Requests": 0,
+  "Stream Requests": 400,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0586,
+  "Avg Latency (s)": 134.6703,
+  "Avg Input Tokens": 93.835,
+  "Output Throughput (tok/s)": 305.1026,
+  "Total Throughput (tok/s)": 310.6052,
+  "Avg TTFT (ms)": 201.56,
+  "Avg TPOT (ms)": 25.43,
+  "Avg ITL (ms)": 25.95,
+  "Avg Output Tokens": 5202.8975,
+  "Avg Decoded Tok/Iter": 1.0033,
+  "Spec. Accept Rate": 0.0033
+}
+2026-09-20 22:30:31 - evalscope - INFO: Processing[parallel_8_number_500]  80%| 400/500 [Elapsed: 1:53:41 < Remaining: 19:33, 11.73s/it]
+2026-09-20 22:31:42 - evalscope - INFO: Processing[parallel_8_number_500]  81%| 406/500 [Elapsed: 1:54:52 < Remaining: 18:30, 11.82s/it]
+2026-09-20 22:33:30 - evalscope - INFO: Processing[parallel_8_number_500]  82%| 408/500 [Elapsed: 1:56:40 < Remaining: 52:09, 34.01s/it]
+2026-09-20 22:34:34 - evalscope - INFO: Processing[parallel_8_number_500]  82%| 411/500 [Elapsed: 1:57:44 < Remaining: 37:30, 25.29s/it]
+2026-09-20 22:35:41 - evalscope - INFO: Processing[parallel_8_number_500]  83%| 415/500 [Elapsed: 1:58:52 < Remaining: 28:39, 20.22s/it]
+2026-09-20 22:36:44 - evalscope - INFO: Processing[parallel_8_number_500]  84%| 421/500 [Elapsed: 1:59:54 < Remaining: 16:46, 12.73s/it]
+2026-09-20 22:37:44 - evalscope - INFO: Processing[parallel_8_number_500]  85%| 425/500 [Elapsed: 2:00:54 < Remaining: 18:25, 14.74s/it]
+2026-09-20 22:38:56 - evalscope - INFO: Processing[parallel_8_number_500]  86%| 432/500 [Elapsed: 2:02:06 < Remaining: 15:35, 13.76s/it]
+2026-09-20 22:40:19 - evalscope - INFO: Processing[parallel_8_number_500]  88%| 438/500 [Elapsed: 2:03:29 < Remaining: 13:46, 13.34s/it]
+2026-09-20 22:41:49 - evalscope - INFO: Processing[parallel_8_number_500]  88%| 441/500 [Elapsed: 2:04:59 < Remaining: 27:27, 27.93s/it]
+2026-09-20 22:42:52 - evalscope - INFO: Processing[parallel_8_number_500]  90%| 448/500 [Elapsed: 2:06:02 < Remaining: 09:12, 10.62s/it]
+2026-09-20 22:44:15 - evalscope - INFO: Processing[parallel_8_number_500]  91%| 453/500 [Elapsed: 2:07:25 < Remaining: 16:37, 21.22s/it]
+2026-09-20 22:45:41 - evalscope - INFO: Processing[parallel_8_number_500]  92%| 460/500 [Elapsed: 2:08:52 < Remaining: 11:08, 16.71s/it]
+2026-09-20 22:46:52 - evalscope - INFO: Processing[parallel_8_number_500]  93%| 463/500 [Elapsed: 2:10:03 < Remaining: 15:13, 24.68s/it]
+2026-09-20 22:48:10 - evalscope - INFO: Processing[parallel_8_number_500]  93%| 465/500 [Elapsed: 2:11:20 < Remaining: 19:47, 33.93s/it]
+2026-09-20 22:49:36 - evalscope - INFO: Processing[parallel_8_number_500]  94%| 468/500 [Elapsed: 2:12:47 < Remaining: 18:34, 34.83s/it]
+2026-09-20 22:50:50 - evalscope - INFO: Processing[parallel_8_number_500]  95%| 473/500 [Elapsed: 2:14:00 < Remaining: 08:47, 19.52s/it]
+2026-09-20 22:52:17 - evalscope - INFO: Processing[parallel_8_number_500]  96%| 478/500 [Elapsed: 2:15:27 < Remaining: 08:02, 21.94s/it]
+2026-09-20 22:53:19 - evalscope - INFO: Processing[parallel_8_number_500]  96%| 480/500 [Elapsed: 2:16:29 < Remaining: 09:01, 27.07s/it]
+2026-09-20 22:54:28 - evalscope - INFO: Processing[parallel_8_number_500]  97%| 485/500 [Elapsed: 2:17:39 < Remaining: 04:31, 18.07s/it]
+2026-09-20 22:55:52 - evalscope - INFO: Processing[parallel_8_number_500]  98%| 491/500 [Elapsed: 2:19:02 < Remaining: 02:32, 16.91s/it]
+2026-09-20 22:56:52 - evalscope - INFO: Processing[parallel_8_number_500]  99%| 497/500 [Elapsed: 2:20:03 < Remaining: 00:23,  7.74s/it]
+2026-09-20 22:57:16 - evalscope - INFO: {
+  "Test Duration (s)": 8426.3505,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 500,
+  "Success Requests": 500,
+  "Failed Requests": 0,
+  "Stream Requests": 500,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0593,
+  "Avg Latency (s)": 134.4663,
+  "Avg Input Tokens": 94.158,
+  "Output Throughput (tok/s)": 310.984,
+  "Total Throughput (tok/s)": 316.5711,
+  "Avg TTFT (ms)": 200.25,
+  "Avg TPOT (ms)": 25.23,
+  "Avg ITL (ms)": 25.72,
+  "Avg Output Tokens": 5240.92,
+  "Avg Decoded Tok/Iter": 1.0034,
+  "Spec. Accept Rate": 0.0034
+}
+2026-09-20 22:57:16 - evalscope - INFO: Processing[parallel_8_number_500] 100%| 500/500 [Elapsed: 2:20:26 < Remaining: 00:00,  7.40s/it]
+2026-09-20 22:57:16 - evalscope - INFO: 
+Benchmarking summary:
+┌────────────────────────────┬───────────────┐
+│ Metric                     │         Value │
+├────────────────────────────┼───────────────┤
+│ ── General ──              │               │
+│ Test Duration (s)          │       8426.35 │
+│ Concurrency                │             8 │
+│ Request Rate (req/s)       │            -1 │
+│ Total / Success / Failed   │ 500 / 500 / 0 │
+│ Req Throughput (req/s)     │          0.06 │
+│ ── Latency ──              │               │
+│ Avg Latency (s)            │       134.466 │
+│ Avg TTFT (ms)              │        200.25 │
+│ Avg TPOT (ms)              │         25.23 │
+│ Avg ITL (ms)               │         25.72 │
+│ ── Tokens ──               │               │
+│ Avg Input Tokens           │          94.2 │
+│ Avg Output Tokens          │        5240.9 │
+│ Output Throughput (tok/s)  │        310.98 │
+│ Total Throughput (tok/s)   │        316.57 │
+│ ── Speculative Decoding ── │               │
+│ Avg Decoded Tok/Iter       │             1 │
+│ Spec. Accept Rate          │           0.3 │
+└────────────────────────────┴───────────────┘
+2026-09-20 22:57:18 - evalscope - INFO: 
+Percentile results:
+┌────────────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┐
+│ Metric         │    min │     1% │     5% │    10% │    25% │    50% │    75% │    90% │    95% │    99% │    max │
+├────────────────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┤
+│ Latency (s)    │   25.7 │  28.41 │  35.29 │  41.87 │  57.08 │  88.82 │ 161.37 │ 276.16 │ 414.76 │ 701.41 │ 899.82 │
+│ TTFT (ms)      │ 125.48 │ 134.41 │ 141.11 │ 148.24 │ 161.59 │ 188.59 │ 219.52 │ 261.65 │ 302.74 │ 380.75 │  561.6 │
+│ ITL (ms)       │      0 │  14.51 │  17.07 │  17.98 │  19.95 │  22.26 │  25.52 │   29.1 │  67.44 │  87.26 │  420.6 │
+│ TPOT (ms)      │  18.43 │  19.37 │  20.87 │  21.62 │  23.12 │  25.04 │  26.99 │  29.03 │  30.74 │  32.94 │  33.81 │
+│ Input tokens   │     32 │     36 │     42 │     46 │     56 │     74 │    101 │    164 │    224 │    365 │    814 │
+│ Output tokens  │   1140 │   1202 │   1424 │   1688 │   2291 │   3483 │   6023 │  10707 │  15096 │  25167 │  32671 │
+│ Output (tok/s) │  29.48 │  30.27 │  32.42 │  34.32 │  36.98 │  39.83 │  43.11 │   46.1 │  47.62 │  51.39 │  54.02 │
+│ Total (tok/s)  │  30.59 │  31.16 │  32.95 │  35.04 │  37.66 │  40.78 │  44.29 │  47.14 │  49.27 │   52.8 │  55.99 │
+│ Decode (tok/s) │  29.58 │  30.34 │  32.45 │  34.41 │  37.04 │  39.93 │  43.24 │  46.18 │  47.87 │  51.52 │  54.24 │
+└────────────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
+2026-09-20 22:57:18 - evalscope - INFO: 
+Workload throughput (500 samples):
+┌─────────────────────┬───────────┬────────────┬─────────────────────┐
+│ Metric (tok/s)      │   Overall │   Last 30s │   Steady (drop 20%) │
+├─────────────────────┼───────────┼────────────┼─────────────────────┤
+│ Total Prompt tok/s  │      5.59 │      16.31 │                5.67 │
+│ New Prompt tok/s    │      5.59 │      16.31 │                5.67 │
+│ Cached Prompt tok/s │         0 │          0 │                   0 │
+│ Completion tok/s    │    310.98 │     917.47 │              313.59 │
+└─────────────────────┴───────────┴────────────┴─────────────────────┘
+2026-09-20 22:57:18 - evalscope - INFO: Save the summary to: /home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_203647/qwen-kvbench/parallel_8_number_500
+2026-09-20 22:57:18 - evalscope - INFO: Running[perf] 100%| 1/1 [Elapsed: 2:20:31 < Remaining: 00:00, 8431.08s/it]
+2026-09-20 22:57:18 - evalscope - INFO: Performance summary saved to: /home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_203647/qwen-kvbench/performance_summary.txt
+2026-09-20 22:57:21 - evalscope - INFO: HTML report generated: /home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_kvarn_math_500_apc0_C8/attempt001/measured/20260920_203647/qwen-kvbench/perf_report.html

@@ -1,0 +1,9 @@
+﻿dataset,case_id,http_success,finish_reason,is_length_capped,is_length_limit_termination,prompt_tokens,completion_tokens,e2e_s,ttft_s,tpot_s,token_count_source,answer_extraction,raw_response_file
+math_500,test/algebra/849.json,True,stop,False,False,81,1030,15.827905276790261,0.3072803467512131,0.015083211788181776,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00000_8167f32d11eb.json.gz
+math_500,test/precalculus/1289.json,True,stop,False,False,103,1456,23.289231749251485,0.3067028373479843,0.015795552516772164,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00001_d9c2b835eed5.json.gz
+math_500,test/prealgebra/1807.json,True,stop,False,False,95,1685,27.34296995587647,0.3039138987660408,0.016056446589733035,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00002_efcf90dbcf84.json.gz
+math_500,test/prealgebra/1784.json,True,stop,False,False,76,2361,39.626180324703455,0.30820283107459545,0.01666015995492748,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00003_0ebc95ca8354.json.gz
+math_500,test/prealgebra/1730.json,True,stop,False,False,92,3946,69.78033860959113,0.3070776090025902,0.017610459062253114,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00004_cb825b41171a.json.gz
+math_500,test/algebra/2277.json,True,stop,False,False,141,4650,83.44222563877702,0.3077544681727886,0.017882226537019624,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00005_f7805dc7affc.json.gz
+math_500,test/counting_and_probability/377.json,True,stop,False,False,95,5115,91.60466291569173,0.3069180753082037,0.017852511701287353,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00006_0a0bdc501432.json.gz
+math_500,test/prealgebra/1991.json,True,stop,False,False,173,6116,106.91764535568655,0.30839270912110806,0.01743405603378012,evalscope_fallback_or_missing,closed_think_delimiter,raw_responses/00007_cb0d474edbf2.json.gz

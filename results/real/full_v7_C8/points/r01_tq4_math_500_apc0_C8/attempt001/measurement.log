@@ -1,0 +1,1248 @@
+2026-09-20 16:22:36 - evalscope - [32mINFO[0m: Save the result to: /home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_tq4_math_500_apc0_C8/attempt001/measured/20260920_162236/qwen-kvbench[0m
+Running[perf]:   0%|          | 0/1 [00:00<?, ?it/s]                                                    2026-09-20 16:22:36 - evalscope - [32mINFO[0m: Starting benchmark with args: [0m
+Running[perf]:   0%|          | 0/1 [00:00<?, ?it/s]                                                    2026-09-20 16:22:36 - evalscope - [32mINFO[0m: {
+    "model": "qwen-kvbench",
+    "model_id": "qwen-kvbench",
+    "attn_implementation": null,
+    "api": "openai",
+    "tokenizer_path": "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+    "port": 8877,
+    "url": "http://127.0.0.1:8000/v1/chat/completions",
+    "headers": {
+        "Authorization": "**********"
+    },
+    "connect_timeout": null,
+    "read_timeout": null,
+    "total_timeout": 3600,
+    "api_key": "**********",
+    "no_test_connection": true,
+    "scenario": null,
+    "number": 500,
+    "parallel": 8,
+    "rate": -1.0,
+    "warmup_num": 0.0,
+    "enable_pd_metrics": false,
+    "open_loop": false,
+    "sleep_interval": 5,
+    "duration": null,
+    "sla_auto_tune": false,
+    "sla_variable": "parallel",
+    "sla_params": null,
+    "sla_num_runs": 3,
+    "sla_upper_bound": 65536,
+    "sla_lower_bound": 1,
+    "sla_fixed_parallel": null,
+    "sla_number_multiplier": null,
+    "db_commit_interval": 1000,
+    "queue_size_multiplier": 5,
+    "in_flight_task_multiplier": 2,
+    "num_workers": 0,
+    "log_every_n_query": 100,
+    "debug": false,
+    "enable_progress_tracker": false,
+    "visualizer": null,
+    "wandb_api_key": null,
+    "swanlab_api_key": null,
+    "swanlab_host": null,
+    "name": null,
+    "outputs_dir": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_tq4_math_500_apc0_C8/attempt001/measured/20260920_162236/qwen-kvbench",
+    "no_timestamp": false,
+    "max_prompt_length": 131072,
+    "min_prompt_length": 0,
+    "prefix_length": 0,
+    "prompt": null,
+    "query_template": null,
+    "apply_chat_template": true,
+    "image_width": 224,
+    "image_height": 224,
+    "image_format": "RGB",
+    "image_num": 1,
+    "image_patch_size": 28,
+    "dataset": "line_by_line",
+    "dataset_path": "/home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_tq4_math_500_apc0_C8/attempt001/measure.requests.jsonl",
+    "data_source": null,
+    "dataset_offset": 0,
+    "dataset_args": null,
+    "frequency_penalty": null,
+    "repetition_penalty": null,
+    "logprobs": null,
+    "max_tokens": 2048,
+    "min_tokens": null,
+    "n_choices": null,
+    "seed": 42,
+    "stop": null,
+    "stop_token_ids": null,
+    "stream": true,
+    "temperature": 0.0,
+    "top_p": null,
+    "top_k": null,
+    "extra_args": {},
+    "tokenize_prompt": false,
+    "multi_turn": false,
+    "min_turns": 1,
+    "max_turns": null,
+    "multi_turn_args": null
+}[0m
+Running[perf]:   0%|          | 0/1 [00:00<?, ?it/s]                                                    2026-09-20 16:22:36 - evalscope - [32mINFO[0m: uvloop event loop policy installed (asyncio.sleep precision improved)[0m
+Running[perf]:   0%|          | 0/1 [00:00<?, ?it/s]None of PyTorch, TensorFlow >= 2.0, or Flax have been found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+                                                    2026-09-20 16:22:38 - evalscope - [33mWARNING[0m: Warmup is disabled, so the first 8 requests are released at once against an idle server. Their TTFT carries the start-up burst and can dominate the reported percentiles. Pass --warmup-num 8 to keep that burst out of the measured window, or 16 if you also read the max column.[0m
+Running[perf]:   0%|          | 0/1 [00:01<?, ?it/s]
+Generating[requests]:   0%|          | 0/500 [00:00<?, ?it/s][A                                                    
+                                                             [A2026-09-20 16:22:38 - evalscope - [32mINFO[0m: Generating[requests] 100%| 499/500 [Elapsed: 00:00 < Remaining: 00:00, 87410.53it/s][0m
+Running[perf]:   0%|          | 0/1 [00:01<?, ?it/s]
+Generating[requests]: 100%|█████████▉| 499/500 [00:00<00:00, 80777.99it/s][AGenerating[requests]: 100%|█████████▉| 499/500 [00:00<00:00, 78676.70it/s]
+                                                    2026-09-20 16:22:38 - evalscope - [32mINFO[0m: Save the data base to: /home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_tq4_math_500_apc0_C8/attempt001/measured/20260920_162236/qwen-kvbench/parallel_8_number_500/benchmark_data.db[0m
+Running[perf]:   0%|          | 0/1 [00:01<?, ?it/s]
+Processing[parallel_8_number_500]:   0%|          | 0/500 [00:00<?, ?it/s][A
+Processing[parallel_8_number_500]:   0%|          | 1/500 [00:37<5:09:42, 37.24s/it][A
+Processing[parallel_8_number_500]:   0%|          | 2/500 [00:39<2:16:24, 16.43s/it][A
+Processing[parallel_8_number_500]:   1%|          | 3/500 [00:51<2:01:50, 14.71s/it][A
+Processing[parallel_8_number_500]:   1%|          | 4/500 [01:16<2:33:41, 18.59s/it][A                                                    
+                                                                                    [A2026-09-20 16:23:54 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   1%| 4/500 [Elapsed: 01:16 < Remaining: 2:33:41, 18.59s/it][0m
+Running[perf]:   0%|          | 0/1 [01:18<?, ?it/s]
+Processing[parallel_8_number_500]:   1%|          | 4/500 [01:16<2:33:41, 18.59s/it][A
+Processing[parallel_8_number_500]:   1%|          | 5/500 [01:51<3:23:37, 24.68s/it][A
+Processing[parallel_8_number_500]:   1%|          | 6/500 [01:55<2:24:16, 17.52s/it][A
+Processing[parallel_8_number_500]:   1%|▏         | 7/500 [01:58<1:44:05, 12.67s/it][A
+Processing[parallel_8_number_500]:   2%|▏         | 8/500 [02:21<2:12:30, 16.16s/it][A                                                    
+                                                                                    [A2026-09-20 16:25:00 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   2%| 8/500 [Elapsed: 02:21 < Remaining: 2:12:30, 16.16s/it][0m
+Running[perf]:   0%|          | 0/1 [02:23<?, ?it/s]
+Processing[parallel_8_number_500]:   2%|▏         | 8/500 [02:21<2:12:30, 16.16s/it][A
+Processing[parallel_8_number_500]:   2%|▏         | 9/500 [02:39<2:16:02, 16.63s/it][A
+Processing[parallel_8_number_500]:   2%|▏         | 10/500 [02:53<2:10:08, 15.94s/it][A
+Processing[parallel_8_number_500]:   2%|▏         | 11/500 [03:02<1:52:26, 13.80s/it][A
+Processing[parallel_8_number_500]:   2%|▏         | 12/500 [03:22<2:05:50, 15.47s/it][A                                                    
+                                                                                     [A2026-09-20 16:26:00 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   2%| 12/500 [Elapsed: 03:22 < Remaining: 2:05:50, 15.47s/it][0m
+Running[perf]:   0%|          | 0/1 [03:24<?, ?it/s]
+Processing[parallel_8_number_500]:   2%|▏         | 12/500 [03:22<2:05:50, 15.47s/it][A
+Processing[parallel_8_number_500]:   3%|▎         | 13/500 [03:39<2:11:08, 16.16s/it][A
+Processing[parallel_8_number_500]:   3%|▎         | 14/500 [04:28<3:31:32, 26.12s/it][A                                                    
+                                                                                     [A2026-09-20 16:27:07 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   3%| 14/500 [Elapsed: 04:28 < Remaining: 3:31:32, 26.12s/it][0m
+Running[perf]:   0%|          | 0/1 [04:30<?, ?it/s]
+Processing[parallel_8_number_500]:   3%|▎         | 14/500 [04:28<3:31:32, 26.12s/it][A
+Processing[parallel_8_number_500]:   3%|▎         | 15/500 [05:06<3:59:16, 29.60s/it][A
+Processing[parallel_8_number_500]:   3%|▎         | 16/500 [05:13<3:04:51, 22.92s/it][A
+Processing[parallel_8_number_500]:   3%|▎         | 17/500 [06:07<4:17:47, 32.02s/it][A                                                    
+                                                                                     [A2026-09-20 16:28:45 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   3%| 17/500 [Elapsed: 06:07 < Remaining: 4:17:47, 32.02s/it][0m
+Running[perf]:   0%|          | 0/1 [06:09<?, ?it/s]
+Processing[parallel_8_number_500]:   3%|▎         | 17/500 [06:07<4:17:47, 32.02s/it][A
+Processing[parallel_8_number_500]:   4%|▎         | 18/500 [06:24<3:40:50, 27.49s/it][A
+Processing[parallel_8_number_500]:   4%|▍         | 19/500 [06:34<2:58:41, 22.29s/it][A
+Processing[parallel_8_number_500]:   4%|▍         | 20/500 [07:10<3:32:56, 26.62s/it][A                                                    
+                                                                                     [A2026-09-20 16:29:49 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   4%| 20/500 [Elapsed: 07:10 < Remaining: 3:32:56, 26.62s/it][0m
+Running[perf]:   0%|          | 0/1 [07:12<?, ?it/s]
+Processing[parallel_8_number_500]:   4%|▍         | 20/500 [07:10<3:32:56, 26.62s/it][A
+Processing[parallel_8_number_500]:   4%|▍         | 21/500 [07:13<2:35:36, 19.49s/it][A
+Processing[parallel_8_number_500]:   4%|▍         | 22/500 [07:16<1:54:21, 14.35s/it][A
+Processing[parallel_8_number_500]:   5%|▍         | 23/500 [07:19<1:28:10, 11.09s/it][A
+Processing[parallel_8_number_500]:   5%|▍         | 24/500 [07:59<2:36:15, 19.70s/it][A
+Processing[parallel_8_number_500]:   5%|▌         | 25/500 [08:13<2:22:40, 18.02s/it][A                                                    
+                                                                                     [A2026-09-20 16:30:52 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   5%| 25/500 [Elapsed: 08:13 < Remaining: 2:22:40, 18.02s/it][0m
+Running[perf]:   0%|          | 0/1 [08:15<?, ?it/s]
+Processing[parallel_8_number_500]:   5%|▌         | 25/500 [08:13<2:22:40, 18.02s/it][A
+Processing[parallel_8_number_500]:   5%|▌         | 26/500 [08:21<1:58:04, 14.95s/it][A
+Processing[parallel_8_number_500]:   5%|▌         | 27/500 [08:22<1:25:24, 10.83s/it][A
+Processing[parallel_8_number_500]:   6%|▌         | 28/500 [08:53<2:13:23, 16.96s/it][A
+Processing[parallel_8_number_500]:   6%|▌         | 29/500 [09:22<2:40:39, 20.47s/it][A                                                    
+                                                                                     [A2026-09-20 16:32:01 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   6%| 29/500 [Elapsed: 09:22 < Remaining: 2:40:39, 20.47s/it][0m
+Running[perf]:   0%|          | 0/1 [09:24<?, ?it/s]
+Processing[parallel_8_number_500]:   6%|▌         | 29/500 [09:22<2:40:39, 20.47s/it][A
+Processing[parallel_8_number_500]:   6%|▌         | 30/500 [09:35<2:22:56, 18.25s/it][A
+Processing[parallel_8_number_500]:   6%|▌         | 31/500 [09:36<1:43:03, 13.18s/it][A
+Processing[parallel_8_number_500]:   6%|▋         | 32/500 [09:45<1:32:51, 11.91s/it][A
+Processing[parallel_8_number_500]:   7%|▋         | 33/500 [10:11<2:04:22, 15.98s/it][A
+Processing[parallel_8_number_500]:   7%|▋         | 34/500 [10:22<1:52:20, 14.46s/it][A
+Processing[parallel_8_number_500]:   7%|▋         | 35/500 [10:25<1:24:49, 10.95s/it][A                                                    
+                                                                                     [A2026-09-20 16:33:03 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   7%| 35/500 [Elapsed: 10:25 < Remaining: 1:24:49, 10.95s/it][0m
+Running[perf]:   0%|          | 0/1 [10:27<?, ?it/s]
+Processing[parallel_8_number_500]:   7%|▋         | 35/500 [10:25<1:24:49, 10.95s/it][A
+Processing[parallel_8_number_500]:   7%|▋         | 36/500 [11:27<3:24:14, 26.41s/it][A                                                    
+                                                                                     [A2026-09-20 16:34:06 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   7%| 36/500 [Elapsed: 11:27 < Remaining: 3:24:14, 26.41s/it][0m
+Running[perf]:   0%|          | 0/1 [11:29<?, ?it/s]
+Processing[parallel_8_number_500]:   7%|▋         | 36/500 [11:27<3:24:14, 26.41s/it][A
+Processing[parallel_8_number_500]:   7%|▋         | 37/500 [11:43<3:00:18, 23.37s/it][A
+Processing[parallel_8_number_500]:   8%|▊         | 38/500 [11:53<2:29:06, 19.37s/it][A
+Processing[parallel_8_number_500]:   8%|▊         | 39/500 [11:55<1:49:11, 14.21s/it][A
+Processing[parallel_8_number_500]:   8%|▊         | 40/500 [12:04<1:36:49, 12.63s/it][A
+Processing[parallel_8_number_500]:   8%|▊         | 41/500 [12:25<1:55:39, 15.12s/it][A
+Processing[parallel_8_number_500]:   8%|▊         | 42/500 [12:33<1:37:49, 12.81s/it][A                                                    
+                                                                                     [A2026-09-20 16:35:11 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   8%| 42/500 [Elapsed: 12:33 < Remaining: 1:37:49, 12.81s/it][0m
+Running[perf]:   0%|          | 0/1 [12:35<?, ?it/s]
+Processing[parallel_8_number_500]:   8%|▊         | 42/500 [12:33<1:37:49, 12.81s/it][A
+Processing[parallel_8_number_500]:   9%|▊         | 43/500 [13:30<3:18:44, 26.09s/it][A
+Processing[parallel_8_number_500]:   9%|▉         | 44/500 [13:34<2:28:53, 19.59s/it][A                                                    
+                                                                                     [A2026-09-20 16:36:13 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]   9%| 44/500 [Elapsed: 13:34 < Remaining: 2:28:53, 19.59s/it][0m
+Running[perf]:   0%|          | 0/1 [13:36<?, ?it/s]
+Processing[parallel_8_number_500]:   9%|▉         | 44/500 [13:34<2:28:53, 19.59s/it][A
+Processing[parallel_8_number_500]:   9%|▉         | 45/500 [13:46<2:11:30, 17.34s/it][A
+Processing[parallel_8_number_500]:   9%|▉         | 46/500 [13:50<1:39:13, 13.11s/it][A
+Processing[parallel_8_number_500]:   9%|▉         | 47/500 [14:34<2:48:51, 22.37s/it][A
+Processing[parallel_8_number_500]:  10%|▉         | 48/500 [14:38<2:07:23, 16.91s/it][A                                                    
+                                                                                     [A2026-09-20 16:37:16 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  10%| 48/500 [Elapsed: 14:38 < Remaining: 2:07:23, 16.91s/it][0m
+Running[perf]:   0%|          | 0/1 [14:40<?, ?it/s]
+Processing[parallel_8_number_500]:  10%|▉         | 48/500 [14:38<2:07:23, 16.91s/it][A
+Processing[parallel_8_number_500]:  10%|▉         | 49/500 [14:38<1:30:37, 12.06s/it][A
+Processing[parallel_8_number_500]:  10%|█         | 50/500 [14:42<1:11:47,  9.57s/it][A
+Processing[parallel_8_number_500]:  10%|█         | 51/500 [14:54<1:16:10, 10.18s/it][A
+Processing[parallel_8_number_500]:  10%|█         | 52/500 [15:28<2:10:38, 17.50s/it][A
+Processing[parallel_8_number_500]:  11%|█         | 53/500 [15:52<2:23:09, 19.21s/it][A                                                    
+                                                                                     [A2026-09-20 16:38:30 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  11%| 53/500 [Elapsed: 15:52 < Remaining: 2:23:09, 19.21s/it][0m
+Running[perf]:   0%|          | 0/1 [15:54<?, ?it/s]
+Processing[parallel_8_number_500]:  11%|█         | 53/500 [15:52<2:23:09, 19.21s/it][A
+Processing[parallel_8_number_500]:  11%|█         | 54/500 [16:15<2:32:23, 20.50s/it][A
+Processing[parallel_8_number_500]:  11%|█         | 55/500 [16:33<2:26:25, 19.74s/it][A
+Processing[parallel_8_number_500]:  11%|█         | 56/500 [17:08<3:00:07, 24.34s/it][A                                                    
+                                                                                     [A2026-09-20 16:39:47 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  11%| 56/500 [Elapsed: 17:08 < Remaining: 3:00:07, 24.34s/it][0m
+Running[perf]:   0%|          | 0/1 [17:10<?, ?it/s]
+Processing[parallel_8_number_500]:  11%|█         | 56/500 [17:08<3:00:07, 24.34s/it][A
+Processing[parallel_8_number_500]:  11%|█▏        | 57/500 [17:37<3:10:11, 25.76s/it][A
+Processing[parallel_8_number_500]:  12%|█▏        | 58/500 [18:40<4:32:25, 36.98s/it][A                                                    
+                                                                                     [A2026-09-20 16:41:19 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  12%| 58/500 [Elapsed: 18:40 < Remaining: 4:32:25, 36.98s/it][0m
+Running[perf]:   0%|          | 0/1 [18:42<?, ?it/s]
+Processing[parallel_8_number_500]:  12%|█▏        | 58/500 [18:40<4:32:25, 36.98s/it][A
+Processing[parallel_8_number_500]:  12%|█▏        | 59/500 [19:12<4:20:09, 35.40s/it][A
+Processing[parallel_8_number_500]:  12%|█▏        | 60/500 [19:16<3:10:08, 25.93s/it][A
+Processing[parallel_8_number_500]:  12%|█▏        | 61/500 [20:13<4:17:50, 35.24s/it][A                                                    
+                                                                                     [A2026-09-20 16:42:52 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  12%| 61/500 [Elapsed: 20:13 < Remaining: 4:17:50, 35.24s/it][0m
+Running[perf]:   0%|          | 0/1 [20:15<?, ?it/s]
+Processing[parallel_8_number_500]:  12%|█▏        | 61/500 [20:13<4:17:50, 35.24s/it][A
+Processing[parallel_8_number_500]:  12%|█▏        | 62/500 [20:18<3:11:02, 26.17s/it][A
+Processing[parallel_8_number_500]:  13%|█▎        | 63/500 [20:30<2:40:49, 22.08s/it][A
+Processing[parallel_8_number_500]:  13%|█▎        | 64/500 [20:44<2:21:10, 19.43s/it][A
+Processing[parallel_8_number_500]:  13%|█▎        | 65/500 [21:08<2:30:38, 20.78s/it][A
+Processing[parallel_8_number_500]:  13%|█▎        | 66/500 [21:23<2:17:54, 19.07s/it][A                                                    
+                                                                                     [A2026-09-20 16:44:01 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  13%| 66/500 [Elapsed: 21:23 < Remaining: 2:17:54, 19.07s/it][0m
+Running[perf]:   0%|          | 0/1 [21:25<?, ?it/s]
+Processing[parallel_8_number_500]:  13%|█▎        | 66/500 [21:23<2:17:54, 19.07s/it][A
+Processing[parallel_8_number_500]:  13%|█▎        | 67/500 [22:09<3:17:34, 27.38s/it][A
+Processing[parallel_8_number_500]:  14%|█▎        | 68/500 [22:20<2:39:54, 22.21s/it][A
+Processing[parallel_8_number_500]:  14%|█▍        | 69/500 [23:06<3:32:07, 29.53s/it][A                                                    
+                                                                                     [A2026-09-20 16:45:45 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  14%| 69/500 [Elapsed: 23:06 < Remaining: 3:32:07, 29.53s/it][0m
+Running[perf]:   0%|          | 0/1 [23:08<?, ?it/s]
+Processing[parallel_8_number_500]:  14%|█▍        | 69/500 [23:06<3:32:07, 29.53s/it][A
+Processing[parallel_8_number_500]:  14%|█▍        | 70/500 [24:13<4:52:17, 40.78s/it][A                                                    
+                                                                                     [A2026-09-20 16:46:52 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  14%| 70/500 [Elapsed: 24:13 < Remaining: 4:52:17, 40.78s/it][0m
+Running[perf]:   0%|          | 0/1 [24:15<?, ?it/s]
+Processing[parallel_8_number_500]:  14%|█▍        | 70/500 [24:13<4:52:17, 40.78s/it][A
+Processing[parallel_8_number_500]:  14%|█▍        | 71/500 [24:18<3:33:53, 29.92s/it][A
+Processing[parallel_8_number_500]:  14%|█▍        | 72/500 [24:25<2:43:41, 22.95s/it][A
+Processing[parallel_8_number_500]:  15%|█▍        | 73/500 [24:34<2:13:49, 18.81s/it][A
+Processing[parallel_8_number_500]:  15%|█▍        | 74/500 [25:12<2:54:41, 24.61s/it][A
+Processing[parallel_8_number_500]:  15%|█▌        | 75/500 [25:35<2:51:39, 24.23s/it][A                                                    
+                                                                                     [A2026-09-20 16:48:14 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  15%| 75/500 [Elapsed: 25:35 < Remaining: 2:51:39, 24.23s/it][0m
+Running[perf]:   0%|          | 0/1 [25:37<?, ?it/s]
+Processing[parallel_8_number_500]:  15%|█▌        | 75/500 [25:35<2:51:39, 24.23s/it][A
+Processing[parallel_8_number_500]:  15%|█▌        | 76/500 [25:48<2:26:10, 20.68s/it][A
+Processing[parallel_8_number_500]:  15%|█▌        | 77/500 [25:50<1:47:47, 15.29s/it][A
+Processing[parallel_8_number_500]:  16%|█▌        | 78/500 [26:22<2:22:38, 20.28s/it][A
+Processing[parallel_8_number_500]:  16%|█▌        | 79/500 [26:37<2:10:52, 18.65s/it][A                                                    
+                                                                                     [A2026-09-20 16:49:16 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  16%| 79/500 [Elapsed: 26:37 < Remaining: 2:10:52, 18.65s/it][0m
+Running[perf]:   0%|          | 0/1 [26:39<?, ?it/s]
+Processing[parallel_8_number_500]:  16%|█▌        | 79/500 [26:37<2:10:52, 18.65s/it][A
+Processing[parallel_8_number_500]:  16%|█▌        | 80/500 [26:57<2:13:38, 19.09s/it][A
+Processing[parallel_8_number_500]:  16%|█▌        | 81/500 [27:39<3:00:36, 25.86s/it][A                                                    
+                                                                                     [A2026-09-20 16:50:17 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  16%| 81/500 [Elapsed: 27:39 < Remaining: 3:00:36, 25.86s/it][0m
+Running[perf]:   0%|          | 0/1 [27:41<?, ?it/s]
+Processing[parallel_8_number_500]:  16%|█▌        | 81/500 [27:39<3:00:36, 25.86s/it][A
+Processing[parallel_8_number_500]:  16%|█▋        | 82/500 [28:11<3:13:08, 27.72s/it][A
+Processing[parallel_8_number_500]:  17%|█▋        | 83/500 [28:40<3:15:41, 28.16s/it][A                                                    
+                                                                                     [A2026-09-20 16:51:19 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  17%| 83/500 [Elapsed: 28:40 < Remaining: 3:15:41, 28.16s/it][0m
+Running[perf]:   0%|          | 0/1 [28:42<?, ?it/s]
+Processing[parallel_8_number_500]:  17%|█▋        | 83/500 [28:40<3:15:41, 28.16s/it][A
+Processing[parallel_8_number_500]:  17%|█▋        | 84/500 [28:51<2:40:15, 23.11s/it][A
+Processing[parallel_8_number_500]:  17%|█▋        | 85/500 [28:58<2:04:44, 18.04s/it][A
+Processing[parallel_8_number_500]:  17%|█▋        | 86/500 [29:13<1:58:50, 17.22s/it][A
+Processing[parallel_8_number_500]:  17%|█▋        | 87/500 [29:42<2:22:22, 20.68s/it][A                                                    
+                                                                                     [A2026-09-20 16:52:20 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  17%| 87/500 [Elapsed: 29:42 < Remaining: 2:22:22, 20.68s/it][0m
+Running[perf]:   0%|          | 0/1 [29:44<?, ?it/s]
+Processing[parallel_8_number_500]:  17%|█▋        | 87/500 [29:42<2:22:22, 20.68s/it][A
+Processing[parallel_8_number_500]:  18%|█▊        | 88/500 [30:53<4:05:44, 35.79s/it][A                                                    
+                                                                                     [A2026-09-20 16:53:31 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  18%| 88/500 [Elapsed: 30:53 < Remaining: 4:05:44, 35.79s/it][0m
+Running[perf]:   0%|          | 0/1 [30:55<?, ?it/s]
+Processing[parallel_8_number_500]:  18%|█▊        | 88/500 [30:53<4:05:44, 35.79s/it][A
+Processing[parallel_8_number_500]:  18%|█▊        | 89/500 [31:33<4:14:54, 37.21s/it][A
+Processing[parallel_8_number_500]:  18%|█▊        | 90/500 [31:35<3:02:20, 26.69s/it][A
+Processing[parallel_8_number_500]:  18%|█▊        | 91/500 [31:46<2:29:31, 21.93s/it][A
+Processing[parallel_8_number_500]:  18%|█▊        | 92/500 [31:53<1:57:53, 17.34s/it][A                                                    
+                                                                                     [A2026-09-20 16:54:31 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  18%| 92/500 [Elapsed: 31:53 < Remaining: 1:57:53, 17.34s/it][0m
+Running[perf]:   0%|          | 0/1 [31:55<?, ?it/s]
+Processing[parallel_8_number_500]:  18%|█▊        | 92/500 [31:53<1:57:53, 17.34s/it][A
+Processing[parallel_8_number_500]:  19%|█▊        | 93/500 [32:44<3:06:34, 27.50s/it][A
+Processing[parallel_8_number_500]:  19%|█▉        | 94/500 [32:54<2:29:57, 22.16s/it][A                                                    
+                                                                                     [A2026-09-20 16:55:32 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  19%| 94/500 [Elapsed: 32:54 < Remaining: 2:29:57, 22.16s/it][0m
+Running[perf]:   0%|          | 0/1 [32:56<?, ?it/s]
+Processing[parallel_8_number_500]:  19%|█▉        | 94/500 [32:54<2:29:57, 22.16s/it][A
+Processing[parallel_8_number_500]:  19%|█▉        | 95/500 [33:03<2:04:13, 18.40s/it][A
+Processing[parallel_8_number_500]:  19%|█▉        | 96/500 [33:33<2:27:20, 21.88s/it][A
+Processing[parallel_8_number_500]:  19%|█▉        | 97/500 [33:42<1:59:43, 17.82s/it][A
+Processing[parallel_8_number_500]:  20%|█▉        | 98/500 [34:05<2:10:05, 19.42s/it][A                                                    
+                                                                                     [A2026-09-20 16:56:43 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  20%| 98/500 [Elapsed: 34:05 < Remaining: 2:10:05, 19.42s/it][0m
+Running[perf]:   0%|          | 0/1 [34:07<?, ?it/s]
+Processing[parallel_8_number_500]:  20%|█▉        | 98/500 [34:05<2:10:05, 19.42s/it][A
+Processing[parallel_8_number_500]:  20%|█▉        | 99/500 [34:05<1:31:45, 13.73s/it][A                                                    
+                                                                                     [A2026-09-20 16:56:54 - evalscope - [32mINFO[0m: {
+  "Test Duration (s)": 2056.0516,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 100,
+  "Success Requests": 100,
+  "Failed Requests": 0,
+  "Stream Requests": 100,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0486,
+  "Avg Latency (s)": 160.0507,
+  "Avg Input Tokens": 85.54,
+  "Output Throughput (tok/s)": 236.9527,
+  "Total Throughput (tok/s)": 241.1131,
+  "Avg TTFT (ms)": 158.96,
+  "Avg TPOT (ms)": 32.44,
+  "Avg ITL (ms)": 32.91,
+  "Avg Output Tokens": 4871.87,
+  "Avg Decoded Tok/Iter": 1.0025,
+  "Spec. Accept Rate": 0.0025
+}[0m
+Running[perf]:   0%|          | 0/1 [34:18<?, ?it/s]
+Processing[parallel_8_number_500]:  20%|█▉        | 99/500 [34:16<1:31:45, 13.73s/it][A
+Processing[parallel_8_number_500]:  20%|██        | 100/500 [34:16<1:24:36, 12.69s/it][A
+Processing[parallel_8_number_500]:  20%|██        | 101/500 [34:26<1:20:39, 12.13s/it][A
+Processing[parallel_8_number_500]:  20%|██        | 102/500 [34:46<1:34:35, 14.26s/it][A
+Processing[parallel_8_number_500]:  21%|██        | 103/500 [35:00<1:33:51, 14.18s/it][A
+Processing[parallel_8_number_500]:  21%|██        | 104/500 [35:12<1:30:10, 13.66s/it][A                                                    
+                                                                                      [A2026-09-20 16:57:51 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  21%| 104/500 [Elapsed: 35:12 < Remaining: 1:30:10, 13.66s/it][0m
+Running[perf]:   0%|          | 0/1 [35:14<?, ?it/s]
+Processing[parallel_8_number_500]:  21%|██        | 104/500 [35:12<1:30:10, 13.66s/it][A
+Processing[parallel_8_number_500]:  21%|██        | 105/500 [35:47<2:11:00, 19.90s/it][A
+Processing[parallel_8_number_500]:  21%|██        | 106/500 [36:02<2:02:00, 18.58s/it][A
+Processing[parallel_8_number_500]:  21%|██▏       | 107/500 [36:14<1:48:07, 16.51s/it][A                                                    
+                                                                                      [A2026-09-20 16:58:52 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  21%| 107/500 [Elapsed: 36:14 < Remaining: 1:48:07, 16.51s/it][0m
+Running[perf]:   0%|          | 0/1 [36:16<?, ?it/s]
+Processing[parallel_8_number_500]:  21%|██▏       | 107/500 [36:14<1:48:07, 16.51s/it][A
+Processing[parallel_8_number_500]:  22%|██▏       | 108/500 [36:34<1:55:32, 17.68s/it][A
+Processing[parallel_8_number_500]:  22%|██▏       | 109/500 [36:47<1:46:20, 16.32s/it][A
+Processing[parallel_8_number_500]:  22%|██▏       | 110/500 [37:28<2:32:53, 23.52s/it][A                                                    
+                                                                                      [A2026-09-20 17:00:06 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  22%| 110/500 [Elapsed: 37:28 < Remaining: 2:32:53, 23.52s/it][0m
+Running[perf]:   0%|          | 0/1 [37:30<?, ?it/s]
+Processing[parallel_8_number_500]:  22%|██▏       | 110/500 [37:28<2:32:53, 23.52s/it][A
+Processing[parallel_8_number_500]:  22%|██▏       | 111/500 [37:52<2:34:00, 23.75s/it][A
+Processing[parallel_8_number_500]:  22%|██▏       | 112/500 [38:19<2:39:58, 24.74s/it][A
+Processing[parallel_8_number_500]:  23%|██▎       | 113/500 [39:43<4:34:43, 42.59s/it][A                                                    
+                                                                                      [A2026-09-20 17:02:22 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  23%| 113/500 [Elapsed: 39:43 < Remaining: 4:34:43, 42.59s/it][0m
+Running[perf]:   0%|          | 0/1 [39:45<?, ?it/s]
+Processing[parallel_8_number_500]:  23%|██▎       | 113/500 [39:43<4:34:43, 42.59s/it][A
+Processing[parallel_8_number_500]:  23%|██▎       | 114/500 [39:59<3:42:48, 34.63s/it][A
+Processing[parallel_8_number_500]:  23%|██▎       | 115/500 [40:24<3:22:41, 31.59s/it][A
+Processing[parallel_8_number_500]:  23%|██▎       | 116/500 [40:55<3:22:16, 31.61s/it][A                                                    
+                                                                                      [A2026-09-20 17:03:34 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  23%| 116/500 [Elapsed: 40:55 < Remaining: 3:22:16, 31.61s/it][0m
+Running[perf]:   0%|          | 0/1 [40:57<?, ?it/s]
+Processing[parallel_8_number_500]:  23%|██▎       | 116/500 [40:55<3:22:16, 31.61s/it][A
+Processing[parallel_8_number_500]:  23%|██▎       | 117/500 [41:38<3:42:24, 34.84s/it][A
+Processing[parallel_8_number_500]:  24%|██▎       | 118/500 [42:11<3:39:17, 34.44s/it][A                                                    
+                                                                                      [A2026-09-20 17:04:50 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  24%| 118/500 [Elapsed: 42:11 < Remaining: 3:39:17, 34.44s/it][0m
+Running[perf]:   0%|          | 0/1 [42:13<?, ?it/s]
+Processing[parallel_8_number_500]:  24%|██▎       | 118/500 [42:11<3:39:17, 34.44s/it][A
+Processing[parallel_8_number_500]:  24%|██▍       | 119/500 [42:22<2:53:33, 27.33s/it][A
+Processing[parallel_8_number_500]:  24%|██▍       | 120/500 [42:29<2:14:07, 21.18s/it][A
+Processing[parallel_8_number_500]:  24%|██▍       | 121/500 [43:06<2:43:28, 25.88s/it][A
+Processing[parallel_8_number_500]:  24%|██▍       | 122/500 [43:07<1:56:19, 18.46s/it][A
+Processing[parallel_8_number_500]:  25%|██▍       | 123/500 [43:20<1:45:22, 16.77s/it][A                                                    
+                                                                                      [A2026-09-20 17:05:58 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  25%| 123/500 [Elapsed: 43:20 < Remaining: 1:45:22, 16.77s/it][0m
+Running[perf]:   0%|          | 0/1 [43:22<?, ?it/s]
+Processing[parallel_8_number_500]:  25%|██▍       | 123/500 [43:20<1:45:22, 16.77s/it][A
+Processing[parallel_8_number_500]:  25%|██▍       | 124/500 [43:38<1:47:49, 17.21s/it][A
+Processing[parallel_8_number_500]:  25%|██▌       | 125/500 [43:41<1:21:55, 13.11s/it][A
+Processing[parallel_8_number_500]:  25%|██▌       | 126/500 [43:56<1:24:40, 13.58s/it][A
+Processing[parallel_8_number_500]:  25%|██▌       | 127/500 [44:13<1:30:29, 14.56s/it][A
+Processing[parallel_8_number_500]:  26%|██▌       | 128/500 [44:15<1:07:26, 10.88s/it][A
+Processing[parallel_8_number_500]:  26%|██▌       | 129/500 [44:43<1:37:43, 15.81s/it][A                                                    
+                                                                                      [A2026-09-20 17:07:21 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  26%| 129/500 [Elapsed: 44:43 < Remaining: 1:37:43, 15.81s/it][0m
+Running[perf]:   0%|          | 0/1 [44:45<?, ?it/s]
+Processing[parallel_8_number_500]:  26%|██▌       | 129/500 [44:43<1:37:43, 15.81s/it][A
+Processing[parallel_8_number_500]:  26%|██▌       | 130/500 [45:06<1:51:54, 18.15s/it][A
+Processing[parallel_8_number_500]:  26%|██▌       | 131/500 [45:38<2:16:38, 22.22s/it][A
+Processing[parallel_8_number_500]:  26%|██▋       | 132/500 [46:08<2:30:17, 24.50s/it][A                                                    
+                                                                                      [A2026-09-20 17:08:46 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  26%| 132/500 [Elapsed: 46:08 < Remaining: 2:30:17, 24.50s/it][0m
+Running[perf]:   0%|          | 0/1 [46:10<?, ?it/s]
+Processing[parallel_8_number_500]:  26%|██▋       | 132/500 [46:08<2:30:17, 24.50s/it][A
+Processing[parallel_8_number_500]:  27%|██▋       | 133/500 [46:25<2:17:24, 22.47s/it][A
+Processing[parallel_8_number_500]:  27%|██▋       | 134/500 [47:57<4:22:42, 43.07s/it][A                                                    
+                                                                                      [A2026-09-20 17:10:35 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  27%| 134/500 [Elapsed: 47:57 < Remaining: 4:22:42, 43.07s/it][0m
+Running[perf]:   0%|          | 0/1 [47:59<?, ?it/s]
+Processing[parallel_8_number_500]:  27%|██▋       | 134/500 [47:57<4:22:42, 43.07s/it][A
+Processing[parallel_8_number_500]:  27%|██▋       | 135/500 [48:13<3:34:14, 35.22s/it][A
+Processing[parallel_8_number_500]:  27%|██▋       | 136/500 [48:19<2:39:35, 26.31s/it][A
+Processing[parallel_8_number_500]:  27%|██▋       | 137/500 [48:24<2:00:14, 19.88s/it][A
+Processing[parallel_8_number_500]:  28%|██▊       | 138/500 [49:27<3:17:43, 32.77s/it][A                                                    
+                                                                                      [A2026-09-20 17:12:05 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  28%| 138/500 [Elapsed: 49:27 < Remaining: 3:17:43, 32.77s/it][0m
+Running[perf]:   0%|          | 0/1 [49:29<?, ?it/s]
+Processing[parallel_8_number_500]:  28%|██▊       | 138/500 [49:27<3:17:43, 32.77s/it][A
+Processing[parallel_8_number_500]:  28%|██▊       | 139/500 [50:16<3:47:11, 37.76s/it][A
+Processing[parallel_8_number_500]:  28%|██▊       | 140/500 [50:27<2:58:29, 29.75s/it][A                                                    
+                                                                                      [A2026-09-20 17:13:06 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  28%| 140/500 [Elapsed: 50:27 < Remaining: 2:58:29, 29.75s/it][0m
+Running[perf]:   0%|          | 0/1 [50:29<?, ?it/s]
+Processing[parallel_8_number_500]:  28%|██▊       | 140/500 [50:27<2:58:29, 29.75s/it][A
+Processing[parallel_8_number_500]:  28%|██▊       | 141/500 [51:03<3:08:16, 31.47s/it][A
+Processing[parallel_8_number_500]:  28%|██▊       | 142/500 [51:46<3:29:13, 35.06s/it][A                                                    
+                                                                                      [A2026-09-20 17:14:25 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  28%| 142/500 [Elapsed: 51:46 < Remaining: 3:29:13, 35.06s/it][0m
+Running[perf]:   0%|          | 0/1 [51:48<?, ?it/s]
+Processing[parallel_8_number_500]:  28%|██▊       | 142/500 [51:46<3:29:13, 35.06s/it][A
+Processing[parallel_8_number_500]:  29%|██▊       | 143/500 [51:51<2:35:23, 26.12s/it][A
+Processing[parallel_8_number_500]:  29%|██▉       | 144/500 [53:12<4:12:29, 42.56s/it][A                                                    
+                                                                                      [A2026-09-20 17:15:51 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  29%| 144/500 [Elapsed: 53:12 < Remaining: 4:12:29, 42.56s/it][0m
+Running[perf]:   0%|          | 0/1 [53:14<?, ?it/s]
+Processing[parallel_8_number_500]:  29%|██▉       | 144/500 [53:12<4:12:29, 42.56s/it][A
+Processing[parallel_8_number_500]:  29%|██▉       | 145/500 [53:42<3:49:51, 38.85s/it][A
+Processing[parallel_8_number_500]:  29%|██▉       | 146/500 [53:57<3:06:04, 31.54s/it][A
+Processing[parallel_8_number_500]:  29%|██▉       | 147/500 [54:27<3:03:26, 31.18s/it][A                                                    
+                                                                                      [A2026-09-20 17:17:06 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  29%| 147/500 [Elapsed: 54:27 < Remaining: 3:03:26, 31.18s/it][0m
+Running[perf]:   0%|          | 0/1 [54:29<?, ?it/s]
+Processing[parallel_8_number_500]:  29%|██▉       | 147/500 [54:27<3:03:26, 31.18s/it][A
+Processing[parallel_8_number_500]:  30%|██▉       | 148/500 [54:48<2:44:31, 28.04s/it][A
+Processing[parallel_8_number_500]:  30%|██▉       | 149/500 [55:23<2:56:19, 30.14s/it][A
+Processing[parallel_8_number_500]:  30%|███       | 150/500 [55:35<2:23:25, 24.59s/it][A                                                    
+                                                                                      [A2026-09-20 17:18:13 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  30%| 150/500 [Elapsed: 55:35 < Remaining: 2:23:25, 24.59s/it][0m
+Running[perf]:   0%|          | 0/1 [55:37<?, ?it/s]
+Processing[parallel_8_number_500]:  30%|███       | 150/500 [55:35<2:23:25, 24.59s/it][A
+Processing[parallel_8_number_500]:  30%|███       | 151/500 [55:50<2:06:18, 21.71s/it][A
+Processing[parallel_8_number_500]:  30%|███       | 152/500 [56:49<3:10:43, 32.88s/it][A                                                    
+                                                                                      [A2026-09-20 17:19:27 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  30%| 152/500 [Elapsed: 56:49 < Remaining: 3:10:43, 32.88s/it][0m
+Running[perf]:   0%|          | 0/1 [56:51<?, ?it/s]
+Processing[parallel_8_number_500]:  30%|███       | 152/500 [56:49<3:10:43, 32.88s/it][A
+Processing[parallel_8_number_500]:  31%|███       | 153/500 [56:56<2:25:30, 25.16s/it][A
+Processing[parallel_8_number_500]:  31%|███       | 154/500 [57:13<2:10:56, 22.71s/it][A
+Processing[parallel_8_number_500]:  31%|███       | 155/500 [58:15<3:18:07, 34.46s/it][A                                                    
+                                                                                      [A2026-09-20 17:20:53 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  31%| 155/500 [Elapsed: 58:15 < Remaining: 3:18:07, 34.46s/it][0m
+Running[perf]:   0%|          | 0/1 [58:17<?, ?it/s]
+Processing[parallel_8_number_500]:  31%|███       | 155/500 [58:15<3:18:07, 34.46s/it][A
+Processing[parallel_8_number_500]:  31%|███       | 156/500 [58:49<3:17:22, 34.43s/it][A
+Processing[parallel_8_number_500]:  31%|███▏      | 157/500 [59:07<2:48:58, 29.56s/it][A
+Processing[parallel_8_number_500]:  32%|███▏      | 158/500 [59:13<2:08:17, 22.51s/it][A
+Processing[parallel_8_number_500]:  32%|███▏      | 159/500 [59:23<1:46:24, 18.72s/it][A                                                    
+                                                                                      [A2026-09-20 17:22:02 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  32%| 159/500 [Elapsed: 59:23 < Remaining: 1:46:24, 18.72s/it][0m
+Running[perf]:   0%|          | 0/1 [59:25<?, ?it/s]
+Processing[parallel_8_number_500]:  32%|███▏      | 159/500 [59:23<1:46:24, 18.72s/it][A
+Processing[parallel_8_number_500]:  32%|███▏      | 160/500 [59:44<1:49:43, 19.36s/it][A
+Processing[parallel_8_number_500]:  32%|███▏      | 161/500 [59:49<1:24:33, 14.96s/it][A
+Processing[parallel_8_number_500]:  32%|███▏      | 162/500 [1:00:10<1:34:23, 16.76s/it][A
+Processing[parallel_8_number_500]:  33%|███▎      | 163/500 [1:00:54<2:20:24, 25.00s/it][A                                                    
+                                                                                        [A2026-09-20 17:23:32 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  33%| 163/500 [Elapsed: 1:00:54 < Remaining: 2:20:24, 25.00s/it][0m
+Running[perf]:   0%|          | 0/1 [1:00:56<?, ?it/s]
+Processing[parallel_8_number_500]:  33%|███▎      | 163/500 [1:00:54<2:20:24, 25.00s/it][A
+Processing[parallel_8_number_500]:  33%|███▎      | 164/500 [1:01:24<2:28:32, 26.53s/it][A
+Processing[parallel_8_number_500]:  33%|███▎      | 165/500 [1:01:30<1:54:29, 20.51s/it][A
+Processing[parallel_8_number_500]:  33%|███▎      | 166/500 [1:01:38<1:32:57, 16.70s/it][A
+Processing[parallel_8_number_500]:  33%|███▎      | 167/500 [1:01:39<1:06:16, 11.94s/it][A
+Processing[parallel_8_number_500]:  34%|███▎      | 168/500 [1:02:07<1:32:28, 16.71s/it][A                                                      
+                                                                                        [A2026-09-20 17:24:45 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  34%| 168/500 [Elapsed: 1:02:07 < Remaining: 1:32:28, 16.71s/it][0m
+Running[perf]:   0%|          | 0/1 [1:02:09<?, ?it/s]
+Processing[parallel_8_number_500]:  34%|███▎      | 168/500 [1:02:07<1:32:28, 16.71s/it][A
+Processing[parallel_8_number_500]:  34%|███▍      | 169/500 [1:02:08<1:05:52, 11.94s/it][A
+Processing[parallel_8_number_500]:  34%|███▍      | 170/500 [1:02:39<1:38:03, 17.83s/it][A
+Processing[parallel_8_number_500]:  34%|███▍      | 171/500 [1:02:59<1:40:36, 18.35s/it][A
+Processing[parallel_8_number_500]:  34%|███▍      | 172/500 [1:03:21<1:47:13, 19.61s/it][A                                                      
+                                                                                        [A2026-09-20 17:26:00 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  34%| 172/500 [Elapsed: 1:03:21 < Remaining: 1:47:13, 19.61s/it][0m
+Running[perf]:   0%|          | 0/1 [1:03:23<?, ?it/s]
+Processing[parallel_8_number_500]:  34%|███▍      | 172/500 [1:03:21<1:47:13, 19.61s/it][A
+Processing[parallel_8_number_500]:  35%|███▍      | 173/500 [1:03:22<1:16:06, 13.96s/it][A
+Processing[parallel_8_number_500]:  35%|███▍      | 174/500 [1:03:55<1:46:56, 19.68s/it][A
+Processing[parallel_8_number_500]:  35%|███▌      | 175/500 [1:04:03<1:27:30, 16.15s/it][A
+Processing[parallel_8_number_500]:  35%|███▌      | 176/500 [1:05:42<3:41:04, 40.94s/it][A                                                      
+                                                                                        [A2026-09-20 17:28:20 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  35%| 176/500 [Elapsed: 1:05:42 < Remaining: 3:41:04, 40.94s/it][0m
+Running[perf]:   0%|          | 0/1 [1:05:44<?, ?it/s]
+Processing[parallel_8_number_500]:  35%|███▌      | 176/500 [1:05:42<3:41:04, 40.94s/it][A
+Processing[parallel_8_number_500]:  35%|███▌      | 177/500 [1:06:07<3:14:41, 36.17s/it][A
+Processing[parallel_8_number_500]:  36%|███▌      | 178/500 [1:06:33<2:58:05, 33.18s/it][A
+Processing[parallel_8_number_500]:  36%|███▌      | 179/500 [1:07:45<3:59:27, 44.76s/it][A                                                      
+                                                                                        [A2026-09-20 17:30:24 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  36%| 179/500 [Elapsed: 1:07:45 < Remaining: 3:59:27, 44.76s/it][0m
+Running[perf]:   0%|          | 0/1 [1:07:47<?, ?it/s]
+Processing[parallel_8_number_500]:  36%|███▌      | 179/500 [1:07:45<3:59:27, 44.76s/it][A
+Processing[parallel_8_number_500]:  36%|███▌      | 180/500 [1:07:52<2:58:51, 33.53s/it][A
+Processing[parallel_8_number_500]:  36%|███▌      | 181/500 [1:08:56<3:46:15, 42.56s/it][A                                                      
+                                                                                        [A2026-09-20 17:31:34 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  36%| 181/500 [Elapsed: 1:08:56 < Remaining: 3:46:15, 42.56s/it][0m
+Running[perf]:   0%|          | 0/1 [1:08:58<?, ?it/s]
+Processing[parallel_8_number_500]:  36%|███▌      | 181/500 [1:08:56<3:46:15, 42.56s/it][A
+Processing[parallel_8_number_500]:  36%|███▋      | 182/500 [1:10:28<5:04:28, 57.45s/it][A                                                      
+                                                                                        [A2026-09-20 17:33:07 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  36%| 182/500 [Elapsed: 1:10:28 < Remaining: 5:04:28, 57.45s/it][0m
+Running[perf]:   0%|          | 0/1 [1:10:30<?, ?it/s]
+Processing[parallel_8_number_500]:  36%|███▋      | 182/500 [1:10:28<5:04:28, 57.45s/it][A
+Processing[parallel_8_number_500]:  37%|███▋      | 183/500 [1:10:45<3:59:45, 45.38s/it][A
+Processing[parallel_8_number_500]:  37%|███▋      | 184/500 [1:12:06<4:54:19, 55.88s/it][A                                                      
+                                                                                        [A2026-09-20 17:34:44 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  37%| 184/500 [Elapsed: 1:12:06 < Remaining: 4:54:19, 55.88s/it][0m
+Running[perf]:   0%|          | 0/1 [1:12:08<?, ?it/s]
+Processing[parallel_8_number_500]:  37%|███▋      | 184/500 [1:12:06<4:54:19, 55.88s/it][A
+Processing[parallel_8_number_500]:  37%|███▋      | 185/500 [1:12:28<3:59:52, 45.69s/it][A
+Processing[parallel_8_number_500]:  37%|███▋      | 186/500 [1:13:09<3:52:45, 44.48s/it][A                                                      
+                                                                                        [A2026-09-20 17:35:48 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  37%| 186/500 [Elapsed: 1:13:09 < Remaining: 3:52:45, 44.48s/it][0m
+Running[perf]:   0%|          | 0/1 [1:13:11<?, ?it/s]
+Processing[parallel_8_number_500]:  37%|███▋      | 186/500 [1:13:09<3:52:45, 44.48s/it][A
+Processing[parallel_8_number_500]:  37%|███▋      | 187/500 [1:13:13<2:48:14, 32.25s/it][A
+Processing[parallel_8_number_500]:  38%|███▊      | 188/500 [1:13:25<2:15:25, 26.04s/it][A
+Processing[parallel_8_number_500]:  38%|███▊      | 189/500 [1:13:41<1:59:27, 23.05s/it][A
+Processing[parallel_8_number_500]:  38%|███▊      | 190/500 [1:13:56<1:47:11, 20.75s/it][A
+Processing[parallel_8_number_500]:  38%|███▊      | 191/500 [1:14:19<1:50:30, 21.46s/it][A                                                      
+                                                                                        [A2026-09-20 17:36:58 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  38%| 191/500 [Elapsed: 1:14:19 < Remaining: 1:50:30, 21.46s/it][0m
+Running[perf]:   0%|          | 0/1 [1:14:21<?, ?it/s]
+Processing[parallel_8_number_500]:  38%|███▊      | 191/500 [1:14:19<1:50:30, 21.46s/it][A
+Processing[parallel_8_number_500]:  38%|███▊      | 192/500 [1:14:41<1:50:56, 21.61s/it][A
+Processing[parallel_8_number_500]:  39%|███▊      | 193/500 [1:14:43<1:19:58, 15.63s/it][A
+Processing[parallel_8_number_500]:  39%|███▉      | 194/500 [1:15:57<2:48:40, 33.07s/it][A                                                      
+                                                                                        [A2026-09-20 17:38:35 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  39%| 194/500 [Elapsed: 1:15:57 < Remaining: 2:48:40, 33.07s/it][0m
+Running[perf]:   0%|          | 0/1 [1:15:59<?, ?it/s]
+Processing[parallel_8_number_500]:  39%|███▉      | 194/500 [1:15:57<2:48:40, 33.07s/it][A
+Processing[parallel_8_number_500]:  39%|███▉      | 195/500 [1:16:00<2:02:40, 24.13s/it][A
+Processing[parallel_8_number_500]:  39%|███▉      | 196/500 [1:16:12<1:44:43, 20.67s/it][A
+Processing[parallel_8_number_500]:  39%|███▉      | 197/500 [1:16:24<1:31:07, 18.04s/it][A
+Processing[parallel_8_number_500]:  40%|███▉      | 198/500 [1:16:49<1:40:38, 19.99s/it][A
+Processing[parallel_8_number_500]:  40%|███▉      | 199/500 [1:17:06<1:35:18, 19.00s/it][A                                                      
+                                                                                        [A2026-09-20 17:39:44 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  40%| 199/500 [Elapsed: 1:17:06 < Remaining: 1:35:18, 19.00s/it][0m
+Running[perf]:   0%|          | 0/1 [1:17:08<?, ?it/s]
+Processing[parallel_8_number_500]:  40%|███▉      | 199/500 [1:17:06<1:35:18, 19.00s/it][A                                                      
+                                                                                        [A2026-09-20 17:39:47 - evalscope - [32mINFO[0m: {
+  "Test Duration (s)": 4628.3999,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 200,
+  "Success Requests": 200,
+  "Failed Requests": 0,
+  "Stream Requests": 200,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0432,
+  "Avg Latency (s)": 182.1929,
+  "Avg Input Tokens": 87.655,
+  "Output Throughput (tok/s)": 223.5278,
+  "Total Throughput (tok/s)": 227.3155,
+  "Avg TTFT (ms)": 164.22,
+  "Avg TPOT (ms)": 34.5,
+  "Avg ITL (ms)": 35.32,
+  "Avg Output Tokens": 5172.88,
+  "Avg Decoded Tok/Iter": 1.003,
+  "Spec. Accept Rate": 0.0029
+}[0m
+Running[perf]:   0%|          | 0/1 [1:17:10<?, ?it/s]
+Processing[parallel_8_number_500]:  40%|███▉      | 199/500 [1:17:08<1:35:18, 19.00s/it][A
+Processing[parallel_8_number_500]:  40%|████      | 200/500 [1:17:08<1:10:10, 14.04s/it][A
+Processing[parallel_8_number_500]:  40%|████      | 201/500 [1:17:14<57:37, 11.56s/it]  [A
+Processing[parallel_8_number_500]:  40%|████      | 202/500 [1:17:35<1:11:30, 14.40s/it][A
+Processing[parallel_8_number_500]:  41%|████      | 203/500 [1:17:41<58:36, 11.84s/it]  [A
+Processing[parallel_8_number_500]:  41%|████      | 204/500 [1:17:57<1:04:29, 13.07s/it][A
+Processing[parallel_8_number_500]:  41%|████      | 205/500 [1:18:05<57:54, 11.78s/it]  [A
+Processing[parallel_8_number_500]:  41%|████      | 206/500 [1:18:16<56:29, 11.53s/it][A                                                      
+                                                                                      [A2026-09-20 17:40:55 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  41%| 206/500 [Elapsed: 1:18:16 < Remaining: 56:29, 11.53s/it][0m
+Running[perf]:   0%|          | 0/1 [1:18:18<?, ?it/s]
+Processing[parallel_8_number_500]:  41%|████      | 206/500 [1:18:16<56:29, 11.53s/it][A
+Processing[parallel_8_number_500]:  41%|████▏     | 207/500 [1:18:24<51:20, 10.51s/it][A
+Processing[parallel_8_number_500]:  42%|████▏     | 208/500 [1:18:46<1:07:33, 13.88s/it][A
+Processing[parallel_8_number_500]:  42%|████▏     | 209/500 [1:18:48<50:11, 10.35s/it]  [A
+Processing[parallel_8_number_500]:  42%|████▏     | 210/500 [1:18:59<50:42, 10.49s/it][A
+Processing[parallel_8_number_500]:  42%|████▏     | 211/500 [1:19:10<51:43, 10.74s/it][A
+Processing[parallel_8_number_500]:  42%|████▏     | 212/500 [1:19:20<50:04, 10.43s/it][A                                                      
+                                                                                      [A2026-09-20 17:41:59 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  42%| 212/500 [Elapsed: 1:19:20 < Remaining: 50:04, 10.43s/it][0m
+Running[perf]:   0%|          | 0/1 [1:19:22<?, ?it/s]
+Processing[parallel_8_number_500]:  42%|████▏     | 212/500 [1:19:20<50:04, 10.43s/it][A
+Processing[parallel_8_number_500]:  43%|████▎     | 213/500 [1:20:15<1:53:22, 23.70s/it][A
+Processing[parallel_8_number_500]:  43%|████▎     | 214/500 [1:20:22<1:30:02, 18.89s/it][A                                                      
+                                                                                        [A2026-09-20 17:43:01 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  43%| 214/500 [Elapsed: 1:20:22 < Remaining: 1:30:02, 18.89s/it][0m
+Running[perf]:   0%|          | 0/1 [1:20:24<?, ?it/s]
+Processing[parallel_8_number_500]:  43%|████▎     | 214/500 [1:20:22<1:30:02, 18.89s/it][A
+Processing[parallel_8_number_500]:  43%|████▎     | 215/500 [1:20:25<1:06:50, 14.07s/it][A
+Processing[parallel_8_number_500]:  43%|████▎     | 216/500 [1:20:43<1:11:39, 15.14s/it][A
+Processing[parallel_8_number_500]:  43%|████▎     | 217/500 [1:21:28<1:54:00, 24.17s/it][A                                                      
+                                                                                        [A2026-09-20 17:44:07 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  43%| 217/500 [Elapsed: 1:21:28 < Remaining: 1:54:00, 24.17s/it][0m
+Running[perf]:   0%|          | 0/1 [1:21:30<?, ?it/s]
+Processing[parallel_8_number_500]:  43%|████▎     | 217/500 [1:21:28<1:54:00, 24.17s/it][A
+Processing[parallel_8_number_500]:  44%|████▎     | 218/500 [1:21:38<1:32:49, 19.75s/it][A
+Processing[parallel_8_number_500]:  44%|████▍     | 219/500 [1:21:38<1:05:09, 13.91s/it][A
+Processing[parallel_8_number_500]:  44%|████▍     | 220/500 [1:22:17<1:40:15, 21.48s/it][A
+Processing[parallel_8_number_500]:  44%|████▍     | 221/500 [1:22:20<1:14:21, 15.99s/it][A
+Processing[parallel_8_number_500]:  44%|████▍     | 222/500 [1:22:25<58:54, 12.71s/it]  [A
+Processing[parallel_8_number_500]:  45%|████▍     | 223/500 [1:22:27<43:55,  9.51s/it][A
+Processing[parallel_8_number_500]:  45%|████▍     | 224/500 [1:22:52<1:04:21, 13.99s/it][A                                                      
+                                                                                        [A2026-09-20 17:45:30 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  45%| 224/500 [Elapsed: 1:22:52 < Remaining: 1:04:21, 13.99s/it][0m
+Running[perf]:   0%|          | 0/1 [1:22:54<?, ?it/s]
+Processing[parallel_8_number_500]:  45%|████▍     | 224/500 [1:22:52<1:04:21, 13.99s/it][A
+Processing[parallel_8_number_500]:  45%|████▌     | 225/500 [1:23:01<56:58, 12.43s/it]  [A
+Processing[parallel_8_number_500]:  45%|████▌     | 226/500 [1:23:09<50:40, 11.10s/it][A
+Processing[parallel_8_number_500]:  45%|████▌     | 227/500 [1:24:51<2:55:26, 38.56s/it][A                                                      
+                                                                                        [A2026-09-20 17:47:30 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  45%| 227/500 [Elapsed: 1:24:51 < Remaining: 2:55:26, 38.56s/it][0m
+Running[perf]:   0%|          | 0/1 [1:24:53<?, ?it/s]
+Processing[parallel_8_number_500]:  45%|████▌     | 227/500 [1:24:51<2:55:26, 38.56s/it][A
+Processing[parallel_8_number_500]:  46%|████▌     | 228/500 [1:24:57<2:10:09, 28.71s/it][A
+Processing[parallel_8_number_500]:  46%|████▌     | 229/500 [1:25:00<1:35:06, 21.06s/it][A
+Processing[parallel_8_number_500]:  46%|████▌     | 230/500 [1:25:01<1:07:04, 14.91s/it][A
+Processing[parallel_8_number_500]:  46%|████▌     | 231/500 [1:25:44<1:44:36, 23.33s/it][A
+Processing[parallel_8_number_500]:  46%|████▋     | 232/500 [1:25:55<1:28:29, 19.81s/it][A                                                      
+                                                                                        [A2026-09-20 17:48:34 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  46%| 232/500 [Elapsed: 1:25:55 < Remaining: 1:28:29, 19.81s/it][0m
+Running[perf]:   0%|          | 0/1 [1:25:57<?, ?it/s]
+Processing[parallel_8_number_500]:  46%|████▋     | 232/500 [1:25:55<1:28:29, 19.81s/it][A
+Processing[parallel_8_number_500]:  47%|████▋     | 233/500 [1:26:43<2:05:01, 28.09s/it][A
+Processing[parallel_8_number_500]:  47%|████▋     | 234/500 [1:27:33<2:34:18, 34.80s/it][A                                                      
+                                                                                        [A2026-09-20 17:50:12 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  47%| 234/500 [Elapsed: 1:27:33 < Remaining: 2:34:18, 34.80s/it][0m
+Running[perf]:   0%|          | 0/1 [1:27:35<?, ?it/s]
+Processing[parallel_8_number_500]:  47%|████▋     | 234/500 [1:27:33<2:34:18, 34.80s/it][A
+Processing[parallel_8_number_500]:  47%|████▋     | 235/500 [1:27:51<2:10:55, 29.64s/it][A
+Processing[parallel_8_number_500]:  47%|████▋     | 236/500 [1:28:06<1:51:21, 25.31s/it][A
+Processing[parallel_8_number_500]:  47%|████▋     | 237/500 [1:28:41<2:03:18, 28.13s/it][A                                                      
+                                                                                        [A2026-09-20 17:51:19 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  47%| 237/500 [Elapsed: 1:28:41 < Remaining: 2:03:18, 28.13s/it][0m
+Running[perf]:   0%|          | 0/1 [1:28:43<?, ?it/s]
+Processing[parallel_8_number_500]:  47%|████▋     | 237/500 [1:28:41<2:03:18, 28.13s/it][A
+Processing[parallel_8_number_500]:  48%|████▊     | 238/500 [1:29:25<2:24:04, 33.00s/it][A
+Processing[parallel_8_number_500]:  48%|████▊     | 239/500 [1:29:26<1:41:27, 23.32s/it][A
+Processing[parallel_8_number_500]:  48%|████▊     | 240/500 [1:29:32<1:18:50, 18.20s/it][A
+Processing[parallel_8_number_500]:  48%|████▊     | 241/500 [1:29:41<1:06:43, 15.46s/it][A                                                      
+                                                                                        [A2026-09-20 17:52:20 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  48%| 241/500 [Elapsed: 1:29:41 < Remaining: 1:06:43, 15.46s/it][0m
+Running[perf]:   0%|          | 0/1 [1:29:43<?, ?it/s]
+Processing[parallel_8_number_500]:  48%|████▊     | 241/500 [1:29:41<1:06:43, 15.46s/it][A
+Processing[parallel_8_number_500]:  48%|████▊     | 242/500 [1:29:53<1:01:20, 14.27s/it][A
+Processing[parallel_8_number_500]:  49%|████▊     | 243/500 [1:31:13<2:25:39, 34.01s/it][A                                                      
+                                                                                        [A2026-09-20 17:53:51 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  49%| 243/500 [Elapsed: 1:31:13 < Remaining: 2:25:39, 34.01s/it][0m
+Running[perf]:   0%|          | 0/1 [1:31:15<?, ?it/s]
+Processing[parallel_8_number_500]:  49%|████▊     | 243/500 [1:31:13<2:25:39, 34.01s/it][A
+Processing[parallel_8_number_500]:  49%|████▉     | 244/500 [1:31:20<1:51:07, 26.04s/it][A
+Processing[parallel_8_number_500]:  49%|████▉     | 245/500 [1:31:34<1:35:24, 22.45s/it][A
+Processing[parallel_8_number_500]:  49%|████▉     | 246/500 [1:32:24<2:10:20, 30.79s/it][A                                                      
+                                                                                        [A2026-09-20 17:55:03 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  49%| 246/500 [Elapsed: 1:32:24 < Remaining: 2:10:20, 30.79s/it][0m
+Running[perf]:   0%|          | 0/1 [1:32:26<?, ?it/s]
+Processing[parallel_8_number_500]:  49%|████▉     | 246/500 [1:32:24<2:10:20, 30.79s/it][A
+Processing[parallel_8_number_500]:  49%|████▉     | 247/500 [1:33:34<2:58:39, 42.37s/it][A                                                      
+                                                                                        [A2026-09-20 17:56:12 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  49%| 247/500 [Elapsed: 1:33:34 < Remaining: 2:58:39, 42.37s/it][0m
+Running[perf]:   0%|          | 0/1 [1:33:36<?, ?it/s]
+Processing[parallel_8_number_500]:  49%|████▉     | 247/500 [1:33:34<2:58:39, 42.37s/it][A
+Processing[parallel_8_number_500]:  50%|████▉     | 248/500 [1:33:41<2:13:18, 31.74s/it][A
+Processing[parallel_8_number_500]:  50%|████▉     | 249/500 [1:34:22<2:25:18, 34.73s/it][A
+Processing[parallel_8_number_500]:  50%|█████     | 250/500 [1:34:40<2:03:00, 29.52s/it][A                                                      
+                                                                                        [A2026-09-20 17:57:18 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  50%| 250/500 [Elapsed: 1:34:40 < Remaining: 2:03:00, 29.52s/it][0m
+Running[perf]:   0%|          | 0/1 [1:34:42<?, ?it/s]
+Processing[parallel_8_number_500]:  50%|█████     | 250/500 [1:34:40<2:03:00, 29.52s/it][A
+Processing[parallel_8_number_500]:  50%|█████     | 251/500 [1:34:42<1:28:35, 21.35s/it][A
+Processing[parallel_8_number_500]:  50%|█████     | 252/500 [1:35:10<1:36:45, 23.41s/it][A
+Processing[parallel_8_number_500]:  51%|█████     | 253/500 [1:35:36<1:39:33, 24.18s/it][A
+Processing[parallel_8_number_500]:  51%|█████     | 254/500 [1:35:50<1:26:39, 21.13s/it][A                                                      
+                                                                                        [A2026-09-20 17:58:29 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  51%| 254/500 [Elapsed: 1:35:50 < Remaining: 1:26:39, 21.13s/it][0m
+Running[perf]:   0%|          | 0/1 [1:35:52<?, ?it/s]
+Processing[parallel_8_number_500]:  51%|█████     | 254/500 [1:35:50<1:26:39, 21.13s/it][A
+Processing[parallel_8_number_500]:  51%|█████     | 255/500 [1:35:57<1:08:13, 16.71s/it][A
+Processing[parallel_8_number_500]:  51%|█████     | 256/500 [1:36:14<1:09:11, 17.02s/it][A
+Processing[parallel_8_number_500]:  51%|█████▏    | 257/500 [1:37:02<1:46:13, 26.23s/it][A                                                      
+                                                                                        [A2026-09-20 17:59:41 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  51%| 257/500 [Elapsed: 1:37:02 < Remaining: 1:46:13, 26.23s/it][0m
+Running[perf]:   0%|          | 0/1 [1:37:04<?, ?it/s]
+Processing[parallel_8_number_500]:  51%|█████▏    | 257/500 [1:37:02<1:46:13, 26.23s/it][A
+Processing[parallel_8_number_500]:  52%|█████▏    | 258/500 [1:37:25<1:41:43, 25.22s/it][A
+Processing[parallel_8_number_500]:  52%|█████▏    | 259/500 [1:37:51<1:42:47, 25.59s/it][A
+Processing[parallel_8_number_500]:  52%|█████▏    | 260/500 [1:38:10<1:34:05, 23.52s/it][A                                                      
+                                                                                        [A2026-09-20 18:00:49 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  52%| 260/500 [Elapsed: 1:38:10 < Remaining: 1:34:05, 23.52s/it][0m
+Running[perf]:   0%|          | 0/1 [1:38:12<?, ?it/s]
+Processing[parallel_8_number_500]:  52%|█████▏    | 260/500 [1:38:10<1:34:05, 23.52s/it][A
+Processing[parallel_8_number_500]:  52%|█████▏    | 261/500 [1:38:16<1:13:05, 18.35s/it][A
+Processing[parallel_8_number_500]:  52%|█████▏    | 262/500 [1:38:26<1:02:08, 15.67s/it][A
+Processing[parallel_8_number_500]:  53%|█████▎    | 263/500 [1:38:49<1:10:12, 17.77s/it][A
+Processing[parallel_8_number_500]:  53%|█████▎    | 264/500 [1:39:06<1:09:10, 17.59s/it][A
+Processing[parallel_8_number_500]:  53%|█████▎    | 265/500 [1:39:38<1:25:49, 21.91s/it][A                                                      
+                                                                                        [A2026-09-20 18:02:16 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  53%| 265/500 [Elapsed: 1:39:38 < Remaining: 1:25:49, 21.91s/it][0m
+Running[perf]:   0%|          | 0/1 [1:39:40<?, ?it/s]
+Processing[parallel_8_number_500]:  53%|█████▎    | 265/500 [1:39:38<1:25:49, 21.91s/it][A
+Processing[parallel_8_number_500]:  53%|█████▎    | 266/500 [1:39:41<1:03:44, 16.35s/it][A
+Processing[parallel_8_number_500]:  53%|█████▎    | 267/500 [1:40:43<1:56:31, 30.01s/it][A                                                      
+                                                                                        [A2026-09-20 18:03:22 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  53%| 267/500 [Elapsed: 1:40:43 < Remaining: 1:56:31, 30.01s/it][0m
+Running[perf]:   0%|          | 0/1 [1:40:45<?, ?it/s]
+Processing[parallel_8_number_500]:  53%|█████▎    | 267/500 [1:40:43<1:56:31, 30.01s/it][A
+Processing[parallel_8_number_500]:  54%|█████▎    | 268/500 [1:40:44<1:21:58, 21.20s/it][A
+Processing[parallel_8_number_500]:  54%|█████▍    | 269/500 [1:40:48<1:02:34, 16.25s/it][A
+Processing[parallel_8_number_500]:  54%|█████▍    | 270/500 [1:40:53<49:25, 12.89s/it]  [A
+Processing[parallel_8_number_500]:  54%|█████▍    | 271/500 [1:41:25<1:11:09, 18.64s/it][A
+Processing[parallel_8_number_500]:  54%|█████▍    | 272/500 [1:42:58<2:35:04, 40.81s/it][A                                                      
+                                                                                        [A2026-09-20 18:05:37 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  54%| 272/500 [Elapsed: 1:42:58 < Remaining: 2:35:04, 40.81s/it][0m
+Running[perf]:   0%|          | 0/1 [1:43:00<?, ?it/s]
+Processing[parallel_8_number_500]:  54%|█████▍    | 272/500 [1:42:58<2:35:04, 40.81s/it][A
+Processing[parallel_8_number_500]:  55%|█████▍    | 273/500 [1:43:38<2:33:49, 40.66s/it][A
+Processing[parallel_8_number_500]:  55%|█████▍    | 274/500 [1:44:50<3:08:08, 49.95s/it][A                                                      
+                                                                                        [A2026-09-20 18:07:28 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  55%| 274/500 [Elapsed: 1:44:50 < Remaining: 3:08:08, 49.95s/it][0m
+Running[perf]:   0%|          | 0/1 [1:44:52<?, ?it/s]
+Processing[parallel_8_number_500]:  55%|█████▍    | 274/500 [1:44:50<3:08:08, 49.95s/it][A
+Processing[parallel_8_number_500]:  55%|█████▌    | 275/500 [1:44:50<2:11:34, 35.09s/it][A
+Processing[parallel_8_number_500]:  55%|█████▌    | 276/500 [1:45:29<2:14:54, 36.14s/it][A
+Processing[parallel_8_number_500]:  55%|█████▌    | 277/500 [1:45:37<1:42:32, 27.59s/it][A
+Processing[parallel_8_number_500]:  56%|█████▌    | 278/500 [1:45:45<1:20:59, 21.89s/it][A
+Processing[parallel_8_number_500]:  56%|█████▌    | 279/500 [1:45:54<1:06:12, 17.97s/it][A                                                      
+                                                                                        [A2026-09-20 18:08:33 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  56%| 279/500 [Elapsed: 1:45:54 < Remaining: 1:06:12, 17.97s/it][0m
+Running[perf]:   0%|          | 0/1 [1:45:56<?, ?it/s]
+Processing[parallel_8_number_500]:  56%|█████▌    | 279/500 [1:45:54<1:06:12, 17.97s/it][A
+Processing[parallel_8_number_500]:  56%|█████▌    | 280/500 [1:46:02<54:57, 14.99s/it]  [A
+Processing[parallel_8_number_500]:  56%|█████▌    | 281/500 [1:46:21<59:16, 16.24s/it][A
+Processing[parallel_8_number_500]:  56%|█████▋    | 282/500 [1:47:17<1:42:20, 28.17s/it][A                                                      
+                                                                                        [A2026-09-20 18:09:56 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  56%| 282/500 [Elapsed: 1:47:17 < Remaining: 1:42:20, 28.17s/it][0m
+Running[perf]:   0%|          | 0/1 [1:47:19<?, ?it/s]
+Processing[parallel_8_number_500]:  56%|█████▋    | 282/500 [1:47:17<1:42:20, 28.17s/it][A
+Processing[parallel_8_number_500]:  57%|█████▋    | 283/500 [1:47:27<1:22:05, 22.70s/it][A
+Processing[parallel_8_number_500]:  57%|█████▋    | 284/500 [1:47:57<1:29:59, 25.00s/it][A
+Processing[parallel_8_number_500]:  57%|█████▋    | 285/500 [1:48:22<1:28:41, 24.75s/it][A                                                      
+                                                                                        [A2026-09-20 18:11:00 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  57%| 285/500 [Elapsed: 1:48:22 < Remaining: 1:28:41, 24.75s/it][0m
+Running[perf]:   0%|          | 0/1 [1:48:24<?, ?it/s]
+Processing[parallel_8_number_500]:  57%|█████▋    | 285/500 [1:48:22<1:28:41, 24.75s/it][A
+Processing[parallel_8_number_500]:  57%|█████▋    | 286/500 [1:48:39<1:20:09, 22.48s/it][A
+Processing[parallel_8_number_500]:  57%|█████▋    | 287/500 [1:48:40<56:39, 15.96s/it]  [A
+Processing[parallel_8_number_500]:  58%|█████▊    | 288/500 [1:48:40<40:27, 11.45s/it][A
+Processing[parallel_8_number_500]:  58%|█████▊    | 289/500 [1:49:06<55:17, 15.72s/it][A
+Processing[parallel_8_number_500]:  58%|█████▊    | 290/500 [1:49:20<52:49, 15.09s/it][A
+Processing[parallel_8_number_500]:  58%|█████▊    | 291/500 [1:49:22<38:36, 11.08s/it][A
+Processing[parallel_8_number_500]:  58%|█████▊    | 292/500 [1:49:23<28:56,  8.35s/it][A                                                      
+                                                                                      [A2026-09-20 18:12:02 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  58%| 292/500 [Elapsed: 1:49:23 < Remaining: 28:56,  8.35s/it][0m
+Running[perf]:   0%|          | 0/1 [1:49:25<?, ?it/s]
+Processing[parallel_8_number_500]:  58%|█████▊    | 292/500 [1:49:23<28:56,  8.35s/it][A
+Processing[parallel_8_number_500]:  59%|█████▊    | 293/500 [1:49:47<44:04, 12.77s/it][A
+Processing[parallel_8_number_500]:  59%|█████▉    | 294/500 [1:49:58<42:04, 12.26s/it][A
+Processing[parallel_8_number_500]:  59%|█████▉    | 295/500 [1:50:04<35:54, 10.51s/it][A
+Processing[parallel_8_number_500]:  59%|█████▉    | 296/500 [1:50:17<37:43, 11.10s/it][A
+Processing[parallel_8_number_500]:  59%|█████▉    | 297/500 [1:50:40<50:20, 14.88s/it][A                                                      
+                                                                                      [A2026-09-20 18:13:19 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  59%| 297/500 [Elapsed: 1:50:40 < Remaining: 50:20, 14.88s/it][0m
+Running[perf]:   0%|          | 0/1 [1:50:42<?, ?it/s]
+Processing[parallel_8_number_500]:  59%|█████▉    | 297/500 [1:50:40<50:20, 14.88s/it][A
+Processing[parallel_8_number_500]:  60%|█████▉    | 298/500 [1:51:29<1:24:04, 24.97s/it][A
+Processing[parallel_8_number_500]:  60%|█████▉    | 299/500 [1:51:31<1:00:55, 18.19s/it][A                                                      
+                                                                                        [A2026-09-20 18:14:11 - evalscope - [32mINFO[0m: {
+  "Test Duration (s)": 6692.7053,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 300,
+  "Success Requests": 300,
+  "Failed Requests": 0,
+  "Stream Requests": 300,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0448,
+  "Avg Latency (s)": 176.1128,
+  "Avg Input Tokens": 91.1933,
+  "Output Throughput (tok/s)": 229.2572,
+  "Total Throughput (tok/s)": 233.345,
+  "Avg TTFT (ms)": 163.17,
+  "Avg TPOT (ms)": 33.79,
+  "Avg ITL (ms)": 34.52,
+  "Avg Output Tokens": 5114.5033,
+  "Avg Decoded Tok/Iter": 1.003,
+  "Spec. Accept Rate": 0.003
+}[0m
+Running[perf]:   0%|          | 0/1 [1:51:34<?, ?it/s]
+Processing[parallel_8_number_500]:  60%|█████▉    | 299/500 [1:51:32<1:00:55, 18.19s/it][A
+Processing[parallel_8_number_500]:  60%|██████    | 300/500 [1:51:32<43:37, 13.09s/it]  [A
+Processing[parallel_8_number_500]:  60%|██████    | 302/500 [1:52:06<49:09, 14.90s/it][A                                                      
+                                                                                      [A2026-09-20 18:14:45 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  60%| 302/500 [Elapsed: 1:52:06 < Remaining: 49:09, 14.90s/it][0m
+Running[perf]:   0%|          | 0/1 [1:52:08<?, ?it/s]
+Processing[parallel_8_number_500]:  60%|██████    | 302/500 [1:52:06<49:09, 14.90s/it][A
+Processing[parallel_8_number_500]:  61%|██████    | 303/500 [1:52:14<43:06, 13.13s/it][A
+Processing[parallel_8_number_500]:  61%|██████    | 304/500 [1:52:15<32:33,  9.96s/it][A
+Processing[parallel_8_number_500]:  61%|██████    | 305/500 [1:52:29<35:35, 10.95s/it][A
+Processing[parallel_8_number_500]:  61%|██████    | 306/500 [1:52:34<30:28,  9.42s/it][A
+Processing[parallel_8_number_500]:  61%|██████▏   | 307/500 [1:52:44<30:49,  9.59s/it][A
+Processing[parallel_8_number_500]:  62%|██████▏   | 308/500 [1:54:01<1:33:11, 29.12s/it][A                                                      
+                                                                                        [A2026-09-20 18:16:40 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  62%| 308/500 [Elapsed: 1:54:01 < Remaining: 1:33:11, 29.12s/it][0m
+Running[perf]:   0%|          | 0/1 [1:54:03<?, ?it/s]
+Processing[parallel_8_number_500]:  62%|██████▏   | 308/500 [1:54:01<1:33:11, 29.12s/it][A
+Processing[parallel_8_number_500]:  62%|██████▏   | 309/500 [1:54:12<1:15:33, 23.74s/it][A
+Processing[parallel_8_number_500]:  62%|██████▏   | 310/500 [1:54:25<1:04:45, 20.45s/it][A
+Processing[parallel_8_number_500]:  62%|██████▏   | 311/500 [1:55:10<1:28:13, 28.01s/it][A                                                      
+                                                                                        [A2026-09-20 18:17:49 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  62%| 311/500 [Elapsed: 1:55:10 < Remaining: 1:28:13, 28.01s/it][0m
+Running[perf]:   0%|          | 0/1 [1:55:12<?, ?it/s]
+Processing[parallel_8_number_500]:  62%|██████▏   | 311/500 [1:55:10<1:28:13, 28.01s/it][A
+Processing[parallel_8_number_500]:  62%|██████▏   | 312/500 [1:55:11<1:02:16, 19.88s/it][A
+Processing[parallel_8_number_500]:  63%|██████▎   | 313/500 [1:55:20<51:41, 16.59s/it]  [A
+Processing[parallel_8_number_500]:  63%|██████▎   | 314/500 [1:55:27<42:56, 13.85s/it][A
+Processing[parallel_8_number_500]:  63%|██████▎   | 315/500 [1:55:37<38:47, 12.58s/it][A
+Processing[parallel_8_number_500]:  63%|██████▎   | 316/500 [1:55:39<28:56,  9.44s/it][A
+Processing[parallel_8_number_500]:  63%|██████▎   | 317/500 [1:56:17<54:45, 17.95s/it][A                                                      
+                                                                                      [A2026-09-20 18:18:56 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  63%| 317/500 [Elapsed: 1:56:17 < Remaining: 54:45, 17.95s/it][0m
+Running[perf]:   0%|          | 0/1 [1:56:19<?, ?it/s]
+Processing[parallel_8_number_500]:  63%|██████▎   | 317/500 [1:56:17<54:45, 17.95s/it][A
+Processing[parallel_8_number_500]:  64%|██████▎   | 318/500 [1:56:54<1:12:04, 23.76s/it][A
+Processing[parallel_8_number_500]:  64%|██████▍   | 319/500 [1:56:57<52:38, 17.45s/it]  [A
+Processing[parallel_8_number_500]:  64%|██████▍   | 320/500 [1:57:09<47:22, 15.79s/it][A
+Processing[parallel_8_number_500]:  64%|██████▍   | 321/500 [1:57:21<43:42, 14.65s/it][A                                                      
+                                                                                      [A2026-09-20 18:19:59 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  64%| 321/500 [Elapsed: 1:57:21 < Remaining: 43:42, 14.65s/it][0m
+Running[perf]:   0%|          | 0/1 [1:57:23<?, ?it/s]
+Processing[parallel_8_number_500]:  64%|██████▍   | 321/500 [1:57:21<43:42, 14.65s/it][A
+Processing[parallel_8_number_500]:  64%|██████▍   | 322/500 [1:57:59<1:04:19, 21.69s/it][A
+Processing[parallel_8_number_500]:  65%|██████▍   | 323/500 [1:58:24<1:06:34, 22.57s/it][A                                                      
+                                                                                        [A2026-09-20 18:21:02 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  65%| 323/500 [Elapsed: 1:58:24 < Remaining: 1:06:34, 22.57s/it][0m
+Running[perf]:   0%|          | 0/1 [1:58:26<?, ?it/s]
+Processing[parallel_8_number_500]:  65%|██████▍   | 323/500 [1:58:24<1:06:34, 22.57s/it][A
+Processing[parallel_8_number_500]:  65%|██████▍   | 324/500 [1:58:51<1:10:08, 23.91s/it][A
+Processing[parallel_8_number_500]:  65%|██████▌   | 325/500 [1:59:55<1:44:41, 35.90s/it][A                                                      
+                                                                                        [A2026-09-20 18:22:33 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  65%| 325/500 [Elapsed: 1:59:55 < Remaining: 1:44:41, 35.90s/it][0m
+Running[perf]:   0%|          | 0/1 [1:59:57<?, ?it/s]
+Processing[parallel_8_number_500]:  65%|██████▌   | 325/500 [1:59:55<1:44:41, 35.90s/it][A
+Processing[parallel_8_number_500]:  65%|██████▌   | 326/500 [1:59:57<1:15:13, 25.94s/it][A
+Processing[parallel_8_number_500]:  65%|██████▌   | 327/500 [2:01:26<2:09:18, 44.84s/it][A                                                      
+                                                                                        [A2026-09-20 18:24:05 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  65%| 327/500 [Elapsed: 2:01:26 < Remaining: 2:09:18, 44.84s/it][0m
+Running[perf]:   0%|          | 0/1 [2:01:28<?, ?it/s]
+Processing[parallel_8_number_500]:  65%|██████▌   | 327/500 [2:01:26<2:09:18, 44.84s/it][A
+Processing[parallel_8_number_500]:  66%|██████▌   | 328/500 [2:02:29<2:24:15, 50.32s/it][A                                                      
+                                                                                        [A2026-09-20 18:25:08 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  66%| 328/500 [Elapsed: 2:02:29 < Remaining: 2:24:15, 50.32s/it][0m
+Running[perf]:   0%|          | 0/1 [2:02:31<?, ?it/s]
+Processing[parallel_8_number_500]:  66%|██████▌   | 328/500 [2:02:29<2:24:15, 50.32s/it][A
+Processing[parallel_8_number_500]:  66%|██████▌   | 329/500 [2:02:47<1:55:21, 40.47s/it][A
+Processing[parallel_8_number_500]:  66%|██████▌   | 330/500 [2:02:59<1:30:28, 31.93s/it][A
+Processing[parallel_8_number_500]:  66%|██████▌   | 331/500 [2:03:27<1:26:55, 30.86s/it][A
+Processing[parallel_8_number_500]:  66%|██████▋   | 332/500 [2:03:59<1:27:15, 31.16s/it][A                                                      
+                                                                                        [A2026-09-20 18:26:38 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  66%| 332/500 [Elapsed: 2:03:59 < Remaining: 1:27:15, 31.16s/it][0m
+Running[perf]:   0%|          | 0/1 [2:04:01<?, ?it/s]
+Processing[parallel_8_number_500]:  66%|██████▋   | 332/500 [2:03:59<1:27:15, 31.16s/it][A
+Processing[parallel_8_number_500]:  67%|██████▋   | 333/500 [2:04:00<1:01:23, 22.06s/it][A
+Processing[parallel_8_number_500]:  67%|██████▋   | 334/500 [2:04:11<52:08, 18.85s/it]  [A
+Processing[parallel_8_number_500]:  67%|██████▋   | 335/500 [2:04:21<44:02, 16.01s/it][A
+Processing[parallel_8_number_500]:  67%|██████▋   | 336/500 [2:04:36<43:09, 15.79s/it][A
+Processing[parallel_8_number_500]:  67%|██████▋   | 337/500 [2:04:44<36:56, 13.60s/it][A
+Processing[parallel_8_number_500]:  68%|██████▊   | 338/500 [2:04:49<29:19, 10.86s/it][A
+Processing[parallel_8_number_500]:  68%|██████▊   | 339/500 [2:05:34<56:25, 21.03s/it][A                                                      
+                                                                                      [A2026-09-20 18:28:12 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  68%| 339/500 [Elapsed: 2:05:34 < Remaining: 56:25, 21.03s/it][0m
+Running[perf]:   0%|          | 0/1 [2:05:36<?, ?it/s]
+Processing[parallel_8_number_500]:  68%|██████▊   | 339/500 [2:05:34<56:25, 21.03s/it][A
+Processing[parallel_8_number_500]:  68%|██████▊   | 340/500 [2:05:40<44:22, 16.64s/it][A
+Processing[parallel_8_number_500]:  68%|██████▊   | 341/500 [2:05:44<34:04, 12.86s/it][A
+Processing[parallel_8_number_500]:  68%|██████▊   | 342/500 [2:05:50<28:25, 10.79s/it][A
+Processing[parallel_8_number_500]:  69%|██████▊   | 343/500 [2:06:07<33:26, 12.78s/it][A
+Processing[parallel_8_number_500]:  69%|██████▉   | 344/500 [2:06:18<31:24, 12.08s/it][A
+Processing[parallel_8_number_500]:  69%|██████▉   | 345/500 [2:06:21<24:32,  9.50s/it][A
+Processing[parallel_8_number_500]:  69%|██████▉   | 346/500 [2:07:06<51:34, 20.09s/it][A                                                      
+                                                                                      [A2026-09-20 18:29:45 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  69%| 346/500 [Elapsed: 2:07:06 < Remaining: 51:34, 20.09s/it][0m
+Running[perf]:   0%|          | 0/1 [2:07:08<?, ?it/s]
+Processing[parallel_8_number_500]:  69%|██████▉   | 346/500 [2:07:06<51:34, 20.09s/it][A
+Processing[parallel_8_number_500]:  69%|██████▉   | 347/500 [2:07:14<42:11, 16.55s/it][A
+Processing[parallel_8_number_500]:  70%|██████▉   | 348/500 [2:07:26<38:06, 15.04s/it][A
+Processing[parallel_8_number_500]:  70%|██████▉   | 349/500 [2:07:40<37:13, 14.79s/it][A
+Processing[parallel_8_number_500]:  70%|███████   | 350/500 [2:08:22<57:21, 22.94s/it][A                                                      
+                                                                                      [A2026-09-20 18:31:01 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  70%| 350/500 [Elapsed: 2:08:22 < Remaining: 57:21, 22.94s/it][0m
+Running[perf]:   0%|          | 0/1 [2:08:24<?, ?it/s]
+Processing[parallel_8_number_500]:  70%|███████   | 350/500 [2:08:22<57:21, 22.94s/it][A
+Processing[parallel_8_number_500]:  70%|███████   | 351/500 [2:08:38<52:00, 20.94s/it][A
+Processing[parallel_8_number_500]:  70%|███████   | 352/500 [2:09:44<1:24:36, 34.30s/it][A                                                      
+                                                                                        [A2026-09-20 18:32:22 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  70%| 352/500 [Elapsed: 2:09:44 < Remaining: 1:24:36, 34.30s/it][0m
+Running[perf]:   0%|          | 0/1 [2:09:46<?, ?it/s]
+Processing[parallel_8_number_500]:  70%|███████   | 352/500 [2:09:44<1:24:36, 34.30s/it][A
+Processing[parallel_8_number_500]:  71%|███████   | 353/500 [2:10:11<1:18:35, 32.08s/it][A
+Processing[parallel_8_number_500]:  71%|███████   | 354/500 [2:10:39<1:14:59, 30.82s/it][A
+Processing[parallel_8_number_500]:  71%|███████   | 355/500 [2:10:46<57:22, 23.74s/it]  [A                                                      
+                                                                                      [A2026-09-20 18:33:24 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  71%| 355/500 [Elapsed: 2:10:46 < Remaining: 57:22, 23.74s/it][0m
+Running[perf]:   0%|          | 0/1 [2:10:48<?, ?it/s]
+Processing[parallel_8_number_500]:  71%|███████   | 355/500 [2:10:46<57:22, 23.74s/it][A
+Processing[parallel_8_number_500]:  71%|███████   | 356/500 [2:10:49<42:03, 17.52s/it][A
+Processing[parallel_8_number_500]:  71%|███████▏  | 357/500 [2:10:57<35:16, 14.80s/it][A
+Processing[parallel_8_number_500]:  72%|███████▏  | 358/500 [2:11:27<45:17, 19.14s/it][A
+Processing[parallel_8_number_500]:  72%|███████▏  | 359/500 [2:11:33<35:41, 15.19s/it][A
+Processing[parallel_8_number_500]:  72%|███████▏  | 360/500 [2:12:15<54:29, 23.36s/it][A                                                      
+                                                                                      [A2026-09-20 18:34:54 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  72%| 360/500 [Elapsed: 2:12:15 < Remaining: 54:29, 23.36s/it][0m
+Running[perf]:   0%|          | 0/1 [2:12:17<?, ?it/s]
+Processing[parallel_8_number_500]:  72%|███████▏  | 360/500 [2:12:15<54:29, 23.36s/it][A
+Processing[parallel_8_number_500]:  72%|███████▏  | 361/500 [2:12:32<49:42, 21.46s/it][A
+Processing[parallel_8_number_500]:  72%|███████▏  | 362/500 [2:12:39<39:10, 17.03s/it][A
+Processing[parallel_8_number_500]:  73%|███████▎  | 363/500 [2:13:09<48:03, 21.05s/it][A
+Processing[parallel_8_number_500]:  73%|███████▎  | 364/500 [2:14:26<1:25:23, 37.67s/it][A                                                      
+                                                                                        [A2026-09-20 18:37:04 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  73%| 364/500 [Elapsed: 2:14:26 < Remaining: 1:25:23, 37.67s/it][0m
+Running[perf]:   0%|          | 0/1 [2:14:28<?, ?it/s]
+Processing[parallel_8_number_500]:  73%|███████▎  | 364/500 [2:14:26<1:25:23, 37.67s/it][A
+Processing[parallel_8_number_500]:  73%|███████▎  | 365/500 [2:14:26<59:31, 26.46s/it]  [A
+Processing[parallel_8_number_500]:  73%|███████▎  | 366/500 [2:14:49<56:46, 25.42s/it][A
+Processing[parallel_8_number_500]:  73%|███████▎  | 367/500 [2:14:49<39:41, 17.90s/it][A
+Processing[parallel_8_number_500]:  74%|███████▎  | 368/500 [2:14:49<27:43, 12.60s/it][A
+Processing[parallel_8_number_500]:  74%|███████▍  | 369/500 [2:15:19<38:48, 17.78s/it][A
+Processing[parallel_8_number_500]:  74%|███████▍  | 370/500 [2:15:41<41:01, 18.94s/it][A                                                      
+                                                                                      [A2026-09-20 18:38:20 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  74%| 370/500 [Elapsed: 2:15:41 < Remaining: 41:01, 18.94s/it][0m
+Running[perf]:   0%|          | 0/1 [2:15:43<?, ?it/s]
+Processing[parallel_8_number_500]:  74%|███████▍  | 370/500 [2:15:41<41:01, 18.94s/it][A
+Processing[parallel_8_number_500]:  74%|███████▍  | 371/500 [2:16:09<46:43, 21.74s/it][A
+Processing[parallel_8_number_500]:  74%|███████▍  | 372/500 [2:16:11<33:46, 15.83s/it][A
+Processing[parallel_8_number_500]:  75%|███████▍  | 373/500 [2:18:08<1:37:21, 46.00s/it][A                                                      
+                                                                                        [A2026-09-20 18:40:46 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  75%| 373/500 [Elapsed: 2:18:08 < Remaining: 1:37:21, 46.00s/it][0m
+Running[perf]:   0%|          | 0/1 [2:18:10<?, ?it/s]
+Processing[parallel_8_number_500]:  75%|███████▍  | 373/500 [2:18:08<1:37:21, 46.00s/it][A
+Processing[parallel_8_number_500]:  75%|███████▍  | 374/500 [2:18:15<1:12:03, 34.31s/it][A
+Processing[parallel_8_number_500]:  75%|███████▌  | 375/500 [2:18:30<59:47, 28.70s/it]  [A
+Processing[parallel_8_number_500]:  75%|███████▌  | 376/500 [2:18:59<59:11, 28.64s/it][A
+Processing[parallel_8_number_500]:  75%|███████▌  | 377/500 [2:19:03<43:48, 21.37s/it][A
+Processing[parallel_8_number_500]:  76%|███████▌  | 378/500 [2:19:33<48:27, 23.83s/it][A                                                      
+                                                                                      [A2026-09-20 18:42:11 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  76%| 378/500 [Elapsed: 2:19:33 < Remaining: 48:27, 23.83s/it][0m
+Running[perf]:   0%|          | 0/1 [2:19:35<?, ?it/s]
+Processing[parallel_8_number_500]:  76%|███████▌  | 378/500 [2:19:33<48:27, 23.83s/it][A
+Processing[parallel_8_number_500]:  76%|███████▌  | 379/500 [2:20:40<1:14:09, 36.77s/it][A                                                      
+                                                                                        [A2026-09-20 18:43:18 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  76%| 379/500 [Elapsed: 2:20:40 < Remaining: 1:14:09, 36.77s/it][0m
+Running[perf]:   0%|          | 0/1 [2:20:42<?, ?it/s]
+Processing[parallel_8_number_500]:  76%|███████▌  | 379/500 [2:20:40<1:14:09, 36.77s/it][A
+Processing[parallel_8_number_500]:  76%|███████▌  | 380/500 [2:20:44<54:04, 27.03s/it]  [A
+Processing[parallel_8_number_500]:  76%|███████▌  | 381/500 [2:21:01<47:39, 24.03s/it][A
+Processing[parallel_8_number_500]:  76%|███████▋  | 382/500 [2:21:05<35:30, 18.05s/it][A
+Processing[parallel_8_number_500]:  77%|███████▋  | 383/500 [2:21:16<30:53, 15.84s/it][A
+Processing[parallel_8_number_500]:  77%|███████▋  | 384/500 [2:21:23<25:17, 13.08s/it][A
+Processing[parallel_8_number_500]:  77%|███████▋  | 385/500 [2:21:42<28:36, 14.93s/it][A                                                      
+                                                                                      [A2026-09-20 18:44:20 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  77%| 385/500 [Elapsed: 2:21:42 < Remaining: 28:36, 14.93s/it][0m
+Running[perf]:   0%|          | 0/1 [2:21:44<?, ?it/s]
+Processing[parallel_8_number_500]:  77%|███████▋  | 385/500 [2:21:42<28:36, 14.93s/it][A
+Processing[parallel_8_number_500]:  77%|███████▋  | 386/500 [2:21:49<24:03, 12.66s/it][A
+Processing[parallel_8_number_500]:  77%|███████▋  | 387/500 [2:23:26<1:11:29, 37.96s/it][A                                                      
+                                                                                        [A2026-09-20 18:46:05 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  77%| 387/500 [Elapsed: 2:23:26 < Remaining: 1:11:29, 37.96s/it][0m
+Running[perf]:   0%|          | 0/1 [2:23:28<?, ?it/s]
+Processing[parallel_8_number_500]:  77%|███████▋  | 387/500 [2:23:26<1:11:29, 37.96s/it][A
+Processing[parallel_8_number_500]:  78%|███████▊  | 388/500 [2:23:55<1:05:39, 35.17s/it][A
+Processing[parallel_8_number_500]:  78%|███████▊  | 389/500 [2:24:08<52:55, 28.61s/it]  [A
+Processing[parallel_8_number_500]:  78%|███████▊  | 390/500 [2:24:32<49:37, 27.07s/it][A                                                      
+                                                                                      [A2026-09-20 18:47:10 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  78%| 390/500 [Elapsed: 2:24:32 < Remaining: 49:37, 27.07s/it][0m
+Running[perf]:   0%|          | 0/1 [2:24:34<?, ?it/s]
+Processing[parallel_8_number_500]:  78%|███████▊  | 390/500 [2:24:32<49:37, 27.07s/it][A
+Processing[parallel_8_number_500]:  78%|███████▊  | 391/500 [2:24:51<44:44, 24.63s/it][A
+Processing[parallel_8_number_500]:  78%|███████▊  | 392/500 [2:25:18<46:04, 25.59s/it][A
+Processing[parallel_8_number_500]:  79%|███████▊  | 393/500 [2:25:49<48:15, 27.06s/it][A                                                      
+                                                                                      [A2026-09-20 18:48:27 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  79%| 393/500 [Elapsed: 2:25:49 < Remaining: 48:15, 27.06s/it][0m
+Running[perf]:   0%|          | 0/1 [2:25:51<?, ?it/s]
+Processing[parallel_8_number_500]:  79%|███████▊  | 393/500 [2:25:49<48:15, 27.06s/it][A
+Processing[parallel_8_number_500]:  79%|███████▉  | 394/500 [2:25:51<34:46, 19.69s/it][A
+Processing[parallel_8_number_500]:  79%|███████▉  | 395/500 [2:25:59<28:12, 16.12s/it][A
+Processing[parallel_8_number_500]:  79%|███████▉  | 396/500 [2:26:12<26:17, 15.17s/it][A
+Processing[parallel_8_number_500]:  79%|███████▉  | 397/500 [2:26:24<24:33, 14.31s/it][A
+Processing[parallel_8_number_500]:  80%|███████▉  | 398/500 [2:26:58<34:08, 20.09s/it][A                                                      
+                                                                                      [A2026-09-20 18:49:37 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  80%| 398/500 [Elapsed: 2:26:58 < Remaining: 34:08, 20.09s/it][0m
+Running[perf]:   0%|          | 0/1 [2:27:00<?, ?it/s]
+Processing[parallel_8_number_500]:  80%|███████▉  | 398/500 [2:26:58<34:08, 20.09s/it][A
+Processing[parallel_8_number_500]:  80%|███████▉  | 399/500 [2:27:09<29:06, 17.29s/it][A                                                      
+                                                                                      [A2026-09-20 18:50:14 - evalscope - [32mINFO[0m: {
+  "Test Duration (s)": 8856.2273,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 400,
+  "Success Requests": 400,
+  "Failed Requests": 0,
+  "Stream Requests": 400,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0452,
+  "Avg Latency (s)": 174.2966,
+  "Avg Input Tokens": 93.54,
+  "Output Throughput (tok/s)": 233.9801,
+  "Total Throughput (tok/s)": 238.2049,
+  "Avg TTFT (ms)": 160.52,
+  "Avg TPOT (ms)": 33.08,
+  "Avg ITL (ms)": 33.74,
+  "Avg Output Tokens": 5180.4525,
+  "Avg Decoded Tok/Iter": 1.0033,
+  "Spec. Accept Rate": 0.0033
+}[0m
+Running[perf]:   0%|          | 0/1 [2:27:38<?, ?it/s]
+Processing[parallel_8_number_500]:  80%|███████▉  | 399/500 [2:27:36<29:06, 17.29s/it][A
+Processing[parallel_8_number_500]:  80%|████████  | 400/500 [2:27:36<33:43, 20.24s/it][A
+Processing[parallel_8_number_500]:  80%|████████  | 401/500 [2:27:51<30:38, 18.57s/it][A
+Processing[parallel_8_number_500]:  80%|████████  | 402/500 [2:28:02<27:05, 16.58s/it][A                                                      
+                                                                                      [A2026-09-20 18:50:41 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  80%| 402/500 [Elapsed: 2:28:02 < Remaining: 27:05, 16.58s/it][0m
+Running[perf]:   0%|          | 0/1 [2:28:04<?, ?it/s]
+Processing[parallel_8_number_500]:  80%|████████  | 402/500 [2:28:02<27:05, 16.58s/it][A
+Processing[parallel_8_number_500]:  81%|████████  | 403/500 [2:28:09<21:43, 13.44s/it][A
+Processing[parallel_8_number_500]:  81%|████████  | 404/500 [2:28:27<23:54, 14.94s/it][A
+Processing[parallel_8_number_500]:  81%|████████  | 405/500 [2:28:43<24:08, 15.25s/it][A
+Processing[parallel_8_number_500]:  81%|████████  | 406/500 [2:28:43<16:50, 10.75s/it][A
+Processing[parallel_8_number_500]:  81%|████████▏ | 407/500 [2:29:58<46:37, 30.08s/it][A                                                      
+                                                                                      [A2026-09-20 18:52:37 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  81%| 407/500 [Elapsed: 2:29:58 < Remaining: 46:37, 30.08s/it][0m
+Running[perf]:   0%|          | 0/1 [2:30:00<?, ?it/s]
+Processing[parallel_8_number_500]:  81%|████████▏ | 407/500 [2:29:58<46:37, 30.08s/it][A
+Processing[parallel_8_number_500]:  82%|████████▏ | 408/500 [2:31:24<1:11:41, 46.75s/it][A                                                      
+                                                                                        [A2026-09-20 18:54:03 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  82%| 408/500 [Elapsed: 2:31:24 < Remaining: 1:11:41, 46.75s/it][0m
+Running[perf]:   0%|          | 0/1 [2:31:26<?, ?it/s]
+Processing[parallel_8_number_500]:  82%|████████▏ | 408/500 [2:31:24<1:11:41, 46.75s/it][A
+Processing[parallel_8_number_500]:  82%|████████▏ | 409/500 [2:32:50<1:28:50, 58.58s/it][A                                                      
+                                                                                        [A2026-09-20 18:55:29 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  82%| 409/500 [Elapsed: 2:32:50 < Remaining: 1:28:50, 58.58s/it][0m
+Running[perf]:   0%|          | 0/1 [2:32:52<?, ?it/s]
+Processing[parallel_8_number_500]:  82%|████████▏ | 409/500 [2:32:50<1:28:50, 58.58s/it][A
+Processing[parallel_8_number_500]:  82%|████████▏ | 410/500 [2:33:35<1:21:28, 54.32s/it][A
+Processing[parallel_8_number_500]:  82%|████████▏ | 411/500 [2:33:42<59:53, 40.37s/it]  [A
+Processing[parallel_8_number_500]:  82%|████████▏ | 412/500 [2:34:08<52:30, 35.80s/it][A                                                      
+                                                                                      [A2026-09-20 18:56:46 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  82%| 412/500 [Elapsed: 2:34:08 < Remaining: 52:30, 35.80s/it][0m
+Running[perf]:   0%|          | 0/1 [2:34:10<?, ?it/s]
+Processing[parallel_8_number_500]:  82%|████████▏ | 412/500 [2:34:08<52:30, 35.80s/it][A
+Processing[parallel_8_number_500]:  83%|████████▎ | 413/500 [2:34:26<44:12, 30.49s/it][A
+Processing[parallel_8_number_500]:  83%|████████▎ | 414/500 [2:35:21<54:27, 37.99s/it][A                                                      
+                                                                                      [A2026-09-20 18:58:00 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  83%| 414/500 [Elapsed: 2:35:21 < Remaining: 54:27, 37.99s/it][0m
+Running[perf]:   0%|          | 0/1 [2:35:23<?, ?it/s]
+Processing[parallel_8_number_500]:  83%|████████▎ | 414/500 [2:35:21<54:27, 37.99s/it][A
+Processing[parallel_8_number_500]:  83%|████████▎ | 415/500 [2:35:36<44:00, 31.07s/it][A
+Processing[parallel_8_number_500]:  83%|████████▎ | 416/500 [2:35:49<35:53, 25.64s/it][A
+Processing[parallel_8_number_500]:  83%|████████▎ | 417/500 [2:35:55<27:05, 19.58s/it][A
+Processing[parallel_8_number_500]:  84%|████████▎ | 418/500 [2:36:00<20:53, 15.28s/it][A
+Processing[parallel_8_number_500]:  84%|████████▍ | 419/500 [2:36:35<28:44, 21.29s/it][A                                                      
+                                                                                      [A2026-09-20 18:59:14 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  84%| 419/500 [Elapsed: 2:36:35 < Remaining: 28:44, 21.29s/it][0m
+Running[perf]:   0%|          | 0/1 [2:36:37<?, ?it/s]
+Processing[parallel_8_number_500]:  84%|████████▍ | 419/500 [2:36:35<28:44, 21.29s/it][A
+Processing[parallel_8_number_500]:  84%|████████▍ | 420/500 [2:36:49<25:23, 19.04s/it][A
+Processing[parallel_8_number_500]:  84%|████████▍ | 421/500 [2:36:49<17:40, 13.43s/it][A
+Processing[parallel_8_number_500]:  84%|████████▍ | 422/500 [2:37:00<16:29, 12.69s/it][A
+Processing[parallel_8_number_500]:  85%|████████▍ | 423/500 [2:37:37<25:41, 20.02s/it][A                                                      
+                                                                                      [A2026-09-20 19:00:16 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  85%| 423/500 [Elapsed: 2:37:37 < Remaining: 25:41, 20.02s/it][0m
+Running[perf]:   0%|          | 0/1 [2:37:39<?, ?it/s]
+Processing[parallel_8_number_500]:  85%|████████▍ | 423/500 [2:37:37<25:41, 20.02s/it][A
+Processing[parallel_8_number_500]:  85%|████████▍ | 424/500 [2:37:52<23:14, 18.35s/it][A
+Processing[parallel_8_number_500]:  85%|████████▌ | 425/500 [2:38:47<36:41, 29.35s/it][A                                                      
+                                                                                      [A2026-09-20 19:01:25 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  85%| 425/500 [Elapsed: 2:38:47 < Remaining: 36:41, 29.35s/it][0m
+Running[perf]:   0%|          | 0/1 [2:38:49<?, ?it/s]
+Processing[parallel_8_number_500]:  85%|████████▌ | 425/500 [2:38:47<36:41, 29.35s/it][A
+Processing[parallel_8_number_500]:  85%|████████▌ | 426/500 [2:38:51<26:44, 21.68s/it][A
+Processing[parallel_8_number_500]:  85%|████████▌ | 427/500 [2:39:21<29:38, 24.36s/it][A
+Processing[parallel_8_number_500]:  86%|████████▌ | 428/500 [2:39:51<31:08, 25.96s/it][A                                                      
+                                                                                      [A2026-09-20 19:02:29 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  86%| 428/500 [Elapsed: 2:39:51 < Remaining: 31:08, 25.96s/it][0m
+Running[perf]:   0%|          | 0/1 [2:39:53<?, ?it/s]
+Processing[parallel_8_number_500]:  86%|████████▌ | 428/500 [2:39:51<31:08, 25.96s/it][A
+Processing[parallel_8_number_500]:  86%|████████▌ | 429/500 [2:40:17<30:54, 26.12s/it][A
+Processing[parallel_8_number_500]:  86%|████████▌ | 430/500 [2:40:42<29:51, 25.59s/it][A
+Processing[parallel_8_number_500]:  86%|████████▌ | 431/500 [2:40:42<20:49, 18.11s/it][A
+Processing[parallel_8_number_500]:  86%|████████▋ | 432/500 [2:41:32<31:15, 27.59s/it][A                                                      
+                                                                                      [A2026-09-20 19:04:11 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  86%| 432/500 [Elapsed: 2:41:32 < Remaining: 31:15, 27.59s/it][0m
+Running[perf]:   0%|          | 0/1 [2:41:34<?, ?it/s]
+Processing[parallel_8_number_500]:  86%|████████▋ | 432/500 [2:41:32<31:15, 27.59s/it][A
+Processing[parallel_8_number_500]:  87%|████████▋ | 433/500 [2:42:32<41:38, 37.29s/it][A
+Processing[parallel_8_number_500]:  87%|████████▋ | 434/500 [2:42:38<30:38, 27.85s/it][A                                                      
+                                                                                      [A2026-09-20 19:05:16 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  87%| 434/500 [Elapsed: 2:42:38 < Remaining: 30:38, 27.85s/it][0m
+Running[perf]:   0%|          | 0/1 [2:42:40<?, ?it/s]
+Processing[parallel_8_number_500]:  87%|████████▋ | 434/500 [2:42:38<30:38, 27.85s/it][A
+Processing[parallel_8_number_500]:  87%|████████▋ | 435/500 [2:42:41<22:17, 20.58s/it][A
+Processing[parallel_8_number_500]:  87%|████████▋ | 436/500 [2:42:49<17:39, 16.55s/it][A
+Processing[parallel_8_number_500]:  87%|████████▋ | 437/500 [2:42:54<13:53, 13.24s/it][A
+Processing[parallel_8_number_500]:  88%|████████▊ | 438/500 [2:43:00<11:31, 11.15s/it][A
+Processing[parallel_8_number_500]:  88%|████████▊ | 439/500 [2:43:31<17:20, 17.05s/it][A
+Processing[parallel_8_number_500]:  88%|████████▊ | 440/500 [2:43:41<14:59, 15.00s/it][A                                                      
+                                                                                      [A2026-09-20 19:06:20 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  88%| 440/500 [Elapsed: 2:43:41 < Remaining: 14:59, 15.00s/it][0m
+Running[perf]:   0%|          | 0/1 [2:43:43<?, ?it/s]
+Processing[parallel_8_number_500]:  88%|████████▊ | 440/500 [2:43:41<14:59, 15.00s/it][A
+Processing[parallel_8_number_500]:  88%|████████▊ | 441/500 [2:44:29<24:17, 24.70s/it][A
+Processing[parallel_8_number_500]:  88%|████████▊ | 442/500 [2:44:50<22:51, 23.64s/it][A                                                      
+                                                                                      [A2026-09-20 19:07:28 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  88%| 442/500 [Elapsed: 2:44:50 < Remaining: 22:51, 23.64s/it][0m
+Running[perf]:   0%|          | 0/1 [2:44:52<?, ?it/s]
+Processing[parallel_8_number_500]:  88%|████████▊ | 442/500 [2:44:50<22:51, 23.64s/it][A
+Processing[parallel_8_number_500]:  89%|████████▊ | 443/500 [2:45:31<27:26, 28.88s/it][A
+Processing[parallel_8_number_500]:  89%|████████▉ | 444/500 [2:45:34<19:37, 21.03s/it][A
+Processing[parallel_8_number_500]:  89%|████████▉ | 445/500 [2:45:45<16:37, 18.14s/it][A
+Processing[parallel_8_number_500]:  89%|████████▉ | 446/500 [2:46:03<16:16, 18.09s/it][A                                                      
+                                                                                      [A2026-09-20 19:08:42 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  89%| 446/500 [Elapsed: 2:46:03 < Remaining: 16:16, 18.09s/it][0m
+Running[perf]:   0%|          | 0/1 [2:46:05<?, ?it/s]
+Processing[parallel_8_number_500]:  89%|████████▉ | 446/500 [2:46:03<16:16, 18.09s/it][A
+Processing[parallel_8_number_500]:  89%|████████▉ | 447/500 [2:46:35<19:43, 22.34s/it][A
+Processing[parallel_8_number_500]:  90%|████████▉ | 448/500 [2:46:39<14:24, 16.63s/it][A
+Processing[parallel_8_number_500]:  90%|████████▉ | 449/500 [2:46:41<10:23, 12.23s/it][A
+Processing[parallel_8_number_500]:  90%|█████████ | 450/500 [2:46:41<07:13,  8.67s/it][A
+Processing[parallel_8_number_500]:  90%|█████████ | 451/500 [2:46:48<06:43,  8.23s/it][A
+Processing[parallel_8_number_500]:  90%|█████████ | 452/500 [2:47:08<09:23, 11.74s/it][A                                                      
+                                                                                      [A2026-09-20 19:09:47 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  90%| 452/500 [Elapsed: 2:47:08 < Remaining: 09:23, 11.74s/it][0m
+Running[perf]:   0%|          | 0/1 [2:47:10<?, ?it/s]
+Processing[parallel_8_number_500]:  90%|█████████ | 452/500 [2:47:08<09:23, 11.74s/it][A
+Processing[parallel_8_number_500]:  91%|█████████ | 453/500 [2:48:05<19:51, 25.36s/it][A
+Processing[parallel_8_number_500]:  91%|█████████ | 454/500 [2:48:42<22:06, 28.83s/it][A                                                      
+                                                                                      [A2026-09-20 19:11:21 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  91%| 454/500 [Elapsed: 2:48:42 < Remaining: 22:06, 28.83s/it][0m
+Running[perf]:   0%|          | 0/1 [2:48:44<?, ?it/s]
+Processing[parallel_8_number_500]:  91%|█████████ | 454/500 [2:48:42<22:06, 28.83s/it][A
+Processing[parallel_8_number_500]:  91%|█████████ | 455/500 [2:49:06<20:32, 27.40s/it][A
+Processing[parallel_8_number_500]:  91%|█████████ | 456/500 [2:49:09<14:42, 20.05s/it][A
+Processing[parallel_8_number_500]:  91%|█████████▏| 457/500 [2:49:28<14:11, 19.79s/it][A
+Processing[parallel_8_number_500]:  92%|█████████▏| 458/500 [2:49:30<10:01, 14.31s/it][A
+Processing[parallel_8_number_500]:  92%|█████████▏| 459/500 [2:50:02<13:28, 19.71s/it][A                                                      
+                                                                                      [A2026-09-20 19:12:41 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  92%| 459/500 [Elapsed: 2:50:02 < Remaining: 13:28, 19.71s/it][0m
+Running[perf]:   0%|          | 0/1 [2:50:04<?, ?it/s]
+Processing[parallel_8_number_500]:  92%|█████████▏| 459/500 [2:50:02<13:28, 19.71s/it][A
+Processing[parallel_8_number_500]:  92%|█████████▏| 460/500 [2:50:06<09:54, 14.85s/it][A
+Processing[parallel_8_number_500]:  92%|█████████▏| 461/500 [2:50:48<15:05, 23.22s/it][A
+Processing[parallel_8_number_500]:  92%|█████████▏| 462/500 [2:51:13<15:03, 23.77s/it][A                                                      
+                                                                                      [A2026-09-20 19:13:52 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  92%| 462/500 [Elapsed: 2:51:13 < Remaining: 15:03, 23.77s/it][0m
+Running[perf]:   0%|          | 0/1 [2:51:15<?, ?it/s]
+Processing[parallel_8_number_500]:  92%|█████████▏| 462/500 [2:51:13<15:03, 23.77s/it][A
+Processing[parallel_8_number_500]:  93%|█████████▎| 463/500 [2:51:30<13:16, 21.53s/it][A
+Processing[parallel_8_number_500]:  93%|█████████▎| 464/500 [2:52:12<16:43, 27.87s/it][A
+Processing[parallel_8_number_500]:  93%|█████████▎| 465/500 [2:52:29<14:21, 24.61s/it][A                                                      
+                                                                                      [A2026-09-20 19:15:08 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  93%| 465/500 [Elapsed: 2:52:29 < Remaining: 14:21, 24.61s/it][0m
+Running[perf]:   0%|          | 0/1 [2:52:31<?, ?it/s]
+Processing[parallel_8_number_500]:  93%|█████████▎| 465/500 [2:52:29<14:21, 24.61s/it][A
+Processing[parallel_8_number_500]:  93%|█████████▎| 466/500 [2:53:18<18:00, 31.78s/it][A
+Processing[parallel_8_number_500]:  93%|█████████▎| 467/500 [2:53:55<18:23, 33.45s/it][A                                                      
+                                                                                      [A2026-09-20 19:16:34 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  93%| 467/500 [Elapsed: 2:53:55 < Remaining: 18:23, 33.45s/it][0m
+Running[perf]:   0%|          | 0/1 [2:53:57<?, ?it/s]
+Processing[parallel_8_number_500]:  93%|█████████▎| 467/500 [2:53:55<18:23, 33.45s/it][A
+Processing[parallel_8_number_500]:  94%|█████████▎| 468/500 [2:55:34<28:15, 53.00s/it][A                                                      
+                                                                                      [A2026-09-20 19:18:12 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  94%| 468/500 [Elapsed: 2:55:34 < Remaining: 28:15, 53.00s/it][0m
+Running[perf]:   0%|          | 0/1 [2:55:36<?, ?it/s]
+Processing[parallel_8_number_500]:  94%|█████████▎| 468/500 [2:55:34<28:15, 53.00s/it][A
+Processing[parallel_8_number_500]:  94%|█████████▍| 469/500 [2:56:04<23:50, 46.15s/it][A
+Processing[parallel_8_number_500]:  94%|█████████▍| 470/500 [2:56:45<22:13, 44.44s/it][A                                                      
+                                                                                      [A2026-09-20 19:19:23 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  94%| 470/500 [Elapsed: 2:56:45 < Remaining: 22:13, 44.44s/it][0m
+Running[perf]:   0%|          | 0/1 [2:56:47<?, ?it/s]
+Processing[parallel_8_number_500]:  94%|█████████▍| 470/500 [2:56:45<22:13, 44.44s/it][A
+Processing[parallel_8_number_500]:  94%|█████████▍| 471/500 [2:57:04<17:51, 36.95s/it][A
+Processing[parallel_8_number_500]:  94%|█████████▍| 472/500 [2:57:49<18:19, 39.28s/it][A                                                      
+                                                                                      [A2026-09-20 19:20:27 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  94%| 472/500 [Elapsed: 2:57:49 < Remaining: 18:19, 39.28s/it][0m
+Running[perf]:   0%|          | 0/1 [2:57:51<?, ?it/s]
+Processing[parallel_8_number_500]:  94%|█████████▍| 472/500 [2:57:49<18:19, 39.28s/it][A
+Processing[parallel_8_number_500]:  95%|█████████▍| 473/500 [2:57:51<12:40, 28.16s/it][A
+Processing[parallel_8_number_500]:  95%|█████████▍| 474/500 [2:58:46<15:40, 36.18s/it][A
+Processing[parallel_8_number_500]:  95%|█████████▌| 475/500 [2:59:00<12:23, 29.73s/it][A                                                      
+                                                                                      [A2026-09-20 19:21:39 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  95%| 475/500 [Elapsed: 2:59:00 < Remaining: 12:23, 29.73s/it][0m
+Running[perf]:   0%|          | 0/1 [2:59:02<?, ?it/s]
+Processing[parallel_8_number_500]:  95%|█████████▌| 475/500 [2:59:00<12:23, 29.73s/it][A
+Processing[parallel_8_number_500]:  95%|█████████▌| 476/500 [2:59:34<12:18, 30.76s/it][A
+Processing[parallel_8_number_500]:  95%|█████████▌| 477/500 [2:59:41<09:04, 23.68s/it][A
+Processing[parallel_8_number_500]:  96%|█████████▌| 478/500 [3:00:09<09:07, 24.89s/it][A                                                      
+                                                                                      [A2026-09-20 19:22:47 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  96%| 478/500 [Elapsed: 3:00:09 < Remaining: 09:07, 24.89s/it][0m
+Running[perf]:   0%|          | 0/1 [3:00:11<?, ?it/s]
+Processing[parallel_8_number_500]:  96%|█████████▌| 478/500 [3:00:09<09:07, 24.89s/it][A
+Processing[parallel_8_number_500]:  96%|█████████▌| 479/500 [3:01:59<17:44, 50.69s/it][A                                                      
+                                                                                      [A2026-09-20 19:24:38 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  96%| 479/500 [Elapsed: 3:01:59 < Remaining: 17:44, 50.69s/it][0m
+Running[perf]:   0%|          | 0/1 [3:02:01<?, ?it/s]
+Processing[parallel_8_number_500]:  96%|█████████▌| 479/500 [3:01:59<17:44, 50.69s/it][A
+Processing[parallel_8_number_500]:  96%|█████████▌| 480/500 [3:02:22<14:03, 42.17s/it][A
+Processing[parallel_8_number_500]:  96%|█████████▌| 481/500 [3:03:14<14:17, 45.13s/it][A                                                      
+                                                                                      [A2026-09-20 19:25:52 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  96%| 481/500 [Elapsed: 3:03:14 < Remaining: 14:17, 45.13s/it][0m
+Running[perf]:   0%|          | 0/1 [3:03:16<?, ?it/s]
+Processing[parallel_8_number_500]:  96%|█████████▌| 481/500 [3:03:14<14:17, 45.13s/it][A
+Processing[parallel_8_number_500]:  96%|█████████▋| 482/500 [3:03:40<11:51, 39.52s/it][A
+Processing[parallel_8_number_500]:  97%|█████████▋| 483/500 [3:03:48<08:29, 29.94s/it][A
+Processing[parallel_8_number_500]:  97%|█████████▋| 484/500 [3:03:48<05:37, 21.07s/it][A
+Processing[parallel_8_number_500]:  97%|█████████▋| 485/500 [3:04:34<07:05, 28.39s/it][A                                                      
+                                                                                      [A2026-09-20 19:27:12 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  97%| 485/500 [Elapsed: 3:04:34 < Remaining: 07:05, 28.39s/it][0m
+Running[perf]:   0%|          | 0/1 [3:04:36<?, ?it/s]
+Processing[parallel_8_number_500]:  97%|█████████▋| 485/500 [3:04:34<07:05, 28.39s/it][A
+Processing[parallel_8_number_500]:  97%|█████████▋| 486/500 [3:04:49<05:41, 24.36s/it][A
+Processing[parallel_8_number_500]:  97%|█████████▋| 487/500 [3:04:54<04:01, 18.61s/it][A
+Processing[parallel_8_number_500]:  98%|█████████▊| 488/500 [3:05:04<03:12, 16.08s/it][A
+Processing[parallel_8_number_500]:  98%|█████████▊| 489/500 [3:05:36<03:48, 20.79s/it][A                                                      
+                                                                                      [A2026-09-20 19:28:14 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  98%| 489/500 [Elapsed: 3:05:36 < Remaining: 03:48, 20.79s/it][0m
+Running[perf]:   0%|          | 0/1 [3:05:38<?, ?it/s]
+Processing[parallel_8_number_500]:  98%|█████████▊| 489/500 [3:05:36<03:48, 20.79s/it][A
+Processing[parallel_8_number_500]:  98%|█████████▊| 490/500 [3:05:51<03:11, 19.16s/it][A
+Processing[parallel_8_number_500]:  98%|█████████▊| 491/500 [3:06:00<02:23, 15.96s/it][A
+Processing[parallel_8_number_500]:  98%|█████████▊| 492/500 [3:06:42<03:11, 23.96s/it][A                                                      
+                                                                                      [A2026-09-20 19:29:21 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  98%| 492/500 [Elapsed: 3:06:42 < Remaining: 03:11, 23.96s/it][0m
+Running[perf]:   0%|          | 0/1 [3:06:44<?, ?it/s]
+Processing[parallel_8_number_500]:  98%|█████████▊| 492/500 [3:06:42<03:11, 23.96s/it][A
+Processing[parallel_8_number_500]:  99%|█████████▊| 493/500 [3:07:07<02:50, 24.35s/it][A
+Processing[parallel_8_number_500]:  99%|█████████▉| 494/500 [3:07:08<01:43, 17.26s/it][A
+Processing[parallel_8_number_500]:  99%|█████████▉| 495/500 [3:07:13<01:07, 13.46s/it][A
+Processing[parallel_8_number_500]:  99%|█████████▉| 496/500 [3:07:18<00:44, 11.05s/it][A
+Processing[parallel_8_number_500]:  99%|█████████▉| 497/500 [3:07:44<00:46, 15.59s/it][A                                                      
+                                                                                      [A2026-09-20 19:30:23 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500]  99%| 497/500 [Elapsed: 3:07:44 < Remaining: 00:46, 15.59s/it][0m
+Running[perf]:   0%|          | 0/1 [3:07:46<?, ?it/s]
+Processing[parallel_8_number_500]:  99%|█████████▉| 497/500 [3:07:44<00:46, 15.59s/it][A
+Processing[parallel_8_number_500]: 100%|█████████▉| 498/500 [3:07:55<00:28, 14.17s/it][A
+Processing[parallel_8_number_500]: 100%|█████████▉| 499/500 [3:08:02<00:11, 11.90s/it][A                                                      
+                                                                                      [A2026-09-20 19:30:50 - evalscope - [32mINFO[0m: {
+  "Test Duration (s)": 11292.1883,
+  "Concurrency": 8,
+  "Request Rate (req/s)": -1.0,
+  "Total Requests": 500,
+  "Success Requests": 500,
+  "Failed Requests": 0,
+  "Stream Requests": 500,
+  "Non-Stream Requests": 0,
+  "Req Throughput (req/s)": 0.0443,
+  "Avg Latency (s)": 180.086,
+  "Avg Input Tokens": 94.158,
+  "Output Throughput (tok/s)": 232.556,
+  "Total Throughput (tok/s)": 236.7252,
+  "Avg TTFT (ms)": 161.58,
+  "Avg TPOT (ms)": 33.67,
+  "Avg ITL (ms)": 34.4,
+  "Avg Output Tokens": 5252.132,
+  "Avg Decoded Tok/Iter": 1.0035,
+  "Spec. Accept Rate": 0.0034
+}[0m
+Running[perf]:   0%|          | 0/1 [3:08:14<?, ?it/s]
+Processing[parallel_8_number_500]: 100%|█████████▉| 499/500 [3:08:12<00:11, 11.90s/it][A
+Processing[parallel_8_number_500]: 100%|██████████| 500/500 [3:08:12<00:00, 11.34s/it][A                                                      
+                                                                                      [A2026-09-20 19:30:51 - evalscope - [32mINFO[0m: Processing[parallel_8_number_500] 100%| 500/500 [Elapsed: 3:08:12 < Remaining: 00:00, 11.34s/it][0m
+Running[perf]:   0%|          | 0/1 [3:08:14<?, ?it/s]
+Processing[parallel_8_number_500]: 100%|██████████| 500/500 [3:08:12<00:00, 11.34s/it][AProcessing[parallel_8_number_500]: 100%|██████████| 500/500 [3:08:12<00:00, 22.58s/it]
+                                                      2026-09-20 19:30:51 - evalscope - [32mINFO[0m: 
+Benchmarking summary:
+┌────────────────────────────┬───────────────┐
+│ Metric                     │         Value │
+├────────────────────────────┼───────────────┤
+│ ── General ──              │               │
+│ Test Duration (s)          │      11292.19 │
+│ Concurrency                │             8 │
+│ Request Rate (req/s)       │            -1 │
+│ Total / Success / Failed   │ 500 / 500 / 0 │
+│ Req Throughput (req/s)     │          0.04 │
+│ ── Latency ──              │               │
+│ Avg Latency (s)            │       180.086 │
+│ Avg TTFT (ms)              │        161.58 │
+│ Avg TPOT (ms)              │         33.67 │
+│ Avg ITL (ms)               │          34.4 │
+│ ── Tokens ──               │               │
+│ Avg Input Tokens           │          94.2 │
+│ Avg Output Tokens          │        5252.1 │
+│ Output Throughput (tok/s)  │        232.56 │
+│ Total Throughput (tok/s)   │        236.73 │
+│ ── Speculative Decoding ── │               │
+│ Avg Decoded Tok/Iter       │             1 │
+│ Spec. Accept Rate          │           0.3 │
+└────────────────────────────┴───────────────┘[0m
+Running[perf]:   0%|          | 0/1 [3:08:14<?, ?it/s]                                                      2026-09-20 19:30:53 - evalscope - [32mINFO[0m: 
+Percentile results:
+┌────────────────┬───────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬─────────┐
+│ Metric         │   min │     1% │     5% │    10% │    25% │    50% │    75% │    90% │    95% │    99% │     max │
+├────────────────┼───────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┼─────────┤
+│ Latency (s)    │ 30.02 │  37.22 │  44.89 │  53.58 │  73.62 │ 118.25 │ 213.12 │ 382.95 │  569.8 │ 847.14 │ 1224.99 │
+│ TTFT (ms)      │ 79.29 │ 104.41 │ 112.34 │ 118.91 │ 133.36 │  153.9 │  182.5 │  210.3 │ 235.13 │ 295.53 │  340.77 │
+│ ITL (ms)       │  0.01 │  19.52 │  22.98 │  25.03 │  29.56 │  33.82 │  38.64 │  44.63 │  47.81 │  52.65 │  358.49 │
+│ TPOT (ms)      │ 17.15 │   21.3 │  24.33 │  26.45 │  29.38 │  33.56 │  37.24 │  41.16 │  43.42 │  48.82 │   50.12 │
+│ Input tokens   │    32 │     36 │     42 │     46 │     56 │     74 │    101 │    164 │    224 │    365 │     814 │
+│ Output tokens  │  1097 │   1250 │   1453 │   1674 │   2209 │   3562 │   6410 │  10925 │  15455 │  24229 │   31883 │
+│ Output (tok/s) │ 19.91 │   20.4 │  22.76 │  24.28 │   26.7 │  29.73 │  33.96 │  37.64 │  40.97 │  45.69 │   58.03 │
+│ Total (tok/s)  │ 20.38 │  20.92 │  23.26 │  24.74 │  27.34 │  30.45 │   34.9 │  38.61 │   41.8 │  47.61 │   59.56 │
+│ Decode (tok/s) │ 19.95 │  20.43 │   22.8 │   24.3 │  26.71 │  29.79 │  33.99 │  37.77 │  41.08 │  45.79 │    58.3 │
+└────────────────┴───────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴─────────┘[0m
+Running[perf]:   0%|          | 0/1 [3:08:16<?, ?it/s]                                                      2026-09-20 19:30:53 - evalscope - [32mINFO[0m: 
+Workload throughput (500 samples):
+┌─────────────────────┬───────────┬────────────┬─────────────────────┐
+│ Metric (tok/s)      │   Overall │   Last 30s │   Steady (drop 20%) │
+├─────────────────────┼───────────┼────────────┼─────────────────────┤
+│ Total Prompt tok/s  │      4.17 │       8.55 │                4.19 │
+│ New Prompt tok/s    │      4.17 │       8.55 │                4.19 │
+│ Cached Prompt tok/s │         0 │          0 │                   0 │
+│ Completion tok/s    │    232.56 │     567.45 │              232.98 │
+└─────────────────────┴───────────┴────────────┴─────────────────────┘[0m
+Running[perf]:   0%|          | 0/1 [3:08:16<?, ?it/s]                                                      2026-09-20 19:30:53 - evalscope - [32mINFO[0m: Save the summary to: /home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_tq4_math_500_apc0_C8/attempt001/measured/20260920_162236/qwen-kvbench/parallel_8_number_500[0m
+Running[perf]:   0%|          | 0/1 [3:08:16<?, ?it/s]Running[perf]: 100%|██████████| 1/1 [3:08:16<00:00, 11296.89s/it]                                                                 2026-09-20 19:30:53 - evalscope - [32mINFO[0m: Running[perf] 100%| 1/1 [Elapsed: 3:08:16 < Remaining: 00:00, 11296.89s/it][0m
+Running[perf]: 100%|██████████| 1/1 [3:08:16<00:00, 11296.89s/it]Running[perf]: 100%|██████████| 1/1 [3:08:16<00:00, 11296.89s/it]
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Performance Test Summary Report                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Basic Information:
+┌───────────────────────┬──────────────────────────────────────────────────────┐
+│ Model                 │ qwen-kvbench                                         │
+│ Test Dataset          │ line_by_line                                         │
+│ API Type              │ openai                                               │
+│ Total Generated       │ 2,626,066.0 tokens                                   │
+│ Avg Output Rate       │ 232.56 tok/s                                         │
+│ Total Test Time       │ 11292.19 s                                           │
+│ Output Path           │ /home/wanglin/kvbench-3090-cu126/results/real/full_… │
+└───────────────────────┴──────────────────────────────────────────────────────┘
+
+
+             Performance Overview             
+┏━━━━━━┳━━━━━━┳━━━━━┳━━━━━━┳━━━━━━━━┳━━━━━━━━┓
+┃Conc. ┃ Rate ┃ Num ┃  RPS ┃  Gen/s ┃ Success┃
+┡━━━━━━╇━━━━━━╇━━━━━╇━━━━━━╇━━━━━━━━╇━━━━━━━━┩
+│    8 │    - │ 500 │ 0.04 │ 232.56 │    100%│
+└──────┴──────┴─────┴──────┴────────┴────────┘
+
+
+                          Per-Request Metrics                           
+┏━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┓
+┃Conc. ┃ Rate ┃ Metric            ┃     avg ┃    p50 ┃    p99 ┃     max┃
+┡━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━┩
+│    8 │    - │ Latency (s)       │ 180.086 │ 118.25 │ 847.14 │ 1224.99│
+│      │      │ TTFT (ms)         │  161.58 │  153.9 │ 295.53 │  340.77│
+│      │      │ TPOT (ms)         │   33.67 │  33.56 │  48.82 │   50.12│
+│      │      │ Input Tokens      │      94 │     74 │    365 │     814│
+│      │      │ Output Tokens     │    5252 │   3562 │  24229 │   31883│
+│      │      │ Decode toks/s     │    29.7 │      - │      - │       -│
+│      │      │ Decoded Tok/Iter  │       1 │      - │      - │       -│
+│      │      │ Spec. Accept Rate │    0.3% │      - │      - │       -│
+└──────┴──────┴───────────────────┴─────────┴────────┴────────┴────────┘
+
+
+                             Workload Throughput                             
+┏━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃Conc. ┃ Rate ┃ Metric (tok/s)      ┃ Overall ┃ Last 30s ┃ Steady (drop 20%)┃
+┡━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│    8 │    - │ Total Prompt tok/s  │    4.17 │     8.55 │              4.19│
+│      │      │ New Prompt tok/s    │    4.17 │     8.55 │              4.19│
+│      │      │ Cached Prompt tok/s │       0 │        0 │                 0│
+│      │      │ Completion tok/s    │  232.56 │   567.45 │            232.98│
+└──────┴──────┴─────────────────────┴─────────┴──────────┴──────────────────┘
+2026-09-20 19:30:53 - evalscope - [32mINFO[0m: Performance summary saved to: /home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_tq4_math_500_apc0_C8/attempt001/measured/20260920_162236/qwen-kvbench/performance_summary.txt[0m
+2026-09-20 19:30:55 - evalscope - [32mINFO[0m: HTML report generated: /home/wanglin/kvbench-3090-cu126/results/real/full_v7_C8/points/r01_tq4_math_500_apc0_C8/attempt001/measured/20260920_162236/qwen-kvbench/perf_report.html[0m
