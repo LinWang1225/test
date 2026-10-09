@@ -1,0 +1,18 @@
+{
+  "evalscope_version": "1.12.0",
+  "score_script_sha256": "4db48e8e29b98eb46ded10c02c069c12de1fd32e53a46f3955288d5111af9d44",
+  "math_rule": "evalscope extract_answer + Accuracy(numeric=True)",
+  "math_timeout": 30,
+  "human_rule": "EvalScope _postprocess + original HumanEval prompt/test in isolated container",
+  "human_sandbox": "none",
+  "docker_image_requested": "python:3.11-slim",
+  "docker_image_id": null,
+  "human_test_timeout_s": 4,
+  "cpu_limit": 1,
+  "memory_limit": "512m",
+  "network": "none",
+  "n_per_case": 1,
+  "inference_rerun": false,
+  "length_cap_samples": "retained; scored using their saved final answer",
+  "outputs_sha256": "2203b1bb501236f9a6fedb100e8904636ae10dbda5f4f6fe2658bf758c973191"
+}

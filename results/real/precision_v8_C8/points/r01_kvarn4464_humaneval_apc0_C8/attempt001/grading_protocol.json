@@ -1,0 +1,18 @@
+{
+  "evalscope_version": "1.12.0",
+  "score_script": "/home/wanglin/kvbench-3090-cu126/kvbench_real_v6/score_humaneval_unshare.py",
+  "score_script_sha256": "3e0920ce8bb77c016bcef05deb080bdec254e877dfc58aaf984c2d83a027b376",
+  "human_rule": "EvalScope HumanevalAdapter._postprocess + original HumanEval prompt/test",
+  "human_sandbox": "linux_unshare_user_net_mount_pid_ipc_uts_plus_chroot",
+  "human_python": "/usr/bin/python3.11",
+  "human_test_timeout_s": 4,
+  "memory_limit": "RLIMIT_AS 512 MiB",
+  "tmp_limit": "tmpfs 64 MiB",
+  "network": "new network namespace; self-test verifies no external connect",
+  "rootfs": "ephemeral chroot; /usr,/lib,/lib64,/bin bind-mounted read-only",
+  "capabilities": "cleared before generated code; no_new_privs=1",
+  "n_per_case": 1,
+  "inference_rerun": false,
+  "security_note": "Linux namespace/chroot sandbox; stronger than venv/host exec, but not equivalent to a hardened VM/gVisor/Firecracker boundary against kernel exploits",
+  "outputs_sha256": "6a7d4ddd288fe17ac56af9f049e82c5af106a512ad80f6873b5d7c25e68497ae"
+}

@@ -1,0 +1,12 @@
+{
+  "quality_scoring_complete": true,
+  "quality_total_tasks": 500,
+  "quality_scored_tasks": 500,
+  "quality_unscored_tasks": 0,
+  "quality_correct_tasks": 469,
+  "accuracy_all_tasks": 0.938,
+  "humaneval_pass_at_1": null,
+  "known_correct_fraction_lower_bound": 0.938,
+  "quality_metric_note": "n=1 per task; HTTP success is not accuracy; grader errors remain unknown",
+  "correct_tasks_per_second": 0.031800691159464614
+}

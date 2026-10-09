@@ -1,0 +1,12 @@
+{
+  "quality_scoring_complete": true,
+  "quality_total_tasks": 164,
+  "quality_scored_tasks": 164,
+  "quality_unscored_tasks": 0,
+  "quality_correct_tasks": 150,
+  "accuracy_all_tasks": 0.9146341463414634,
+  "humaneval_pass_at_1": 0.9146341463414634,
+  "known_correct_fraction_lower_bound": 0.9146341463414634,
+  "quality_metric_note": "n=1 per task; generated Python executed in Linux namespace/chroot sandbox; grader infrastructure errors remain unknown",
+  "correct_tasks_per_second": 0.04256131809786996
+}
