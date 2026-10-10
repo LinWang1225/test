@@ -1,0 +1,14 @@
+{
+  "upstream_code_commit": "2e00731f8d0bff23dc4325161044d0ed8af94c1e",
+  "scorer_file_sha256": "3097f907dca1dad859d03a1080c4a221de68b05655fcbea5f5d5058c710980ec",
+  "dependencies": {
+    "rouge": "1.0.1",
+    "fuzzywuzzy": null,
+    "python-Levenshtein": null,
+    "Levenshtein": null,
+    "rapidfuzz": null
+  },
+  "data_manifest_sha256": "609a9bcf70f1bf7156f0e9370b09d1ae32309023e38f883f8d9f2713d1e2c522",
+  "variant": "longbench",
+  "policy": "max over references; capped outputs retained; missing outputs never hidden"
+}

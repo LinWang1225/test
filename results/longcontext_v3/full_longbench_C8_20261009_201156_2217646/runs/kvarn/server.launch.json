@@ -1,0 +1,178 @@
+{
+  "schema": "kvbench.longcontext.server.v1",
+  "command": [
+    "/home/wanglin/miniconda3/envs/kvarn-serve/bin/python",
+    "-m",
+    "vllm.entrypoints.openai.api_server",
+    "--model",
+    "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+    "--tokenizer",
+    "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+    "--served-model-name",
+    "kvlong-kvarn-0d2fd37a30",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "8000",
+    "--dtype",
+    "float16",
+    "--kv-cache-dtype",
+    "kvarn_k4v2_g128",
+    "--block-size",
+    "128",
+    "--max-model-len",
+    "32768",
+    "--max-num-seqs",
+    "16",
+    "--max-num-batched-tokens",
+    "1024",
+    "--gpu-memory-utilization",
+    "0.85",
+    "--seed",
+    "20260917",
+    "--no-enable-prefix-caching",
+    "--generation-config",
+    "vllm"
+  ],
+  "config": {
+    "method": "kvarn",
+    "kv_dtype": "kvarn_k4v2_g128",
+    "block_size": 128,
+    "model_name": "kvlong-kvarn-0d2fd37a30",
+    "max_model_len": 32768,
+    "max_seqs": 16,
+    "batch_tokens": 1024,
+    "gpu_util": 0.85,
+    "kv_bytes": null,
+    "eager": false,
+    "server_seed": 20260917,
+    "apc": false,
+    "generation_config": "vllm",
+    "override_generation_config": {}
+  },
+  "base_url": "http://127.0.0.1:8000",
+  "tokenizer": {
+    "model_path": "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+    "files_sha256": {
+      "config.json": "8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a",
+      "generation_config.json": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2",
+      "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "model.safetensors.index.json": "6dc0981b8829fead746441f68f38f24c5ca4a3a66351f652c26c6df0efc43ab2",
+      "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    },
+    "fingerprint": "02cffcadcc4799ea337d2fd06be350e827599a679b49641f463cc1e6a9b2c60e"
+  },
+  "packages": {
+    "vllm": "0.1.dev227+g7586257f1.cu126",
+    "torch": "2.11.0+cu126",
+    "triton": "3.6.0",
+    "transformers": "4.57.6",
+    "tokenizers": "0.22.2"
+  },
+  "vllm_module": "/home/wanglin/kvbench-3090-cu126/src/KVarN/vllm/__init__.py",
+  "source_commit": {
+    "returncode": 0,
+    "stdout": "7586257f1c632e63187bfacbbe21ccb51540f7b3",
+    "stderr": ""
+  },
+  "source_status": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "python": "3.12.13 | packaged by conda-forge | (main, Aug 11 2026, 10:27:28) [GCC 14.4.0]",
+  "gpu": {
+    "returncode": 0,
+    "stdout": "GPU-f2631dea-f7eb-2e6f-c767-1a3f926c5e5f, NVIDIA GeForce RTX 3090, 560.35.05, 24576, 350.00",
+    "stderr": ""
+  },
+  "weight_file_sizes_mtime_ns": {
+    "model-00001-of-00003.safetensors": [
+      3957900840,
+      1789645173051872620
+    ],
+    "model-00003-of-00003.safetensors": [
+      99630640,
+      1789644967934876223
+    ],
+    "model-00002-of-00003.safetensors": [
+      3987450520,
+      1789645176987804646
+    ]
+  },
+  "environment": {
+    "CUDA_HOME": "/usr/local/cuda-12.6",
+    "TRITON_PTXAS_PATH": "/usr/local/cuda-12.6/bin/ptxas",
+    "KVARN_SINK_TOKENS": null,
+    "KVARN_SINKHORN_ITERS": null,
+    "VLLM_ATTENTION_BACKEND": null,
+    "VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS": null
+  },
+  "cuda_visible_devices": "0",
+  "native_verified": true,
+  "native_cache_config": {
+    "_block_size_resolved": "True",
+    "block_size": "128",
+    "cache_dtype": "kvarn_k4v2_g128",
+    "calculate_kv_scales": "False",
+    "enable_prefix_caching": "False",
+    "engine": "0",
+    "gpu_memory_utilization": "0.85",
+    "hash_block_size": "None",
+    "is_attention_free": "False",
+    "kv_cache_dtype_skip_layers": "['sliding_window']",
+    "kv_cache_memory_bytes": "None",
+    "kv_offloading_backend": "native",
+    "kv_offloading_size": "None",
+    "kv_sharing_fast_prefill": "False",
+    "mamba_block_size": "None",
+    "mamba_cache_dtype": "auto",
+    "mamba_cache_mode": "none",
+    "mamba_page_size_padded": "None",
+    "mamba_ssm_cache_dtype": "auto",
+    "num_cpu_blocks": "None",
+    "num_gpu_blocks": "2809",
+    "num_gpu_blocks_override": "None",
+    "prefix_caching_hash_algo": "sha256",
+    "sliding_window": "None",
+    "user_specified_block_size": "True",
+    "user_specified_mamba_block_size": "False"
+  },
+  "models": {
+    "object": "list",
+    "data": [
+      {
+        "id": "kvlong-kvarn-0d2fd37a30",
+        "object": "model",
+        "created": 1791580768,
+        "owned_by": "vllm",
+        "root": "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+        "parent": null,
+        "max_model_len": 32768,
+        "permission": [
+          {
+            "id": "modelperm-a668ae1cf5d8143d",
+            "object": "model_permission",
+            "created": 1791580768,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "native_max_model_len": 32768,
+  "pid": 2664007,
+  "native_kv_capacity_tokens": 359552,
+  "ready_unix_time": 1791580768.4475641
+}
