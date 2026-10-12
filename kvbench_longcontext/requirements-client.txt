@@ -1,0 +1,6 @@
+# Install only in evalscope-client, using the existing tokenizer constraints.
+# These tokenizer versions match the uploaded V8 environment; no GPU stack install.
+transformers==4.57.6
+tokenizers==0.22.2
+huggingface_hub==0.36.2
+rouge==1.0.1

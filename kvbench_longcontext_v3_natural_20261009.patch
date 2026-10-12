@@ -1,0 +1,2889 @@
+diff --git a/kvbench_longcontext/.gitignore b/kvbench_longcontext/.gitignore
+new file mode 100644
+index 0000000..7a60b85
+--- /dev/null
++++ b/kvbench_longcontext/.gitignore
+@@ -0,0 +1,2 @@
++__pycache__/
++*.pyc
+diff --git a/kvbench_longcontext/BUDGET_SEMANTICS.zh-CN.md b/kvbench_longcontext/BUDGET_SEMANTICS.zh-CN.md
+new file mode 100644
+index 0000000..e58fdc5
+--- /dev/null
++++ b/kvbench_longcontext/BUDGET_SEMANTICS.zh-CN.md
+@@ -0,0 +1,54 @@
++# v3 的“无额外输出上限”如何实现
++
++本版对齐已有短输入测量中的显式 JSON max_tokens:null，并固定服务生成配置。不是改成另一个大整数，也不强制生成到窗口末尾。
++
++## 1. 默认协议
++
++prepare 默认 thinking=true、generation-budget-policy=remaining-context。正式 chat 和 raw completion 请求均保留 max_tokens 键且值为 JSON null，不发送 max_completion_tokens。服务固定 --generation-config vllm，generation override 为空。
++
++采样为 temperature=0.6、top_p=0.95、top_k=20、min_p=0。EOS/stop正常生效。request-timeout=0同时取消生成请求的整请求elapsed截止与阻塞读取超时。健康检查和独立预热不计入测量；预热短预算不会传给正式请求。
++
++在已核验的后端中，硬生成预算等于“实际模型窗口−实际原生输入token数”。
++
++| 含模板输入token | 窗口 | 剩余生成空间 | 正式max_tokens |
++|---|---|---|---|
++| 1024 | 32768 | 31744 | null |
++| 8192 | 32768 | 24576 | null |
++| 24000 | 32768 | 8768 | null |
++| 32767 | 32768 | 1 | null |
++
++以上是预算示例，不是真实模型结果。生成仍可自然提前结束。输入占满窗口时拒绝或按显式skip排除，不会偷偷扩窗或裁输入。
++
++## 2. 为什么必须同时核验服务配置
++
++固定核验后端为 [huawei-csl/KVarN commit 7586257](https://github.com/huawei-csl/KVarN/tree/7586257f1c632e63187bfacbbe21ccb51540f7b3)。
++
++[get_max_tokens](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/entrypoints/serve/utils/api_utils.py) 将非空的剩余上下文、请求或默认生成限制、服务override限制、平台限制取最小。因此不能对任意服务泛称“null一定只受上下文约束”。
++
++[模型配置逻辑](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/config/model.py) 在generation_config=vllm时不载入模型sampling defaults；空override不引入max_new_tokens。已核验的 [CUDA平台](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/platforms/cuda.py) 沿用 [平台接口](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/platforms/interface.py) 的极大输出限制，不比32768窗口更小。模型EOS等结束token仍会工作。
++
++启动器和runner保存并核验窗口、生成配置、模型身份。源码身份被记录不等于未来任何版本都自动得到验证；升级后端后需重新检查语义。
++
++## 3. null与省略字段为什么不同
++
++[chat协议](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/entrypoints/openai/chat_completion/protocol.py) 的两个长度字段默认None，但非空max_completion_tokens优先。
++
++[raw completion协议](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/entrypoints/openai/completion/protocol.py) 省略max_tokens默认16，显式null才得到None。因此LCC原始补全也必须发null。serving将解析后的具体预算传给采样参数，不会再被采样参数类的默认16覆盖。
++
++已有短输入 [V7实际请求](https://github.com/LinWang1225/test/blob/7801b642d03a27aca0486341f4cde6ab4ce960d5/results/real/full_v7_C8/points/r01_fp16_math_500_apc0_C8/attempt001/measure.requests.jsonl) 可直接见到thinking=true、temperature=.6、top_p=.95、top_k=20、max_tokens:null。旧 [run_real.py](https://github.com/LinWang1225/test/blob/7801b642d03a27aca0486341f4cde6ab4ce960d5/kvbench_real_v6/run_real.py) 用显式null避免客户端补上缺省整数。v3对齐这一真实请求行为。
++
++## 4. 从结果检查
++
++1. manifest.json与run.json记录generation_budget_policy=remaining-context及max_tokens_transport=explicit-json-null。
++2. measure.requests.jsonl中的正式max_tokens必须存在且为null，不应有max_completion_tokens整数。
++3. launch.json应为generation_config=vllm、override_generation_config={}，原生窗口与prepare一致。
++4. 对照本地输入token与原生usage.prompt_tokens；不一致响应不算完整主测量。
++5. remaining_context_tokens_native由原生输入和已验证窗口推导。完整length早于此预算仍评分，另记unexpected_length_before_budget、每点计数和generation_budget_consistent。
++
++提前length是排查信号，可能涉及服务预算、版本或token计数语义。不能据此删除结果或直接断定有隐藏cap。HTTP断流或缺usage则是不完整响应，不伪装成正常length截断。
++
++## 5. 与官方LongBench的关系
++
++本版使用官方任务数据、提示、评分指标；默认生成协议为自然输出thinking，未使用官方dataset2maxlen整数，也不强制greedy。应标注“LongBench tasks under Qwen thinking / remaining-context protocol”，不可当作官方生成协议复现与论文原表混排。
++
++CLI保留显式reference（要求no-thinking）和fixed策略以供专门复现；默认与README推荐命令都不使用。此次实验只需remaining-context，不传max-new-tokens。
+diff --git a/kvbench_longcontext/DATASETS_RESEARCH.zh-CN.md b/kvbench_longcontext/DATASETS_RESEARCH.zh-CN.md
+new file mode 100644
+index 0000000..013a578
+--- /dev/null
++++ b/kvbench_longcontext/DATASETS_RESEARCH.zh-CN.md
+@@ -0,0 +1,113 @@
++# 长输入数据集与结果解读（补丁 v3）
++
++本补丁默认采用 **LongBench v1 六任务、Qwen3 thinking=true、剩余上下文生成预算**。正式测量请求显式发送 `max_tokens: null`，不设置整数 `max_completion_tokens`，也不使用官方 LongBench 的 32/64/128/512 token 短输出上限。模型可以自然结束；硬长度边界由服务端实际输入长度和模型窗口决定。运行步骤见 [README.zh-CN.md](README.zh-CN.md)，版本与来源见 [SOURCES.md](SOURCES.md)。
++
++这是使用 LongBench 数据和任务指标开展的思考模式研究协议。它改变了官方参考流程的生成策略，报告时应写清数据子集、thinking、采样参数和生成预算；选择同一数据集不代表直接复现相关论文表格。
++
++## 1. 六个核心任务与两个扩展任务
++
++以下样本数与平均长度来自[官方任务统计](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/task.md)，指原始 v1 数据。实际纳入数量由准备阶段的长度检查、筛选和抽样共同决定。
++
++| 任务 key | 任务内容与本次用途 | 官方平均长度：英文词数 | v1 样本数 | 任务指标 |
++|---|---|---:|---:|---|
++| `qasper` | 依据 NLP 研究论文回答问题，含 yes/no/unanswerable；检查长文证据读取和答案限定 | 3,619 | 200 | 归一化 token F1 |
++| `multifieldqa_en` | 多领域长文章问答，覆盖论文、司法和政府文档等来源；补充不同文体 | 4,559 | 150 | 归一化 token F1 |
++| `hotpotqa` | 根据证据段落和干扰文档进行多跳问答；检查跨文档信息结合 | 9,151 | 200 | 归一化 token F1 |
++| `2wikimqa` | 另一种多文档多跳问答分布；检验结果是否只适用于 HotpotQA | 4,887 | 200 | 归一化 token F1 |
++| `gov_report` | 对长政府报告生成一页摘要；同时观察长输入利用与较长答案生成 | 8,734 | 200 | ROUGE-L F |
++| `passage_retrieval_en` | 在 30 个 Wikipedia 段落中定位给定摘要的来源；检索目标明确，方便诊断 | 9,289 | 200 | 官方检索分数 |
++| `qmsum`，扩展 | 按用户查询总结长会议记录；补充会议、对话和摘要场景 | 10,614 | 200 | ROUGE-L F |
++| `lcc`，扩展 | 根据代码上下文补下一行；Python/C#/Java，检查代码上下文利用 | 1,235 | 500 | 编辑相似度 |
++
++核心六项原始合计 **1,150 条**；加上两个扩展为 1,850 条。QMSum 可以加入思考模式测量。LCC 使用原始代码 completion，不接受 chat 的 thinking 控制，须单独以 `--no-thinking` 准备；它仍可采用默认的剩余上下文预算，正式请求同样发送 null。
++
++这组核心任务覆盖单文档、多文档、摘要与检索，优先补充现有短输入 MATH-500/HumanEval 未覆盖的长输入负载。LCC 的官方平均输入较短，因此作为代码扩展，不作为首轮长输入压力的主要依据。这是本次实验设计选择。
++
++## 2. v1、LongBench-E 与两种长度
++
++可通过 `--variant longbench-e` 选择 E 数据。六个核心任务都有 E，但并非每项 300 条：
++
++| E 数据 key | 原始 length <4,000 | 4,000 ≤ length <8,000 | length ≥8,000 | 合计 |
++|---|---:|---:|---:|---:|
++| `qasper_e` | 100 | 100 | 24 | 224 |
++| `multifieldqa_en_e` | 67 | 70 | 13 | 150 |
++| `hotpotqa_e` | 100 | 100 | 100 | 300 |
++| `2wikimqa_e` | 100 | 100 | 100 | 300 |
++| `gov_report_e` | 100 | 100 | 100 | 300 |
++| `passage_retrieval_en_e` | 100 | 100 | 100 | 300 |
++
++核心 E 合计 **1,574 条**。`qmsum` 没有 E，`lcc_e` 有 300 条。以上是原始分布，筛选或抽样后的分桶数量应以本次 manifest 为准。[官方 E 统计与构造说明](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/task.md)
++
++**官方 length 不是模型 token 数。** 官方 schema 将它定义为 input、context、answers 三项总长；英文和代码用 Python split 计词数，中文计字符数。官方 E 计分按该字段的 4,000/8,000 阈值分桶。[官方 schema](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/README.md) · [官方 E 计分](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/eval.py)
++
++补丁同时保留：
++
++- `source_length`：原始词数，供 `official_word_length_bins` 使用。
++- `original_input_tokens` 与 `input_tokens`：本地固定 tokenizer 计算的原始和实际请求长度；chat 包含实际模板和特殊 tokens。
++- `local_input_token_bins`：按实际输入 token 分桶，用于分析上下文长度与运行成本。
++- `remaining_context_tokens`：模型窗口减去实际输入 tokens，是默认协议下可用的生成空间；不是另加的固定输出 cap。
++
++在同一 32K 窗口下，输入越长，可用于思考与最终答案的空间越少。解释长度分桶结果时，应一起看 FP16/FP8 基线、剩余空间、输出长度和 `finish_reason`，不能只把长输入下的质量下降归因于量化。
++
++## 3. 生成协议与官方历史参考值
++
++v3 默认设置为 `--generation-budget-policy remaining-context` 和 `--thinking`。正式测量的 `max_tokens` 为 null；输入必须严格短于模型窗口。准备阶段至少留出一个 token 只是合法性检查，**不表示输出只允许一个 token**。服务以 `--generation-config vllm` 启动，预算语义已按固定后端源码核验，详见 [SOURCES.md](SOURCES.md)。
++
++**下表仅记录官方历史参考上限，不是本补丁默认，也不会在默认测量中发送：**
++
++| 任务 | 官方参考 max_new_tokens |
++|---|---:|
++| Qasper | 128 |
++| MultiFieldQA-en | 64 |
++| HotpotQA / 2WikiMQA / PassageRetrieval-en | 32 |
++| GovReport / QMSum | 512 |
++| LCC | 64 |
++
++这些数值来自[官方配置](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/config/dataset2maxlen.json)，保留在 `config/tasks.json` 供显式 `reference` 策略使用。选择该策略需同时 `--no-thinking`；若要对照历史参考流程，还须另行匹配其 greedy sampling 等设置。不要把不同生成策略的分数或延迟合并成同一组结果。
++
++## 4. 如何读取任务分数与性能结果
++
++补丁按最终答案计分，保存原始输出、思考内容和最终答案提取方式。思考未结束而没有最终答案，与网络失败或响应不完整属于不同情况，应分别查看。
++
++| 指标 | 计算口径与解释 |
++|---|---|
++| QA F1 | 英文小写、去标点/冠词、合并空白后计算 token 多重集合 F1；每题取多个参考答案中的最高分 |
++| ROUGE-L F | 使用 `rouge==1.0.1` 的 ROUGE-L F，再对参考答案取最高分；不能直接换成 rougeLsum 或另一套 stemming 配置 |
++| 检索分数 | 参考答案指定 Paragraph N；预测里正确数字出现次数除以所有数字出现次数，无数字为 0 |
++| LCC 编辑相似度 | 选第一个不含反引号、#、// 的输出行，用固定实现的 fuzzywuzzy 相似度比较参考下一行；不是执行测试 pass@1 |
++| `task_score_0_100` | 全部预期样本获得可计分完整响应时的平均任务分；缺失或无效响应时为空，部分可用分与零填充诊断另列 |
++| TTFT / TPOT / E2E | 客户端端到端时延；TTFT 可以是首个非空思考片段，TPOT 不是纯 GPU attention 或解量化时间 |
++| 输出 tokens 与 length 结束率 | 输出 tokens 包含思考和最终答案；默认 null 协议下，length 结束应结合实际剩余上下文检查 |
++
++任务算法来自[官方 metrics.py](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/metrics.py)和[参考答案聚合逻辑](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/eval.py)。本补丁另加响应完整性检查、思考/答案提取和运行信息记录。
++
++这些多数是连续任务分数，应称“F1、ROUGE-L、检索分数或编辑相似度”，不要统一称准确率。六任务均分应标为“本次六任务平均分”，不能标为全套 LongBench overall。若选择 skip、head-tail 或抽样，应同时报告纳入、排除、截断和完整计分的样本数。
++
++## 5. 与相关 KV-cache 论文的关系
++
++| 论文 | 一手实验依据 | 本次使用方式 |
++|---|---|---|
++| [KIVI](https://arxiv.org/html/2402.02750v2) | 4.1 节及附录 Tables 8–10 包含核心六项及 QMSum/LCC 等 | 六项均有量化论文中的实验先例 |
++| [GEAR](https://arxiv.org/pdf/2403.05527v4) | 4.1 节评测 21 个 LongBench 任务，Table 2 突出 QMSum/SAMSum/GovReport | 支持真实长文与摘要评测 |
++| [TurboQuant](https://arxiv.org/html/2504.19874v1) | 4.3 节明确使用 LongBench-E | 可选 E 数据进行相同长度分布的研究；默认 v1 是另一 split |
++| [RotateKV](https://www.ijcai.org/proceedings/2025/0690.pdf) | Table 6 的 LongBench 部分是 QMSum、LCC、SAMSum、TriviaQA | QMSum/LCC 的扩展依据；该表不是本次六任务 |
++| [KVarN](https://arxiv.org/html/2606.03458v1) | 实验含 MATH/AIME/HumanEval/IFEval、Line Retrieval、NIAH；LongBench 是引言举例 | 长输入评测补充现有持续解码任务，不能声称复现其 LongBench 结果 |
++
++上述文献使用的模型、量化配置、生成预算和推理实现各不相同。v3 的首要比较对象应是同批、同一冻结输入和生成协议下运行的 FP16、FP8 与候选方法。
++
++## 6. RULER：有论文依据的后续扩展
++
++本次可执行补丁包含 LongBench v1/E，**未实现 RULER 运行入口**。[KVLinC](https://arxiv.org/pdf/2510.05373v1) 的 Tables 2/6 使用 RULER 4K/8K；[More Tokens, Lower Precision](https://aclanthology.org/2025.findings-emnlp.429.pdf) 的 Table 2/附录 A 使用 4K/8K/16K，可作为后续规则化长度实验的依据。
++
++建议后续先接入官方 `niah_single_1`、`niah_multikey_1`、`vt` 三项，分别覆盖单目标检索、多 key 干扰和变量链追踪。须冻结官方生成器版本、tokenizer、配置、seed 与真实导出，保留 `input`、`outputs`、`answer_prefix`；本次核验的官方旧版推理器会拼接 input 与 answer_prefix。[官方 RULER 配置](https://github.com/NVIDIA/RULER/blob/c3f5e3b4f87f97e048793bb510a3a6b19a46bf3a/scripts/synthetic.yaml) · [官方推理器](https://github.com/NVIDIA/RULER/blob/c3f5e3b4f87f97e048793bb510a3a6b19a46bf3a/scripts/pred/call_api.py)
++
++RULER 当前 README 已将 main 的旧流程标为 deprecated，并指向新的 NS 分支；后续适配须明确支持的导出版本。三项子集、自己生成的检索题和 LongBench PassageRetrieval 都不能标成全套官方 RULER 分数。
++
++## 7. 本次推荐的测量顺序
++
++1. 先用固定的小样本在 C1 跑 FP16、FP8，核验请求 null、真实输入 tokens、最终答案提取和离线计分，再加入候选方法。
++2. 在相同输入与生成策略下比较任务分、思考/输出长度、TTFT、TPOT 和 E2E。默认自然生成允许不同方法产生不同输出长度，端到端时延变化不能全部归为单 token 执行变化。
++3. 再扩大样本并做 C4/C8，观察原生 KV 容量、利用率与 preemption。每个请求最终都可能接近完整模型窗口，并发压力应按真实常驻上下文评估。
++4. 保留 MATH-500/HumanEval 作为持续生成测试。长文 QA、摘要与原有短输入长输出结果共同用于确定新方法有效的负载区间。
++
++所有方法复用一次准备得到的 manifest，不根据某方法的得分重新挑样本。实际 GPU 测量尚需在用户目标环境完成；本文件给出数据、协议与解读口径，不宣称新增 benchmark 成绩。
+diff --git a/kvbench_longcontext/LICENSE.LongBench b/kvbench_longcontext/LICENSE.LongBench
+new file mode 100644
+index 0000000..d339461
+--- /dev/null
++++ b/kvbench_longcontext/LICENSE.LongBench
+@@ -0,0 +1,21 @@
++MIT License
++
++Copyright (c) 2023 THU-KEG & Zhipu AI
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+diff --git a/kvbench_longcontext/README.zh-CN.md b/kvbench_longcontext/README.zh-CN.md
+new file mode 100644
+index 0000000..0f7b947
+--- /dev/null
++++ b/kvbench_longcontext/README.zh-CN.md
+@@ -0,0 +1,199 @@
++# 长输入 KV Cache 评测补丁 v3：自然生成，不设额外输出上限
++
++本版是完整补丁，直接应用到 `LinWang1225/test`，不需要先应用 v1/v2。
++核验基点：`3cf8dd9345e8e8181b0069b6b39c3355ae463b67`。新增 `kvbench_longcontext/`；既有短输入实验由原 runner 继续负责。
++
++## 1. 本版默认协议
++
++| 设置 | 默认值/行为 |
++|---|---|
++| 模型 | 复用现有本地 Qwen3-4B snapshot |
++| Thinking | true |
++| Sampling | temperature=0.6, top_p=0.95, top_k=20, min_p=0 |
++| 正式请求输出预算 | 显式 JSON `max_tokens: null`；不发送整数 `max_completion_tokens` |
++| 服务生成配置 | `--generation-config vllm`，不设置生成长度 override |
++| 硬上下文窗口 | 32768；输入+生成总 token 受此窗口限制 |
++| 默认请求耗时限制 | `--request-timeout 0`，不设置整请求 elapsed/阻塞读取超时 |
++| EOS/stop | 正常自然结束；不强制生成满窗口，不使用 ignore_eos |
++| 输出截断 | 完整 `finish_reason=length` 响应照常计性能、评分、分母 |
++| APC | 关闭 |
++| 服务配置 | TP1、float16 weights、max-seqs16、batch-tokens1024、gpu-util0.85 |
++| 并发 | 首轮 C1；正式对照可显式选择 C8 |
++
++在已核验的 KVarN/vLLM CUDA 后端上，这个配置使生成长度硬限制为：
++
++`剩余上下文 = 服务端实际 max_model_len - 服务端实际 prompt_tokens`。
++
++例如同样 32768 窗口，输入 8192 的题可生成至最多约24576，输入24576的题最多约8192。数字由输入决定，不是补丁另设了8192输出cap。实际仍可提前EOS结束。详见 `BUDGET_SEMANTICS.zh-CN.md`。
++
++短连接预检、每点长 prompt 预热仍用至多16/32 token的短预算，且不超过该题剩余空间。它们独立保存、完全排除于测量分数/吞吐/延迟；正式请求全部采用上面的null策略。
++
++## 2. 应用完整新补丁
++
++```bash
++cd /path/to/test
++git apply --check /path/to/kvbench_longcontext_v3_natural_20261009.patch
++git apply /path/to/kvbench_longcontext_v3_natural_20261009.patch
++```
++
++把路径换成实际 Git checkout 和下载文件。你尚未应用旧版，直接执行本节即可。
++
++## 3. 环境与依赖
++
++复用现有 `evalscope-client` 和 `kvarn-serve` 环境。以下变量在两个终端中分别设置；`REPO` 是 Git checkout，`KVBENCH_ROOT` 是现有模型/数据/实验目录。
++
++客户端终端：
++
++```bash
++source "$(conda info --base)/etc/profile.d/conda.sh"
++conda activate evalscope-client
++export REPO=/path/to/test
++export KVBENCH_ROOT=/home/wanglin/kvbench-3090-cu126
++source "$KVBENCH_ROOT/model.env"
++cd "$REPO"
++
++python -m pip install -c "$KVBENCH_ROOT/constraints/tokenizer-stack.txt" \
++  -r kvbench_longcontext/requirements-client.txt
++python -m pip check
++python -m unittest discover -s kvbench_longcontext/tests -v
++```
++
++这些依赖安装在客户端，沿用已上传V8的tokenizer版本。LCC另需`requirements-lcc.txt`；核心六项不需要它。
++
++## 4. 准备数据：先每任务4题
++
++默认六项：qasper、multifieldqa_en、hotpotqa、2wikimqa、gov_report、passage_retrieval_en。默认下载固定官方数据archive并核验SHA，不运行远程数据集Python代码。
++
++```bash
++export LC_DATA="$KVBENCH_ROOT/data/longbench_v3_smoke_8k"
++python -m kvbench_longcontext.prepare \
++  --model "$MODEL" --out "$LC_DATA" \
++  --variant longbench \
++  --sample-size 4 --data-seed 42 \
++  --min-input-tokens 1024 --max-input-tokens 8192 \
++  --max-model-len 32768 --overflow skip \
++  --thinking --generation-budget-policy remaining-context
++```
++
++没有 `--max-new-tokens`。`--max-input-tokens 8192` 只筛选实际输入范围，不限制输出为8192。所有token预算都包含真实聊天模板。
++
++若使用LongBench-E，改为`--variant longbench-e`并使用新目录。QMSum只有v1；LCC是raw completion，须单独加`--no-thinking`准备，仍显式发送max_tokens:null。
++
++数据目录含`manifest.json`、各任务JSONL、原始`raw/*.jsonl`、`*.excluded.jsonl`。相同方法对照必须复用同一份数据目录；不同seed或输入范围重新prepare可能改变题集。
++
++`--overflow skip`明列排除样本；这些结果应标为该输入范围内的固定子集。默认error会拒绝超长输入；head-tail是显式裁掉中间的输入截断变体，可能删去证据，须单独报告。正常remaining模式至少保留1个可生成token，但接近32768的输入可能没有充分思考空间，应查看remaining_context分布。
++
++网络受限时可以先取得官方data.zip，用以下选项替换在线来源：
++
++```bash
++--source /absolute/path/data.zip \
++--source-revision 5e628be450b7e67fb7ae6e201bd6d8f7056f7672
++```
++
++已有缓存可加`--offline`；如果现有shell设置了HF_HUB_OFFLINE，在线下载也会受该环境设置影响。数据本身与模型权重不包含在补丁内。
++
++## 5. 终端A：启动一个方法
++
++```bash
++source "$(conda info --base)/etc/profile.d/conda.sh"
++conda activate kvarn-serve
++export REPO=/path/to/test
++export KVBENCH_ROOT=/home/wanglin/kvbench-3090-cu126
++export KIT=/home/wanglin/kv_evalscope_3090_cu126_v2
++source "$KIT/env.sh"
++source "$KVBENCH_ROOT/model.env"
++cd "$REPO"
++
++export LC_RESULTS="$KVBENCH_ROOT/results/longcontext_v3"
++export METHOD=fp16
++python -m kvbench_longcontext.serve \
++  --model "$MODEL" --method "$METHOD" \
++  --out "$LC_RESULTS/servers/${METHOD}_smoke" \
++  --max-model-len 32768 --max-seqs 16 --batch-tokens 1024 --gpu-util 0.85
++```
++
++看到`Ready; native dtype/block verified`后运行客户端。启动器记录原生窗口、KV block与容量、模型/tokenizer身份、命令和引擎源码身份。它只管理自己启动的服务，发现已有GPU进程或端口占用则报错。
++
++支持fp16、fp8、kvarn、kvarn44、kvarn64、kvarn4464、tq4、tq34、tq3。g64明确block64；FP8启用calculate-kv-scales。TQ84未纳入健康路径列表。
++
++## 6. 终端B：运行、评分、生成速读表
++
++在客户端终端，保持第3/4节变量，并与服务端使用相同METHOD：
++
++```bash
++export LC_RESULTS="$KVBENCH_ROOT/results/longcontext_v3"
++export METHOD=fp16
++export LC_RUN="$LC_RESULTS/${METHOD}_smoke_C1"
++
++python -m kvbench_longcontext.run \
++  --data-dir "$LC_DATA" --out "$LC_RUN" \
++  --concurrency 1 --dry-run
++
++python -m kvbench_longcontext.run \
++  --data-dir "$LC_DATA" --out "$LC_RUN" \
++  --server-manifest "$LC_RESULTS/servers/${METHOD}_smoke/launch.json" \
++  --temperature 0.6 --top-p 0.95 --top-k 20 --min-p 0 \
++  --concurrency 1 --repeats 1 --request-timeout 0 --gpu 0
++
++python -m kvbench_longcontext.scoring --data-dir "$LC_DATA" --run-dir "$LC_RUN"
++python -m kvbench_longcontext.report --run-dir "$LC_RUN" --out "$LC_RUN/readout"
++```
++
++`dry-run`只检查冻结数据和显示计划，既不发请求也不创建结果目录。真实运行逐请求核对native prompt_tokens。数据目录、服务目录、推理目录都使用新路径，避免混入旧结果。
++
++每个方法要依次完成run→scoring→report。FP16结束后，在终端A按Ctrl-C退出本次服务；两端METHOD改fp8并改用新服务目录/结果目录，继续用同一LC_DATA。再根据需要测试目标低比特方法。
++
++## 7. 正式扩展
++
++每任务32题：重新prepare到新数据目录，将sample-size改32；可扩输入上限到24576。此时实际输入为8192的样本依然保留24576生成空间，不是固定8192输出。
++
++全部合格样本：将sample-size改0。要尽量覆盖所有可放入窗口的原样本，可以省略max-input-tokens/min-input-tokens，使用remaining-context与overflow skip；仍须报告排除数量及remaining_context分布，不能把只剩很少生成空间的题当成同样资源条件。
++
++并发统一时，run可指定`--concurrency 8`或`--concurrency 1 4 8`，每任务样本数至少达到最大C。run默认C1只用于先跑通；C1与旧C8不是同一性能对照。长输入+C8可能触及FP16池容量，须同时看preemptions。没有输出cap时，不应再用固定512生成量估算并发容量上界。
++
++重复运行可设`--repeats 3`，每个repeat保存独立point与请求seed。它不是三次服务冷启动，也不会自动计算配对统计显著性。
++
++多个方法已有结果后：
++
++```bash
++python -m kvbench_longcontext.report \
++  --run-dir "$LC_RESULTS/fp16_smoke_C1" "$LC_RESULTS/fp8_smoke_C1" \
++  --out "$LC_RESULTS/compare_smoke_C1"
++```
++
++优先打开`compare_smoke_C1/overview.md`或CSV，按同一任务、同一清单、同一并发比较。核心六任务的分数不是一个跨任务总体accuracy。
++
++## 8. 结果在哪里与怎样看
++
++完整说明见`RESULTS_GUIDE.zh-CN.md`，最常用路径如下：
++
++| 位置 | 内容 |
++|---|---|
++| `$LC_DATA/manifest.json` | 数据版本、题目清单、输入/剩余空间分布、预算策略 |
++| `$LC_RESULTS/servers/<method>_smoke/launch.json` | 服务实际配置与原生窗口/容量 |
++| `$LC_RUN/run.json` | 运行计划、方法、thinking、采样、null传输策略、时间限制 |
++| `$LC_RUN/readout/overview.md` / `overview.csv` | 质量、完整性、性能总览，先看这里 |
++| `$LC_RUN/quality.summary.json` | 每任务/并发/repeat的质量汇总 |
++| `$LC_RUN/performance.summary.json` | 已完成测量点的性能汇总 |
++| `$LC_RUN/r01_qasper_C1/scores.jsonl` | Qasper逐题得分、终止原因、空答案标记 |
++| `$LC_RUN/r01_qasper_C1/requests.jsonl` | 逐题实际请求、reasoning、final、usage、时延 |
++| 同一point下`measure.requests.jsonl` | 实际正式请求体，max_tokens应为null |
++| 同一point下`metrics.before.txt`、`metrics.after.txt`、`telemetry.jsonl` | 原生指标和运行时采样 |
++
++quality summary按计划包含未运行点，performance顶层只包含已落盘点；report按run.json的计划列出全部point，不会隐藏缺失点。
++
++## 9. 截断评分标准
++
++完整且通过传输/原生计数校验的`finish_reason=length`响应永远保留：有final就对该final正常评分，可能为0、部分分或满分；最终答案为空时按空答案计0分，包括thinking未结束而没有final。所有这些样本都进入正式样本分母和性能统计。
++
++即使出现“length终止却早于按原生输入推导的预算”的异常，完整响应仍评分；逐题记录unexpected_length_before_budget，每点汇总unexpected_length_before_budget_count，并记录generation_budget_consistent。应排查服务端预算与token计数差异，不能仅凭这个标记断定有隐藏上限，也不能跳过排查就称这批已满足无额外cap协议。
++
++HTTP错误、断流、缺原生usage或prompt计数不匹配属于基础设施/协议不完整，不能和正常输出截断混为一谈。主质量分为null/NA，另给partial与zero-filled诊断分，不能代替完整主分。
++
++## 10. 停止运行与验证范围
++
++默认不设置请求总时间上限，模型可能运行很久。需要诊断时间界限时可显式设正数request-timeout；它产生的中断按不完整响应处理，不是正常length终止。
++
++需要提前停止时，先结束自己在终端A启动的服务，使连接关闭；客户端可保存已收到的断流记录。已完成记录逐行flush。强制杀死客户端不保证正在内存中接收的全部片段都能落盘。
++
++本补丁提供数据准备、测量、评分与速读流程；没有实现新KV算法、固定生成步数微基准或RULER。真实3090/vLLM和官方数据集推理未在交付环境执行。实际离线测试与未执行范围见`VALIDATION.md`。
+diff --git a/kvbench_longcontext/RESULTS_GUIDE.zh-CN.md b/kvbench_longcontext/RESULTS_GUIDE.zh-CN.md
+new file mode 100644
+index 0000000..dce48b9
+--- /dev/null
++++ b/kvbench_longcontext/RESULTS_GUIDE.zh-CN.md
+@@ -0,0 +1,140 @@
++# v3 结果位置与解读
++
++本说明对应 README 的默认协议：thinking=true、自然采样、正式请求 max_tokens:null、只受剩余上下文约束、默认不设请求总时限。有效完整的输出截断仍评分。
++
++## 1. 本补丁完成什么、为了测什么
++
++| 模块 | 完成的工作 | 要回答的问题 |
++|---|---|---|
++| prepare | 固定官方数据版本、题目顺序、提示与多参考答案，记录真实输入 token 和剩余空间 | 方法之间是否使用同一题集、同一答案和预算规则？ |
++| serve | 启动已有 KV 方法，核对原生 dtype、block、APC、窗口和容量 | 实际运行的是哪个配置，KV 池有多少 token 槽位？ |
++| run | 逐任务、并发、repeat 测量自然生成，保留 reasoning/final/usage/时延 | 长输入下速度、生成长度、截断、空答案和抢占怎样变化？ |
++| scoring | 按 LongBench 对应指标离线评分，保留完整截断响应 | KV 资源节约是否伴随任务质量损失？ |
++| report | 生成 Markdown/CSV 质量与性能表，保留计划中未完成的点 | 是否已有完整可比证据，应该检查哪个任务或样本？ |
++
++核心六任务覆盖单文档问答、多跳问答、摘要和检索。本补丁提供评测流程，没有实现新的 KV 算法，也不包含已运行的真实 GPU 实验结果。
++
++## 2. 结果在哪里
++
++README 默认 LC_RESULTS 为 `/home/wanglin/kvbench-3090-cu126/results/longcontext_v3`。FP16 smoke 的 LC_RUN 为 `$LC_RESULTS/fp16_smoke_C1`；FP8 改为 fp8_smoke_C1。
++
++| 路径 | 内容与用途 |
++|---|---|
++| `$LC_DATA/manifest.json` | 数据版本、采样 seed、入选 ID/hash、输入与剩余空间分布、排除数量 |
++| `$LC_DATA/<task>.jsonl` | 冻结后的逐题输入、答案、输入 token 与 null 预算；不要手改后复用原清单 |
++| `$LC_DATA/<task>.excluded.jsonl` | 因输入范围或窗口被排除的题及原因 |
++| `$LC_RESULTS/servers/<method>_smoke/launch.json` | 启动配置、实际窗口、KV 容量、模型与引擎源码身份 |
++| 同一服务目录下 `server.log` | 服务日志，启动或运行失败时查看 |
++| `$LC_RUN/run.json` | 全部计划点、方法、并发/repeat、采样、数据 hash、时间限制、容量 |
++| `$LC_RUN/server.launch.json` | 本次运行使用的服务清单副本 |
++| `$LC_RUN/readout/overview.md` / `overview.csv` | 先看这里：质量、完整性、性能；CSV 空白数值为 NA |
++| `$LC_RUN/quality.summary.json` | 全部计划点的质量汇总，包含未运行/缺失点 |
++| `$LC_RUN/performance.summary.json` | 已完成测量并落盘的点的性能汇总，未落盘点可能不在此文件中 |
++| `$LC_RUN/grading_protocol.json` | 评分源码 hash、依赖版本、数据 hash、上游版本 |
++
++每个点直接在 LC_RUN 下。例如 `r01_qasper_C1` 表示第1次重复、Qasper、请求并发1，路径是 `$LC_RUN/r01_qasper_C1/`，没有额外 points 层。
++
++| 每点文件 | 内容 |
++|---|---|
++| `point.json` | 本点计划与请求顺序 |
++| `performance.summary.json` | 延迟、吞吐、截断、空答案、原生计数及预算诊断 |
++| `scores.summary.json` | 质量主分、分母、缺失/无效数量、长度分箱 |
++| `scores.jsonl` | 逐题得分，以 case_id 与其他记录对应 |
++| `requests.jsonl` | 逐题实际请求、reasoning、final_answer、usage、finish_reason、延迟、error |
++| `measure.requests.jsonl` | 实际正式请求体，用来确认 max_tokens:null 等参数 |
++| `raw/*.json.gz` | 原始流式事件，用于解析或传输问题排查 |
++| `metrics.before.txt` / `metrics.after.txt` | 测量前后原生服务指标 |
++| `telemetry.jsonl` | 测量期间服务与 GPU 指标采样，部分值可能不可用 |
++| `warmup/` | 独立短预算预热，完全排除于正式分数和性能 |
++
++## 3. 先看完整性，再看分数
++
++每任务4题的 smoke 共24题/方法/repeat/C。题集在 prepare 时固定，不能因为结果不好而减少分母。
++
++| 字段 | 含义与检查方法 |
++|---|---|
++| expected_tasks | 应测题数，应等于冻结数据入选数量 |
++| valid_responses | 完整且通过传输/原生计数/预算校验的响应数；包括完整 length 响应 |
++| scored_tasks | 正常完成评分的题数；真实0分仍计入 |
++| measurement_complete | 全部计划响应完整有效；false 时性能可能只是部分响应统计 |
++| evaluation_complete | 全部计划题均完成评分；false 时主质量分为 null/NA |
++| generation_budget_consistent | 原生 usage 与推导预算是否一致；false 需排查，null 表示无法判断 |
++| unexpected_length_before_budget_count | 完整 length 响应的输出 token 少于推导剩余空间的题数；这些题仍评分 |
++
++理想状态为 expected_tasks=valid_responses=scored_tasks，两个完整性标记都为 true。预算一致性独立于评分完整性：提前 length 的完整答案仍可正常评分，但需要核对服务预算和 token 计数。这个标记本身不能证明一定有隐藏 cap，更不能据此删除样本。
++
++错误计数可能重叠：HTTP 错误也可能同时被计为不完整流和缺 usage。不要简单相加各错误列；优先看 expected_tasks−valid_responses，再按 case_id 排查。
++
++## 4. 质量分代表什么
++
++逐题 score 为0–1，task_score_0_100 为逐题均值乘100。多参考答案按题取最高匹配分。评分只用 final_answer；reasoning 单独保留，仍计入全部生成 token 与性能。
++
++| 任务 | 指标 | 含义 |
++|---|---|---|
++| Qasper / MultiFieldQA-en | qa_f1 | 归一化词级答案 F1，额外解释也可能影响匹配 |
++| HotpotQA / 2WikiMQA | qa_f1 | 多文档问答的答案 F1；没有另测 supporting-fact 指标 |
++| GovReport / QMSum | rouge_l | 摘要与参考摘要的 ROUGE-L F1，不是事实正确率 |
++| PassageRetrieval-en | retrieval | 输出段落编号的匹配比例；多个编号可能稀释分数 |
++| LCC | code_sim | 按官方规则提取代码行后的编辑相似度，不是 HumanEval pass@1 |
++
++这些是连续任务分，不是统一的二元 accuracy。跨任务不宜直接比较分值大小，方法对照应先在同一任务内进行。
++
++### 输出截断、真实0分与缺结果
++
++| 响应情况 | 处理 |
++|---|---|
++| 完整 stop，有 final | 正常评分 |
++| 完整 length，有全部或部分 final | 对实际 final 正常评分，可以0、部分分或满分，保留分母和性能 |
++| 完整 length，但 thinking 未结束、没有 final | 空答案0分，保留分母和性能 |
++| 完整 stop，但 final 为空 | 同样是空答案0分 |
++| 完整 early length，原生计数有效 | 正常评分，另记预算差异 |
++| HTTP错误、断流、缺失、缺usage、prompt计数不匹配 | 不完整主分为NA，不伪装成完整0分 |
++
++partial_available_score_0_100 只平均可评分部分；all_expected_zero_filled_score_0_100 将未评分部分暂当0后除以全部应有题数。二者是缺失影响诊断，不能替代完整主分。
++
++## 5. 性能字段代表什么
++
++| 字段 | 单位 | 解读 |
++|---|---|---|
++| input_tokens_mean | token/请求 | 原生 prompt token 均值，含模板 |
++| output_tokens_mean | token/请求 | 原生 completion token 均值，包含思考和最终答案 |
++| ttft_ms_mean / ttft_ms_p95 | 毫秒 | 发出请求至首个非空 reasoning/content 片段；含排队/网络，不是纯 prefill kernel 时间 |
++| tpot_ms_mean | 毫秒/token | 各请求 `(E2E−TTFT)/(completion_tokens−1)` 的等权均值；越低表示该口径下生成越快 |
++| tpot_samples | 请求数 | 可以计算TPOT的请求数；输出≤1 token时不可算，不能填0 |
++| e2e_s_mean / e2e_s_p95 | 秒/请求 | 请求发出至流接收结束；同时受排队、输入和生成长度影响 |
++| output_tokens_per_s | token/秒 | 有效响应生成token总和除以本点请求测量窗口，是服务吞吐 |
++| valid_requests_per_s | 请求/秒 | 有效响应数除以同一窗口 |
++| length_capped | 请求数 | 有效完整响应中 finish_reason=length 的数量 |
++| length_capped_percent_of_valid | % | length_capped / valid_responses ×100 |
++| empty_final_answers | 请求数 | 有效响应中 final 为空或纯空白的题数，不是基础设施失败数 |
++| preemptions_delta | 事件数 | 测量前后原生累计抢占计数的增量，反映本轮调度压力；NA表示无法可靠计算 |
++
++TPOT 来自 HTTP 流式片段与原生 token 数，是平均估计，不是每个 GPU decode step 的直接计时。每点只有4题时，p95/p99几乎等于最大值，只用于 smoke 诊断。
++
++不能单看 E2E 宣称更快：生成更少、提前截断或没有 final 都可能缩短请求。也不能因某方法思考更长导致 E2E 上升，就推断每 token 更慢。至少同时比较任务分、TPOT、输出长度、E2E、吞吐和截断率。
++
++## 6. 长度与容量如何解释
++
++remaining_context_tokens_native 是“已验证服务窗口−原生 usage.prompt_tokens”的派生值，不是服务端原样返回的同名字段；native_remaining_source 明确记录来源。默认 null 模式下，这也是推导的最大生成空间。
++
++source_length 是原始 LongBench 英文词数，用于 `<4000`、`4000–7999`、`>=8000` 分箱。local_input_token_bins 使用模板后的实际输入 token，区间为 `[0,4096)`、`[4096,8192)`、`[8192,16384)`、`[16384,24576)`、`[24576,+∞)`。两者不能互换。
++
++was_truncated 表示 prepare 的 head-tail **输入截断**；length_capped / finish_reason=length 表示**输出截断**。README 默认 overflow=skip，不会静默裁输入，排除题列在 excluded 文件。
++
++native_kv_capacity_tokens = num_gpu_blocks × block_size，表示KV池的token槽位容量，不是当前活跃token数或显存字节数。nvidia-smi 的预分配大块显存不能直接用来比较每token成本；应结合原生池容量、cache usage、抢占和并发解释。
++
++相同32768窗口下，长输入会留下更少生成空间；边界输入可能只剩1个token。质量下降可能同时涉及输入难度和思考空间，需结合 remaining_context 分布、终止原因和空答案分析。不同数据集分数差也不能单独证明纯长度效应。
++
++## 7. 推荐顺序
++
++1. 同一份每任务4题数据，依次完成 FP16 C1、FP8 C1 的 run→scoring→report，确认接口、原生计数、各任务评分完整。
++2. 先核对完整性、实际null请求、窗口、截断/空答案、预算诊断，再比较质量和性能。
++3. 用同一冻结数据、模型、窗口、thinking、采样、并发和请求seed对照目标KV方法；质量差用百分点表示，速度差注明口径。
++4. 扩至每任务32题或 sample-size=0，正式并发可统一用C8。每任务样本数至少等于最大C。C1不能直接与旧C8作性能对照。
++5. 正式结论补足题量、重复/种子和配对分析。repeats不是服务冷启动，当前报告不自动给出统计显著性。
++
++smoke通过后可以开展新方法的探索性实验；真正的新算法仍需在推理后端实现并接入配置。补丁测试通过不等于新方法质量或速度已获验证。
++
++排查坏样本时，先从 scores.jsonl 取 case_id，再查 requests.jsonl 的同一ID，必要时查 raw 和 server.log。请求按完成顺序落盘，不要仅按行号与输入配对。
++
++交付环境没有执行真实GPU推理，已完成和未完成的验证见 VALIDATION.md。
+diff --git a/kvbench_longcontext/SHA256SUMS b/kvbench_longcontext/SHA256SUMS
+new file mode 100644
+index 0000000..3661642
+--- /dev/null
++++ b/kvbench_longcontext/SHA256SUMS
+@@ -0,0 +1,22 @@
++862263fa1f46c20f0d1e4dac5ffcc75abd55c08211b2c3864c5f8764b9d87793  .gitignore
++78534939bf23869b96e60a1f32642b3c2624b8ce23c5b1939dec02abd49d880b  BUDGET_SEMANTICS.zh-CN.md
++2133086413bde4cbbfd2ca49619983aae832fc03f8aaec3dc524255862e26450  DATASETS_RESEARCH.zh-CN.md
++bf7f05f274d65931bdf14f060b6855f1c359b8424eb74fd3091d25de89d700c3  LICENSE.LongBench
++dce2447b82b0cd3babcb2d2e27a7490dc96de5393c6f25df54283d25372b4282  README.zh-CN.md
++f67a23b1455fed86579da14fae971bde8d7700eeac76b6b745dcec039fc960a5  RESULTS_GUIDE.zh-CN.md
++fa8c332ab4f10b9514b52cb011de01ed894813772b8b5eb5f084932df0ce40a5  SOURCES.md
++7282a02f0f47381f24e17c2f02c147d17da6d2049fb0f96694ffc6ad915a8a3f  VALIDATION.md
++8b4b4c5a5c9ada1f83e354ed1a06476335d29186817aa9e7fa746910848dff95  __init__.py
++d231860a0ed115aceb5ded12fa8915cc5a3c631cd6c358085151972598054387  common.py
++904b4e55f382110d3d0c2353aa8c9c6f1d2d1b800a6bc1b67a9981b611b8212e  config/smoke.json
++29fcb06fbcd2cd887645167e6eda35f32474e48841d32b9764da2eecf7fb9661  config/tasks.json
++350d1c328ac2a376f48d3e2869ccebc332b35255108def9146e96411adf8c454  prepare.py
++43041018c0a2f1b77480ae75659602964fed3a8f19711fabf0393a4dbd706a94  report.py
++90566d4fcaf65a57789adeefd04b1ec0df1151ac1ea88c57b3f03950ab054fe3  requirements-client.txt
++9f8db47851ee0b7bcd401b66d6d3c775585f794be32a92686725e04a55a0e390  requirements-lcc.txt
++1deaa9d055df428f187560985141393bae263f333c39e1999c9d5358e6e7ac53  run.py
++3097f907dca1dad859d03a1080c4a221de68b05655fcbea5f5d5058c710980ec  scoring.py
++9f80c6b726de53c623a51f9fb872b3f8323fc4852e4b027d576c3d6a263a80ea  serve.py
++65f208e915ab04c4b3b29d3c314aa31fe9f92283160275d7dbe6cc593ac44320  tests/__init__.py
++8ae7059bca4e2bbdc0d1cf3480a4fbfbd42770e66f4de915eb57e9b4c3c8f729  tests/test_protocol.py
++6fc974ea0f1a51e25c997629c34576d8168df5931a0eeda64893757029b0a57f  tests/test_report.py
+diff --git a/kvbench_longcontext/SOURCES.md b/kvbench_longcontext/SOURCES.md
+new file mode 100644
+index 0000000..f54e24d
+--- /dev/null
++++ b/kvbench_longcontext/SOURCES.md
+@@ -0,0 +1,85 @@
++# Source and provenance ledger: patch v3
++
++This v3 extension is based on [LinWang1225/test at 3cf8dd9345e8e8181b0069b6b39c3355ae463b67](https://github.com/LinWang1225/test/tree/3cf8dd9345e8e8181b0069b6b39c3355ae463b67). It provides LongBench v1/E data preparation, a local streaming client, offline scoring and a launcher for the installed KVarN/vLLM backend.
++
++**The default v3 measurement protocol uses Qwen3 thinking=true and remaining-context generation. Every measured request explicitly sends max_tokens:null. Official LongBench short output caps are historical reference settings and are not the v3 default.**
++
++## Fixed sources
++
++| Component | Pinned identity |
++|---|---|
++| LongBench prompt, task and scorer source | `THUDM/LongBench@2e00731f8d0bff23dc4325161044d0ed8af94c1e` |
++| Official Hugging Face dataset | `zai-org/LongBench@5e628be450b7e67fb7ae6e201bd6d8f7056f7672` |
++| Official data.zip SHA256 | `cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64` |
++| Audited inference backend | `huawei-csl/KVarN@7586257f1c632e63187bfacbbe21ccb51540f7b3` |
++
++## LongBench v1 and LongBench-E
++
++The original benchmark's files are now under the official repository's `LongBench/` directory; the repository root also contains the separate LongBench v2 benchmark.
++
++- [Official prompt strings](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/config/dataset2prompt.json).
++- [Historical reference output caps](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/config/dataset2maxlen.json): used only when the reference policy is explicitly selected.
++- [Official task metrics](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/metrics.py).
++- [Max-over-references aggregation and original E length bins](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/eval.py).
++- [Task descriptions, counts and E subsets](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/task.md).
++- [Dataset schema](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/README.md).
++- [Historical model-specific prediction workflow](https://github.com/THUDM/LongBench/blob/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/pred.py).
++
++Eight English prompt strings and their historical caps are copied into `config/tasks.json`. Supported English metrics and the max-over-references rule are adapted in `scoring.py`. The MIT license is included as `LICENSE.LongBench`; the source copyright is THU-KEG & Zhipu AI, 2023. This software license does not replace the original datasets' source attribution or licenses.
++
++The old Hugging Face identifier `THUDM/LongBench` redirects to `zai-org/LongBench`. The default download contains data, without executing the dataset's remote Python loading script:
++
++- [Pinned official data.zip](https://huggingface.co/datasets/zai-org/LongBench/resolve/5e628be450b7e67fb7ae6e201bd6d8f7056f7672/data.zip).
++- [Dataset revision](https://huggingface.co/datasets/zai-org/LongBench/commit/5e628be450b7e67fb7ae6e201bd6d8f7056f7672).
++- [Official archive pointer and checksum](https://huggingface.co/datasets/zai-org/LongBench/blob/5e628be450b7e67fb7ae6e201bd6d8f7056f7672/data.zip).
++
++The default archive hash is verified by preparation. Prepared original JSONL and request JSONL files are also hashed. Local imports record raw byte hashes and a supplied revision; an unspecified revision is recorded as `unknown-local-export`. Dataset text is not bundled with the patch.
++
++The source `length` is an English word count, not the local model's token count. It is retained for `official_word_length_bins`. Actual prompt token counts, including the chat template where applicable, are recorded separately for `local_input_token_bins` and remaining-context checks. The six core tasks contain 1,150 original v1 examples or 1,574 E examples before filtering; Qasper-E has 224, MultiFieldQA-en-E has 150, and the other four core E datasets have 300 each. QMSum has no E split.
++
++## v3 generation budget: backend evidence
++
++The following sources are from the exact audited backend commit, not a generic assumption about all OpenAI-compatible servers.
++
++| Question | Source and observed logic |
++|---|---|
++| Chat omission versus null | [ChatCompletionRequest](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/entrypoints/openai/chat_completion/protocol.py): both max_tokens and max_completion_tokens default to None. |
++| Chat field precedence | [Chat serving](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/entrypoints/openai/chat_completion/serving.py): a non-None max_completion_tokens takes precedence over max_tokens. |
++| Raw completion omission versus null | [CompletionRequest](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/entrypoints/openai/completion/protocol.py): omitted max_tokens defaults to 16; explicit null produces None. |
++| Effective generation budget | [get_max_tokens](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/entrypoints/serve/utils/api_utils.py): takes the minimum non-None value among remaining model context, request/default budget, server override and platform limit. |
++| Model generation defaults | [ModelConfig.get_diff_sampling_param](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/config/model.py): generation_config=vllm begins with an empty sampling-config dictionary; explicit override_generation_config is still applied. max_new_tokens is mapped to max_tokens. |
++| CUDA platform limit | [Platform interface](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/platforms/interface.py) returns sys.maxsize; [CUDA classes](https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/platforms/cuda.py) do not override that method. |
++
++Consequently, with the shipped `--generation-config vllm` launcher and no explicit `max_new_tokens` server override, v3's null request resolves to:
++
++~~~text
++effective_max_tokens = max_model_len - backend_actual_input_tokens
++~~~
++
++The implementation sends null explicitly for both chat and raw completion. No integer max_completion_tokens is added. This avoids the raw completion endpoint's default of 16. EOS and stop conditions can still end generation earlier; remaining-context is a maximum, not a forced output length.
++
++The old short-input experiment also used a null request sentinel. This is directly visible in [V7's measured request JSONL](https://github.com/LinWang1225/test/blob/7801b642d03a27aca0486341f4cde6ab4ce960d5/results/real/full_v7_C8/points/r01_fp16_math_500_apc0_C8/attempt001/measure.requests.jsonl). Its [runner](https://github.com/LinWang1225/test/blob/7801b642d03a27aca0486341f4cde6ab4ce960d5/kvbench_real_v6/run_real.py) explains that null prevented EvalScope's missing-key default of 2048 from being inserted.
++
++## Model and measurement protocol
++
++The [Qwen3-4B official model card](https://huggingface.co/Qwen/Qwen3-4B#best-practices) documents the thinking switch and recommends temperature=0.6, top_p=0.95, top_k=20 and min_p=0 for thinking. These are the default v3 sampling values for the chat tasks. LCC remains a raw completion task and is prepared separately with `--no-thinking`.
++
++The official LongBench reference workflow used greedy decoding and task-specific short caps. V3 changes generation to thinking plus remaining context, while retaining source prompts and task metrics. Even selecting E does not make the v3 run a numerical reproduction of the TurboQuant or LongBench paper tables. Explicit `reference` and `fixed` policies are separate experiments; their settings must be reported with their results.
++
++The SSE client calls the locally launched API directly and retains usage-only chunks. It records native token usage, response completion, prompt-count consistency, raw content, reasoning content and final-answer extraction. Offline scoring uses the extracted final answer. An unfinished thinking response with no final answer is distinguished from a missing or invalid response.
++
++TTFT includes time to the first nonempty content or reasoning chunk. TPOT uses native completion tokens, including thinking tokens, with a request-equal mean. These are client measurements, not isolated GPU kernel timings. Compare methods within the same new batch; do not splice new client timings into old EvalScope measurements as though their measurement paths were identical.
++
++## Verified relevance to KV-cache papers
++
++- [KIVI, arXiv:2402.02750v2](https://arxiv.org/html/2402.02750v2), section 4.1 and appendix Tables 8–10: includes the six core tasks and optional QMSum/LCC among its LongBench evaluations.
++- [TurboQuant, arXiv:2504.19874v1](https://arxiv.org/html/2504.19874v1), section 4.3: explicitly uses LongBench-E. The default v1 split differs.
++- [GEAR, arXiv:2403.05527v4](https://arxiv.org/pdf/2403.05527v4), section 4.1/Table 2 and appendix: evaluates the 21-task LongBench suite.
++- [RotateKV, IJCAI 2025](https://www.ijcai.org/proceedings/2025/0690.pdf), Table 6: its LongBench portion contains QMSum, LCC, SAMSum and TriviaQA.
++- [KVarN, arXiv:2606.03458v1](https://arxiv.org/html/2606.03458v1): evaluates reasoning/generation tasks, Line Retrieval and NIAH; LongBench is mentioned as background, not presented as its experimental suite.
++- [KVLinC, arXiv:2510.05373v1](https://arxiv.org/pdf/2510.05373v1), Tables 2/6: RULER at 4K/8K, with LongBench results also covering Qwen3-4B.
++- [More Tokens, Lower Precision, Findings EMNLP 2025](https://aclanthology.org/2025.findings-emnlp.429.pdf), Table 2/Appendix A: RULER at 4K/8K/16K in a pruning-plus-quantization study.
++
++RULER is a documented future extension, not an implemented entry point in this patch. The inspected official source is [NVIDIA/RULER at c3f5e3b4f87f97e048793bb510a3a6b19a46bf3a](https://github.com/NVIDIA/RULER/tree/c3f5e3b4f87f97e048793bb510a3a6b19a46bf3a). Its README now points users from the deprecated main pipeline to NS branches. A future adapter must pin its actual generator, template, answer-prefix handling and export schema. Synthetic filler or LongBench retrieval results are not official RULER results.
++
++Task descriptions, supported counts and interpretation guidance are in [DATASETS_RESEARCH.zh-CN.md](DATASETS_RESEARCH.zh-CN.md). Source inspection and offline software checks do not establish target-GPU benchmark results; those measurements must be run in the user's fixed inference environment.
+diff --git a/kvbench_longcontext/VALIDATION.md b/kvbench_longcontext/VALIDATION.md
+new file mode 100644
+index 0000000..bcd972b
+--- /dev/null
++++ b/kvbench_longcontext/VALIDATION.md
+@@ -0,0 +1,90 @@
++# Validation record — v3, 2026-10-09
++
++## Executed here
++
++```bash
++python -m unittest discover -s kvbench_longcontext/tests -v
++```
++
++Final suite: **18 tests discovered, 16 passed, 2 explicitly skipped**. The two
++skips require real `rouge==1.0.1` and LCC `fuzzywuzzy==0.18.0` /
++`Levenshtein==0.25.1`, which are not installed in this delivery environment.
++Installing requirements-client.txt enables the ROUGE test; installing the
++additional requirements-lcc.txt enables the optional LCC test. A skipped backend
++test is not evidence that its real backend has been run.
++
++The suite covers:
++
++- Frozen official task prompts, multi-reference answers, no answer injection,
++  deterministic sampling, archive member selection and source/data hashes.
++- Synthetic tokenizer accounting after the selected chat wrapper, explicit
++  skip/error/head-tail handling, and separate source-word / local-token bins.
++- QA F1, retrieval, reference-max scoring, code-line extraction, missing/duplicate/
++  unexpected response handling, and the distinction between real zero and NA.
++- Cache dtype, block size, APC, FP8 scales, positive native num_gpu_blocks and
++  verified model window. K4/V4/g64 has its distinct block64 mapping.
++- Local HTTP mock chat and raw-completion requests, actual JSON bodies, headers,
++  usage-only SSE chunks, reasoning/content extraction, HTTP errors, interrupted
++  streams, absent native usage and local/native prompt-token mismatches.
++- A synthetic end-to-end prepare → frozen data → dry-run → concurrent mock HTTP
++  → response records → offline scoring sequence. Dry-run sends no HTTP and creates
++  no run directory; measured rows exclude all independent warmups.
++- Default thinking=true and sampling .6/.95/20/0 reaching both measured and long
++  warmup requests; explicit raw and chat max_tokens:null without
++  max_completion_tokens; optional reference/fixed mode guards.
++- Inputs of 1024/24000/32767 tokens retaining 31744/8768/1 generated-token capacity
++  under a verified 32768 window, warmup caps32/32/1 and formal requests null.
++  A 32768-token input without any generation space is rejected.
++- request-timeout=0 passing timeout=None to the HTTP connection and disabling the
++  elapsed stream guard; positive-timeout failures remaining incomplete responses.
++- Complete normal/early length responses retained for scoring and performance;
++  unfinished thinking with no final scoring zero, and early length producing only
++  a separate budget-consistency diagnostic.
++- Reporting every planned point, including missing points; preserving real zero,
++  converting milliseconds correctly, rejecting mismatched summaries, and carrying
++  unexpected_length_before_budget_count through to CSV.
++
++An independent review also exercised timeout=0 under a deliberately advanced mock
++clock and checked that an early-length response can receive full quality credit,
++whereas an interrupted version has a missing primary score. These checks are not
++additional GPU tests and are not added to the 18-test count above.
++
++## Source audit
++
++Read-only inspection of the fixed KVarN/vLLM source confirms explicit-null chat
++and completion semantics, the completion endpoint omitted-field default16,
++the remaining-context budget merge, the effect of generation_config=vllm and
++empty override, and the CUDA platform lack of a smaller output bound.
++The source-linked explanation is BUDGET_SEMANTICS.zh-CN.md.
++
++Official LongBench task prompts and metric definitions were compared with the
++pinned upstream version. Prior uploaded native metrics and request logs were
++used to verify cache labels and the old short-input null request protocol.
++
++## Delivery verification
++
++The complete v3 patch was applied in an isolated baseline checkout, checked for
++reverse application, and all applied package files were compared byte-for-byte.
++Only new kvbench_longcontext/ paths are added. No earlier patch is needed, and
++existing short-input benchmark files are unchanged. SHA256SUMS covers all other
++package files. Interpreter caches, temporary fixtures, model weights and datasets
++are not included. This delivery is one full patch, not an incremental update.
++
++## Not executed here
++
++- No official dataset archive or model weights were downloaded for a real run.
++- No real Qwen tokenizer was available. Offline tests use an explicitly synthetic
++  fixture; prepare and native prompt_tokens comparison must verify the actual
++  tokenizer on the target host.
++- No real ROUGE/LCC backend score was computed here; missing packages were not
++  silently replaced by substitute metrics.
++- No target RTX3090, vLLM startup, CUDA compilation, real generation, latency,
++  memory, task-quality or new-algorithm experiment was executed.
++- The new direct HTTP client is not the old EvalScope runner. Generation settings
++  match the selected short-input protocol, but performance comparisons should use
++  the same client/protocol batch; old and new numbers should not be merged as if
++  client overhead, dataset and concurrency were identical.
++
++On the target host, install the documented client dependencies, run the suite,
++then the four-cases-per-task FP16/FP8 C1 smoke. Preserve the data, launch, run and
++grading manifests with real outputs before expanding to a full experiment.
+diff --git a/kvbench_longcontext/__init__.py b/kvbench_longcontext/__init__.py
+new file mode 100644
+index 0000000..90b65bd
+--- /dev/null
++++ b/kvbench_longcontext/__init__.py
+@@ -0,0 +1,2 @@
++"""Long-input KV-cache experiments; independent of the MATH/HumanEval runner."""
++__version__ = "3.0.0"
+diff --git a/kvbench_longcontext/common.py b/kvbench_longcontext/common.py
+new file mode 100644
+index 0000000..1ae266e
+--- /dev/null
++++ b/kvbench_longcontext/common.py
+@@ -0,0 +1,116 @@
++from __future__ import annotations
++
++import hashlib
++import importlib.metadata
++import json
++import math
++from pathlib import Path
++
++HERE = Path(__file__).resolve().parent
++BASE_COMMIT = "3cf8dd9345e8e8181b0069b6b39c3355ae463b67"
++LONGBENCH_COMMIT = "2e00731f8d0bff23dc4325161044d0ed8af94c1e"
++HF_REPO = "zai-org/LongBench"
++HF_REVISION = "5e628be450b7e67fb7ae6e201bd6d8f7056f7672"
++DATA_ZIP_SHA256 = "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64"
++TASKS = json.loads((HERE / "config/tasks.json").read_text(encoding="utf-8"))
++CORE_TASKS = list(TASKS)[:6]
++
++
++def canonical(value):
++    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
++
++
++def digest(value):
++    return hashlib.sha256(canonical(value).encode("utf-8")).hexdigest()
++
++
++def sha_file(path):
++    h = hashlib.sha256()
++    with Path(path).open("rb") as f:
++        for block in iter(lambda: f.read(1024 * 1024), b""):
++            h.update(block)
++    return h.hexdigest()
++
++
++def atomic_json(path, value):
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    temp = path.with_name(path.name + ".tmp")
++    temp.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
++    temp.replace(path)
++
++
++def write_jsonl(path, rows):
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    with path.open("w", encoding="utf-8") as f:
++        for row in rows:
++            f.write(canonical(row) + "\n")
++
++
++def read_jsonl(path):
++    return [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
++
++
++def package_versions(names):
++    result = {}
++    for name in names:
++        try:
++            result[name] = importlib.metadata.version(name)
++        except importlib.metadata.PackageNotFoundError:
++            result[name] = None
++    return result
++
++
++def tokenizer_identity(model):
++    model = Path(model).resolve()
++    if not model.is_dir():
++        raise ValueError("Use the same existing local model snapshot for prepare and serve: " + str(model))
++    files = {p.name: sha_file(p) for p in sorted(model.iterdir()) if p.is_file()
++             and p.suffix in (".json", ".jinja", ".txt", ".model") and p.stat().st_size < 100_000_000}
++    if not files:
++        raise ValueError("No tokenizer/model configuration files found")
++    return {"model_path": str(model), "files_sha256": files, "fingerprint": digest(files)}
++
++
++def quantile(values, p):
++    return sorted(values)[max(0, math.ceil(len(values) * p) - 1)] if values else None
++
++
++def describe(values):
++    values = [float(v) for v in values if v is not None and math.isfinite(float(v))]
++    return {"n": len(values), "mean": sum(values) / len(values) if values else None,
++            "p50": quantile(values, .5), "p95": quantile(values, .95),
++            "p99": quantile(values, .99), "max": max(values) if values else None}
++
++
++def checked_data(folder):
++    folder = Path(folder)
++    manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
++    if manifest.get("schema") != "kvbench.longcontext.data.v1":
++        raise ValueError("Unknown frozen data schema")
++    policy = manifest.get("generation_budget_policy")
++    if policy not in ("remaining-context", "reference", "fixed") or manifest.get("settings", {}).get("generation_budget_policy") != policy:
++        raise ValueError("Frozen data have no matching explicit generation budget policy; prepare with the current version")
++    window = manifest["settings"]["max_model_len"]
++    datasets = {}
++    for name, info in manifest["datasets"].items():
++        path = folder / info["file"]
++        if path.parent.resolve() != folder.resolve() or sha_file(path) != info["sha256"]:
++            raise ValueError("Frozen request data changed: " + name)
++        rows = read_jsonl(path)
++        if len(rows) != info["selected_count"] or len({r["case_id"] for r in rows}) != len(rows):
++            raise ValueError("Frozen count or case IDs do not match: " + name)
++        if [r["case_id"] for r in rows] != info["selected_case_ids"]:
++            raise ValueError("Frozen order changed: " + name)
++        for row in rows:
++            remaining = window - row["input_tokens"]
++            cap = row["max_tokens"]
++            valid_cap = cap is None if policy == "remaining-context" else isinstance(cap, int) and not isinstance(cap, bool) and cap > 0
++            if (row.get("generation_budget_policy") != policy or row.get("max_model_len") != window
++                    or row.get("remaining_context_tokens") != remaining or remaining < 1 or not valid_cap
++                    or cap is not None and cap > remaining
++                    or row.get("generation_budget_tokens") != (remaining if cap is None else cap)):
++                raise ValueError("Invalid frozen generation/context budget: " + row["case_id"])
++        datasets[name] = rows
++    return manifest, datasets
+diff --git a/kvbench_longcontext/config/smoke.json b/kvbench_longcontext/config/smoke.json
+new file mode 100644
+index 0000000..988559d
+--- /dev/null
++++ b/kvbench_longcontext/config/smoke.json
+@@ -0,0 +1,26 @@
++{
++  "description": "v3 natural-generation thinking smoke recipe. This JSON is documentation; CLI does not auto-load it. Use the commands in README.zh-CN.md.",
++  "datasets": ["qasper", "multifieldqa_en", "hotpotqa", "2wikimqa", "gov_report", "passage_retrieval_en"],
++  "variant": "longbench",
++  "sample_size_per_task": 4,
++  "min_input_tokens": 1024,
++  "max_input_tokens": 8192,
++  "max_model_len": 32768,
++  "overflow": "skip",
++  "thinking": true,
++  "temperature": 0.6,
++  "top_p": 0.95,
++  "top_k": 20,
++  "min_p": 0.0,
++  "generation_budget_policy": "remaining-context",
++  "request_max_tokens": null,
++  "request_timeout_seconds": 0,
++  "generation_config": "vllm",
++  "override_generation_config": {},
++  "concurrency": [1],
++  "repeats": 1,
++  "warmup_per_point": "concurrency count, min(32, remaining_context_tokens), excluded from measurement",
++  "apc": false,
++  "max_seqs": 16,
++  "methods_in_order": ["fp16", "fp8", "kvarn", "tq4"]
++}
+diff --git a/kvbench_longcontext/config/tasks.json b/kvbench_longcontext/config/tasks.json
+new file mode 100644
+index 0000000..f251f60
+--- /dev/null
++++ b/kvbench_longcontext/config/tasks.json
+@@ -0,0 +1,50 @@
++{
++  "qasper": {
++    "prompt": "You are given a scientific article and a question. Answer the question as concisely as you can, using a single phrase or sentence if possible. If the question cannot be answered based on the information in the article, write \"unanswerable\". If the question is a yes/no question, answer \"yes\", \"no\", or \"unanswerable\". Do not provide any explanation.\n\nArticle: {context}\n\n Answer the question based on the above article as concisely as you can, using a single phrase or sentence if possible. If the question cannot be answered based on the information in the article, write \"unanswerable\". If the question is a yes/no question, answer \"yes\", \"no\", or \"unanswerable\". Do not provide any explanation.\n\nQuestion: {input}\n\nAnswer:",
++    "max_new_tokens": 128,
++    "metric": "qa_f1",
++    "request_kind": "chat"
++  },
++  "multifieldqa_en": {
++    "prompt": "Read the following text and answer briefly.\n\n{context}\n\nNow, answer the following question based on the above text, only give me the answer and do not output any other words.\n\nQuestion: {input}\nAnswer:",
++    "max_new_tokens": 64,
++    "metric": "qa_f1",
++    "request_kind": "chat"
++  },
++  "hotpotqa": {
++    "prompt": "Answer the question based on the given passages. Only give me the answer and do not output any other words.\n\nThe following are given passages.\n{context}\n\nAnswer the question based on the given passages. Only give me the answer and do not output any other words.\n\nQuestion: {input}\nAnswer:",
++    "max_new_tokens": 32,
++    "metric": "qa_f1",
++    "request_kind": "chat"
++  },
++  "2wikimqa": {
++    "prompt": "Answer the question based on the given passages. Only give me the answer and do not output any other words.\n\nThe following are given passages.\n{context}\n\nAnswer the question based on the given passages. Only give me the answer and do not output any other words.\n\nQuestion: {input}\nAnswer:",
++    "max_new_tokens": 32,
++    "metric": "qa_f1",
++    "request_kind": "chat"
++  },
++  "gov_report": {
++    "prompt": "You are given a report by a government agency. Write a one-page summary of the report.\n\nReport:\n{context}\n\nNow, write a one-page summary of the report.\n\nSummary:",
++    "max_new_tokens": 512,
++    "metric": "rouge_l",
++    "request_kind": "chat"
++  },
++  "passage_retrieval_en": {
++    "prompt": "Here are 30 paragraphs from Wikipedia, along with an abstract. Please determine which paragraph the abstract is from.\n\n{context}\n\nThe following is an abstract.\n\n{input}\n\nPlease enter the number of the paragraph that the abstract is from. The answer format must be like \"Paragraph 1\", \"Paragraph 2\", etc.\n\nThe answer is: ",
++    "max_new_tokens": 32,
++    "metric": "retrieval",
++    "request_kind": "chat"
++  },
++  "qmsum": {
++    "prompt": "You are given a meeting transcript and a query containing a question or instruction. Answer the query in one or more sentences.\n\nTranscript:\n{context}\n\nNow, answer the query based on the above meeting transcript in one or more sentences.\n\nQuery: {input}\nAnswer:",
++    "max_new_tokens": 512,
++    "metric": "rouge_l",
++    "request_kind": "chat"
++  },
++  "lcc": {
++    "prompt": "Please complete the code given below. \n{context}Next line of code:\n",
++    "max_new_tokens": 64,
++    "metric": "code_sim",
++    "request_kind": "completion"
++  }
++}
+diff --git a/kvbench_longcontext/prepare.py b/kvbench_longcontext/prepare.py
+new file mode 100644
+index 0000000..0569fbb
+--- /dev/null
++++ b/kvbench_longcontext/prepare.py
+@@ -0,0 +1,241 @@
++"""Freeze official LongBench v1 inputs with exact local tokenizer accounting."""
++from __future__ import annotations
++
++import argparse
++import hashlib
++import json
++import math
++import re
++import zipfile
++from pathlib import Path
++
++from .common import (CORE_TASKS, DATA_ZIP_SHA256, HF_REPO, HF_REVISION, LONGBENCH_COMMIT,
++                     TASKS, atomic_json, canonical, describe, digest, package_versions,
++                     sha_file, tokenizer_identity, write_jsonl)
++
++
++def get_source(args):
++    if args.source:
++        source = Path(args.source).resolve()
++        if not source.exists():
++            raise ValueError("Source does not exist: " + str(source))
++        revision = args.source_revision or "unknown-local-export"
++        return source, {"source": "local", "path": str(source), "revision": revision}
++    from huggingface_hub import hf_hub_download
++    if not re.fullmatch(r"[0-9a-f]{40}", args.revision):
++        raise ValueError("--revision must be an immutable 40-character dataset commit")
++    path = hf_hub_download(HF_REPO, "data.zip", repo_type="dataset", revision=args.revision,
++                           cache_dir=args.cache_dir, local_files_only=args.offline)
++    actual = sha_file(path)
++    if args.revision == HF_REVISION and actual != DATA_ZIP_SHA256:
++        raise ValueError("Official data.zip SHA256 mismatch; refusing changed bytes")
++    return Path(path), {"source": "huggingface-data-zip", "dataset_id": HF_REPO,
++                        "revision": args.revision, "filename": "data.zip", "sha256": actual}
++
++
++def source_bytes(source, dataset):
++    if source.is_dir():
++        candidates = [source / (dataset + ".jsonl"), source / "data" / (dataset + ".jsonl")]
++        found = [p for p in candidates if p.is_file()]
++        if len(found) != 1:
++            raise ValueError("Expected exactly one official JSONL for " + dataset)
++        return found[0].read_bytes(), str(found[0])
++    if not zipfile.is_zipfile(source):
++        raise ValueError("--source must be an official data.zip or a directory of original JSONL files")
++    with zipfile.ZipFile(source) as z:
++        members = [n for n in z.namelist() if n in (dataset + ".jsonl", "data/" + dataset + ".jsonl")]
++        if len(members) != 1:
++            raise ValueError("Missing or ambiguous JSONL member for " + dataset)
++        # Read named entries only; never extract archive paths or execute dataset code.
++        return z.read(members[0]), members[0]
++
++
++def count_input(tokenizer, prompt, kind, thinking):
++    if kind == "completion":
++        return len(tokenizer.encode(prompt, add_special_tokens=False))
++    return len(tokenizer.apply_chat_template([{"role": "user", "content": prompt}], tokenize=True,
++                                            add_generation_prompt=True, enable_thinking=thinking))
++
++
++def fit_prompt(tokenizer, prompt, kind, thinking, limit, policy):
++    original = count_input(tokenizer, prompt, kind, thinking)
++    if original <= limit:
++        return prompt, original, original, False
++    if policy == "error":
++        raise ValueError(f"Prompt has {original} tokens, budget is {limit}. Select --overflow skip or explicit head-tail.")
++    if policy == "skip":
++        return None, original, None, False
++    # Explicit LongBench-style middle removal on the formatted prompt, then re-count
++    # the actual Qwen chat wrapper. The full prompt remains in raw source records.
++    ids = tokenizer.encode(prompt, add_special_tokens=False)
++    keep = min(len(ids) - 1, limit)
++    while keep > 0:
++        left = (keep + 1) // 2
++        right = keep // 2
++        candidate = (tokenizer.decode(ids[:left], skip_special_tokens=True)
++                     + (tokenizer.decode(ids[-right:], skip_special_tokens=True) if right else ""))
++        actual = count_input(tokenizer, candidate, kind, thinking)
++        if actual <= limit:
++            return candidate, original, actual, True
++        keep -= max(1, actual - limit)
++    raise ValueError("Even the template cannot fit the requested input budget")
++
++
++def prepare_rows(records, name, tokenizer, settings):
++    task = TASKS[name]
++    policy = settings["generation_budget_policy"]
++    explicit_cap = settings["max_new_tokens"]
++    if policy == "remaining-context":
++        if explicit_cap is not None:
++            raise ValueError("remaining-context sends max_tokens:null; use fixed for --max-new-tokens")
++        cap, reserve = None, 1
++    elif policy == "reference":
++        if explicit_cap is not None or settings["thinking"]:
++            raise ValueError("reference uses official short caps: select --no-thinking and omit --max-new-tokens")
++        cap = reserve = task["max_new_tokens"]
++    elif policy == "fixed":
++        if not isinstance(explicit_cap, int) or isinstance(explicit_cap, bool) or explicit_cap < 1:
++            raise ValueError("fixed requires a positive --max-new-tokens")
++        cap = reserve = explicit_cap
++    else:
++        raise ValueError("Unknown generation budget policy: " + str(policy))
++    limit = min(settings["max_input_tokens"] or settings["max_model_len"], settings["max_model_len"] - reserve)
++    if limit <= 0 or settings["min_input_tokens"] > limit:
++        raise ValueError("Input budget cannot fit generation reserve or minimum length")
++    kept, excluded, seen = [], [], set()
++    for i, record in enumerate(records):
++        if not isinstance(record.get("context"), str) or not isinstance(record.get("input"), str):
++            raise ValueError(f"{name} row {i}: official context/input strings required")
++        answers = record.get("answers")
++        if not isinstance(answers, list) or not answers or not all(isinstance(x, str) for x in answers):
++            raise ValueError(f"{name} row {i}: nonempty original answers list required")
++        length = record.get("length")
++        if (not isinstance(length, (int, float)) or isinstance(length, bool)
++                or not math.isfinite(length) or length < 0):
++            raise ValueError(f"{name} row {i}: original finite nonnegative LongBench length required; never replace it with model tokens")
++        raw_id = str(record.get("_id", record.get("id", i)))
++        cid = name + "/" + raw_id
++        if cid in seen:
++            raise ValueError("Duplicate source case ID: " + cid)
++        seen.add(cid)
++        # Only context/input interpolate into the official template; references never do.
++        prompt = task["prompt"].format(context=record["context"], input=record["input"])
++        try:
++            prompt, original, effective, truncated = fit_prompt(tokenizer, prompt, task["request_kind"],
++                settings["thinking"], limit, settings["overflow"])
++        except ValueError as exc:
++            raise ValueError(cid + ": " + str(exc)) from exc
++        if prompt is None or effective < settings["min_input_tokens"]:
++            excluded.append({"case_id": cid, "source_index": i, "original_input_tokens": original,
++                             "reason": "over_budget" if prompt is None else "below_minimum"})
++            continue
++        row = {"dataset": name, "case_id": cid, "source_index": i, "source_record_sha256": digest(record),
++               "prompt": prompt, "request_kind": task["request_kind"], "answers": answers,
++               "metric": task["metric"], "all_classes": record.get("all_classes", []),
++               "source_length": record.get("length"), "source_length_unit": "LongBench English words (not model tokens)",
++               "original_input_tokens": original, "input_tokens": effective, "input_token_budget": limit,
++               "was_truncated": truncated, "truncation_policy": settings["overflow"], "max_tokens": cap,
++               "generation_budget_policy": policy, "minimum_generation_reserve": reserve,
++               "max_model_len": settings["max_model_len"],
++               "remaining_context_tokens": settings["max_model_len"] - effective,
++               "generation_budget_tokens": settings["max_model_len"] - effective if cap is None else cap,
++               "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest()}
++        kept.append(row)
++    kept.sort(key=lambda r: digest([settings["data_seed"], r["case_id"]]))
++    eligible_count = len(kept)
++    size = settings["sample_size"]
++    if size and len(kept) < size:
++        raise ValueError(f"{name}: only {len(kept)} eligible records for requested sample {size}; choose a smaller sample explicitly")
++    if not kept:
++        raise ValueError(name + ": no eligible records")
++    return kept[:size] if size else kept, excluded, eligible_count
++
++
++def main(argv=None):
++    p = argparse.ArgumentParser(description=__doc__)
++    p.add_argument("--out", type=Path, required=True)
++    p.add_argument("--model", type=Path, required=True, help="Existing local model/tokenizer snapshot")
++    p.add_argument("--datasets", nargs="+", choices=list(TASKS), default=CORE_TASKS)
++    p.add_argument("--variant", choices=["longbench", "longbench-e"], default="longbench")
++    p.add_argument("--source", type=Path, help="Official local data.zip or original JSONL directory")
++    p.add_argument("--source-revision", help="Immutable revision of a local source when known")
++    p.add_argument("--revision", default=HF_REVISION)
++    p.add_argument("--cache-dir", type=Path)
++    p.add_argument("--offline", action="store_true")
++    p.add_argument("--max-model-len", type=int, default=32768)
++    p.add_argument("--max-input-tokens", type=int, default=None)
++    p.add_argument("--min-input-tokens", type=int, default=0)
++    p.add_argument("--generation-budget-policy", choices=["remaining-context", "reference", "fixed"], default="remaining-context",
++                   help="Default: send max_tokens:null and let the server use the remaining context; reference uses official task caps")
++    p.add_argument("--max-new-tokens", type=int, help="Positive explicit output cap; only for --generation-budget-policy fixed")
++    p.add_argument("--sample-size", type=int, default=0, help="0 = every eligible case; otherwise deterministic sample")
++    p.add_argument("--data-seed", type=int, default=42)
++    p.add_argument("--overflow", choices=["error", "skip", "head-tail"], default="error")
++    p.add_argument("--thinking", action=argparse.BooleanOptionalAction, default=True)
++    a = p.parse_args(argv)
++    if a.out.exists() and any(a.out.iterdir()):
++        raise ValueError("Output must be a new/empty directory; frozen data are not overwritten")
++    if (a.sample_size < 0 or a.min_input_tokens < 0 or a.max_model_len < 1
++            or a.max_input_tokens is not None and a.max_input_tokens < 1
++            or a.max_new_tokens is not None and a.max_new_tokens < 1):
++        raise ValueError("Invalid size or token budget")
++    if a.generation_budget_policy == "fixed" and a.max_new_tokens is None:
++        raise ValueError("fixed requires an explicit positive --max-new-tokens")
++    if a.generation_budget_policy != "fixed" and a.max_new_tokens is not None:
++        raise ValueError("--max-new-tokens is only used with --generation-budget-policy fixed")
++    if a.generation_budget_policy == "reference" and a.thinking:
++        raise ValueError("reference uses official short output caps; also select --no-thinking")
++    if a.thinking and "lcc" in a.datasets:
++        raise ValueError("LCC uses raw completion without chat thinking controls; prepare it separately with --no-thinking")
++    if a.variant == "longbench-e" and "qmsum" in a.datasets:
++        raise ValueError("Official LongBench-E has no qmsum split; prepare it separately as LongBench v1")
++    from transformers import AutoTokenizer
++    identity = tokenizer_identity(a.model)
++    tokenizer = AutoTokenizer.from_pretrained(str(a.model), local_files_only=True, trust_remote_code=False)
++    if not tokenizer.chat_template:
++        raise ValueError("Model tokenizer has no chat template")
++    source, provenance = get_source(a)
++    if source.is_file():
++        provenance["file_sha256"] = sha_file(source)
++        if provenance.get("revision") == HF_REVISION and provenance["file_sha256"] != DATA_ZIP_SHA256:
++            raise ValueError("Local archive does not match the SHA256 of the claimed official dataset revision")
++    settings = {k: getattr(a, k) for k in ["max_model_len", "max_input_tokens", "min_input_tokens",
++                "max_new_tokens", "generation_budget_policy", "sample_size", "data_seed", "overflow", "thinking"]}
++    prepared = {}
++    for name in dict.fromkeys(a.datasets):
++        raw, member = source_bytes(source, name + ("_e" if a.variant == "longbench-e" else ""))
++        records = [json.loads(line) for line in raw.decode("utf-8").splitlines() if line.strip()]
++        rows, excluded, eligible = prepare_rows(records, name, tokenizer, settings)
++        prepared[name] = (raw, member, rows, excluded, len(records), eligible)
++    a.out.mkdir(parents=True, exist_ok=True)
++    manifest = {"schema": "kvbench.longcontext.data.v1", "benchmark": "LongBench-v1", "variant": a.variant,
++        "generation_budget_policy": a.generation_budget_policy,
++        "max_tokens_transport": "explicit-json-null" if a.generation_budget_policy == "remaining-context" else "explicit-positive-integer",
++        "upstream_code_commit": LONGBENCH_COMMIT, "source": provenance, "settings": settings,
++        "tokenizer": identity, "tokenizer_packages": package_versions(["transformers", "tokenizers", "huggingface_hub"]),
++        "protocol": ("Qwen non-thinking inputs; sampling specified by run.json" if not a.thinking
++                     else "experimental Qwen thinking inputs; sampling specified by run.json"),
++        "source_config_sha256": sha_file(Path(__file__).parent / "config/tasks.json"), "datasets": {}}
++    for name, (raw, member, rows, excluded, total, eligible) in prepared.items():
++        rawpath = a.out / "raw" / (name + ".jsonl")
++        rawpath.parent.mkdir(parents=True, exist_ok=True)
++        rawpath.write_bytes(raw)
++        path = a.out / (name + ".jsonl")
++        write_jsonl(path, rows)
++        write_jsonl(a.out / (name + ".excluded.jsonl"), excluded)
++        manifest["datasets"][name] = {"file": path.name, "sha256": sha_file(path), "source_member": member,
++            "raw_file": str(rawpath.relative_to(a.out)), "raw_sha256": sha_file(rawpath), "source_count": total,
++            "eligible_count": eligible, "excluded_count": len(excluded), "selected_count": len(rows),
++            "selected_case_ids": [r["case_id"] for r in rows], "truncated_count": sum(r["was_truncated"] for r in rows),
++            "input_tokens": describe([r["input_tokens"] for r in rows]), "max_tokens": rows[0]["max_tokens"],
++            "generation_budget_policy": a.generation_budget_policy,
++            "remaining_context_tokens": describe([r["remaining_context_tokens"] for r in rows]),
++            "generation_budget_tokens": describe([r["generation_budget_tokens"] for r in rows]),
++            "cohort": "entire-source" if len(rows) == total and not any(r["was_truncated"] for r in rows) else "selected-or-truncated-cohort"}
++    atomic_json(a.out / "manifest.json", manifest)
++    print(json.dumps({"out": str(a.out), "datasets": {k: {x: v[x] for x in ["source_count", "selected_count", "excluded_count", "truncated_count", "input_tokens"]}
++                                                  for k, v in manifest["datasets"].items()}}, ensure_ascii=False, indent=2))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/kvbench_longcontext/report.py b/kvbench_longcontext/report.py
+new file mode 100644
+index 0000000..c8a32fb
+--- /dev/null
++++ b/kvbench_longcontext/report.py
+@@ -0,0 +1,161 @@
++"""Create human-readable tables from saved results; never run inference or grading."""
++from __future__ import annotations
++
++import argparse
++import csv
++import json
++import math
++from pathlib import Path
++
++
++FIELDS = [
++    "run_name", "method", "dataset", "repeat", "concurrency", "generation_budget_policy",
++    "thinking", "temperature", "top_p", "top_k", "min_p", "data_manifest_sha256",
++    "expected_tasks", "valid_responses", "scored_tasks", "measurement_complete", "evaluation_complete",
++    "generation_budget_consistent", "unexpected_length_before_budget_count",
++    "score_name", "task_score_0_100", "input_tokens_mean", "output_tokens_mean",
++    "ttft_ms_mean", "ttft_ms_p95", "tpot_ms_mean", "tpot_samples", "e2e_s_mean", "e2e_s_p95",
++    "output_tokens_per_s", "valid_requests_per_s", "length_capped", "length_capped_percent_of_valid",
++    "empty_final_answers", "preemptions_delta", "http_failed", "incomplete_streams",
++    "missing_native_usage", "prompt_token_mismatches", "missing_tasks", "invalid_response_tasks",
++    "unscored_tasks", "source_point_dir",
++]
++
++
++def read_object(path, required=False):
++    path = Path(path)
++    if not path.is_file():
++        if required:
++            raise FileNotFoundError(path)
++        return {}
++    value = json.loads(path.read_text(encoding="utf-8"))
++    if not isinstance(value, dict):
++        raise ValueError("Expected a JSON object: " + str(path))
++    return value
++
++
++def number(value, factor=1):
++    if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value):
++        return value * factor
++    return None
++
++
++def statistic(summary, name, key="mean", factor=1):
++    return number(summary.get(name, {}).get(key), factor)
++
++
++def collect_run(folder):
++    folder = Path(folder).resolve()
++    run = read_object(folder / "run.json", required=True)
++    if run.get("schema") != "kvbench.longcontext.run.v1":
++        raise ValueError("Unsupported run schema: " + str(folder))
++    settings, rows, seen = run["settings"], [], set()
++    for point in run["points"]:
++        pid = point["id"]
++        if not isinstance(pid, str) or Path(pid).name != pid or pid in (".", "..") or pid in seen:
++            raise ValueError("Invalid or duplicate point ID")
++        seen.add(pid)
++        dest = folder / pid
++        perf = read_object(dest / "performance.summary.json")
++        quality = read_object(dest / "scores.summary.json")
++        for summary in (perf, quality):
++            for field in ("id", "dataset", "repeat", "concurrency", "expected_tasks"):
++                if field in summary and summary[field] != point[field]:
++                    raise ValueError(f"Summary/plan mismatch: {pid} {field}")
++        if perf.get("method", run["method"]) != run["method"]:
++            raise ValueError("Performance method differs from run method")
++        complete = quality.get("evaluation_complete") is True
++        row = {k: None for k in FIELDS}
++        row.update(run_name=folder.name, method=run["method"], dataset=point["dataset"],
++                   repeat=point["repeat"], concurrency=point["concurrency"],
++                   generation_budget_policy=settings.get("generation_budget_policy", "not-recorded"),
++                   data_manifest_sha256=run.get("data_manifest_sha256"),
++                   expected_tasks=point["expected_tasks"],
++                   measurement_complete=perf.get("measurement_complete") is True,
++                   evaluation_complete=complete, source_point_dir=str(dest),
++                   task_score_0_100=number(quality.get("task_score_0_100")) if complete else None,
++                   score_name=quality.get("score_name"),
++                   input_tokens_mean=statistic(perf, "prompt_tokens"),
++                   output_tokens_mean=statistic(perf, "completion_tokens"),
++                   ttft_ms_mean=statistic(perf, "ttft_s", factor=1000),
++                   ttft_ms_p95=statistic(perf, "ttft_s", "p95", 1000),
++                   tpot_ms_mean=statistic(perf, "tpot_s", factor=1000),
++                   tpot_samples=statistic(perf, "tpot_s", "n"),
++                   e2e_s_mean=statistic(perf, "e2e_s"),
++                   e2e_s_p95=statistic(perf, "e2e_s", "p95"))
++        for key in ("thinking", "temperature", "top_p", "top_k", "min_p"):
++            row[key] = settings.get(key)
++        for key in ("valid_responses", "output_tokens_per_s", "valid_requests_per_s", "length_capped",
++                    "empty_final_answers", "preemptions_delta", "http_failed", "incomplete_streams",
++                    "missing_native_usage", "prompt_token_mismatches", "generation_budget_consistent",
++                    "unexpected_length_before_budget_count"):
++            row[key] = perf.get(key)
++        for key in ("scored_tasks", "missing_tasks", "invalid_response_tasks", "unscored_tasks"):
++            row[key] = quality.get(key)
++        valid, capped = number(row["valid_responses"]), number(row["length_capped"])
++        row["length_capped_percent_of_valid"] = 100 * capped / valid if valid and capped is not None else None
++        rows.append(row)
++    return rows
++
++
++def display(value, digits=2):
++    if value is None:
++        return "NA"
++    if isinstance(value, bool):
++        return "是" if value else "否"
++    if isinstance(value, float):
++        return f"{value:.{digits}f}"
++    return str(value).replace("|", "\\|").replace("\n", " ")
++
++
++def markdown_table(headers, rows):
++    return "\n".join(["| " + " | ".join(headers) + " |",
++                       "| " + " | ".join("---" for _ in headers) + " |"] +
++                      ["| " + " | ".join(display(x) for x in row) + " |" for row in rows])
++
++
++def main(argv=None):
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--run-dir", type=Path, nargs="+", required=True)
++    parser.add_argument("--out", type=Path, required=True, help="Directory for overview.md and overview.csv")
++    args = parser.parse_args(argv)
++    if len({str(p.resolve()) for p in args.run_dir}) != len(args.run_dir):
++        raise ValueError("Duplicate run directories")
++    rows = [row for folder in args.run_dir for row in collect_run(folder)]
++    args.out.mkdir(parents=True, exist_ok=True)
++    csvpath, mdpath = args.out / "overview.csv", args.out / "overview.md"
++    with csvpath.open("w", newline="", encoding="utf-8-sig") as f:
++        writer = csv.DictWriter(f, fieldnames=FIELDS)
++        writer.writeheader()
++        writer.writerows(rows)
++    quality_rows = [[r["run_name"], r["dataset"], f'r{r["repeat"]}/C{r["concurrency"]}',
++                     f'{display(r["valid_responses"])}/{r["expected_tasks"]}', r["scored_tasks"],
++                     r["task_score_0_100"], r["length_capped"], r["empty_final_answers"],
++                     r["measurement_complete"], r["evaluation_complete"], r["generation_budget_consistent"]] for r in rows]
++    performance_rows = [[r["run_name"], r["dataset"], f'r{r["repeat"]}/C{r["concurrency"]}',
++                         r["input_tokens_mean"], r["output_tokens_mean"], r["ttft_ms_mean"],
++                         r["tpot_ms_mean"], r["e2e_s_mean"], r["e2e_s_p95"],
++                         r["output_tokens_per_s"], r["preemptions_delta"]] for r in rows]
++    text = "# 长输入实验结果速读\n\n"
++    text += "本报告只读取已保存的结果，不运行推理或重新评分。先检查测量完整/评分完整，再比较同一任务、同一数据清单与协议。\n\n"
++    text += "NA 表示尚无完整结果或指标不可计算；真实 0 分保留为 0。CSV 的空白数值对应 NA。未完成点仍按运行计划列出。\n\n"
++    text += "## 质量与完整性\n\n" + markdown_table(
++        ["运行", "任务", "重复/并发", "有效/应有", "已评分", "质量分0–100", "截断数", "空答案", "测量完整", "评分完整", "预算一致"], quality_rows)
++    text += "\n\n## 性能\n\n" + markdown_table(
++        ["运行", "任务", "重复/并发", "输入均值token", "输出均值token", "TTFT均值ms", "TPOT均值ms", "E2E均值s", "E2E p95 s", "输出token/s", "抢占增量"], performance_rows)
++    text += "\n\n思考与最终答案的全部生成 token 计入输出和 TPOT；TTFT 是首个 reasoning/content 片段，非最终答案首 token 时间。\n\n"
++    text += "截断完整响应仍评分，不保证为0；思考未结束且无最终答案按空答案计分。基础设施失败不会伪装成完整0分。\n\n"
++    text += "预算一致为否表示原生usage与推导预算存在差异，例如length早于剩余上下文边界。提前length的完整响应仍评分；应核对服务端预算和token计数，不能仅凭该标记断定有隐藏cap。\n\n"
++    text += "测量不完整时，表中性能可能来自已收到的部分响应，不能当作完整主对照。质量分仅在评分完整时展示。\n\n"
++    text += "不计算跨任务总体准确率，不自动按分数或吞吐判定方法优胜。少量 smoke 样本的p95只作流程诊断。\n\n## 来源与协议\n\n"
++    for folder in args.run_dir:
++        run = read_object(folder / "run.json", required=True)
++        text += f"- `{folder.resolve()}`：method={run['method']}；data_manifest_sha256={run.get('data_manifest_sha256')}；settings=`{json.dumps(run['settings'], ensure_ascii=False, sort_keys=True)}`\n"
++    mdpath.write_text(text, encoding="utf-8")
++    print(json.dumps({"points": len(rows), "overview_markdown": str(mdpath.resolve()),
++                      "overview_csv": str(csvpath.resolve()),
++                      "complete_quality_points": sum(r["evaluation_complete"] for r in rows)}, ensure_ascii=False, indent=2))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/kvbench_longcontext/requirements-client.txt b/kvbench_longcontext/requirements-client.txt
+new file mode 100644
+index 0000000..8033b0d
+--- /dev/null
++++ b/kvbench_longcontext/requirements-client.txt
+@@ -0,0 +1,6 @@
++# Install only in evalscope-client, using the existing tokenizer constraints.
++# These tokenizer versions match the uploaded V8 environment; no GPU stack install.
++transformers==4.57.6
++tokenizers==0.22.2
++huggingface_hub==0.36.2
++rouge==1.0.1
+diff --git a/kvbench_longcontext/requirements-lcc.txt b/kvbench_longcontext/requirements-lcc.txt
+new file mode 100644
+index 0000000..1ccb522
+--- /dev/null
++++ b/kvbench_longcontext/requirements-lcc.txt
+@@ -0,0 +1,4 @@
++# Only needed if adding optional LCC edit-similarity scoring.
++-r requirements-client.txt
++fuzzywuzzy==0.18.0
++python-Levenshtein==0.25.1
+diff --git a/kvbench_longcontext/run.py b/kvbench_longcontext/run.py
+new file mode 100644
+index 0000000..0177768
+--- /dev/null
++++ b/kvbench_longcontext/run.py
+@@ -0,0 +1,434 @@
++"""Bounded, auditable local OpenAI-compatible SSE client for frozen long inputs."""
++from __future__ import annotations
++
++import argparse
++from concurrent.futures import ThreadPoolExecutor, as_completed
++import gzip
++import json
++import math
++import os
++from pathlib import Path
++import re
++import threading
++import time
++import urllib.error
++import urllib.parse
++import urllib.request
++
++from .common import (atomic_json, canonical, checked_data, describe, digest, package_versions,
++                     sha_file, write_jsonl)
++from .serve import http_text, run_text, verify_cache, verify_model
++
++
++def validate_sampling(temperature, top_p, top_k, min_p):
++    if (not math.isfinite(temperature) or temperature < 0
++            or not math.isfinite(top_p) or not 0 < top_p <= 1):
++        raise ValueError("temperature must be finite and nonnegative; top_p must be in (0, 1]")
++    if not isinstance(top_k, int) or isinstance(top_k, bool) or top_k != -1 and top_k < 1:
++        raise ValueError("top_k must be -1 (disabled) or a positive integer")
++    if not math.isfinite(min_p) or not 0 <= min_p <= 1:
++        raise ValueError("min_p must be finite and in [0, 1]")
++
++
++def make_request(row, model, thinking=True, temperature=0.6, top_p=0.95, seed=42, top_k=20, min_p=0.0):
++    validate_sampling(temperature, top_p, top_k, min_p)
++    request = {"model": model, "stream": True, "stream_options": {"include_usage": True},
++               "n": 1, "max_tokens": row["max_tokens"], "temperature": temperature,
++               "top_p": top_p, "top_k": top_k, "min_p": min_p, "seed": seed,
++               "repetition_penalty": 1.0, "frequency_penalty": 0.0, "presence_penalty": 0.0}
++    if row["request_kind"] == "chat":
++        request["messages"] = [{"role": "user", "content": row["prompt"]}]
++        request["chat_template_kwargs"] = {"enable_thinking": thinking}
++    else:
++        request["prompt"] = row["prompt"]
++        request["add_special_tokens"] = False
++    return request
++
++
++def sse_events(response, deadline):
++    """Check elapsed time between SSE lines; socket timeout applies while blocked."""
++    lines = []
++    for raw in response:
++        if deadline is not None and time.monotonic() > deadline:
++            raise TimeoutError("Elapsed-time limit exceeded between SSE lines")
++        line = raw.decode("utf-8").rstrip("\r\n")
++        if not line:
++            if lines:
++                yield "\n".join(lines)
++                lines = []
++        elif line.startswith("data:"):
++            lines.append(line[5:].lstrip(" "))
++        # SSE comments, event/id/retry fields are not model content.
++    if lines:
++        yield "\n".join(lines)
++
++
++def extract_final(content, reasoning, thinking, kind="chat", reasoning_channel=False):
++    if reasoning_channel:
++        return content, reasoning, "server-reasoning-channel"
++    if not thinking:
++        # Code-completion whitespace and literal <think> tags can be answer data.
++        # Preserve them. Chat may have a leading EMPTY Qwen thinking wrapper only.
++        if kind == "chat":
++            match = re.match(r"^\s*<think>\s*</think>\s*", content)
++            if match:
++                return content[match.end():], reasoning, "leading-empty-think-wrapper"
++        return content, reasoning, "non-thinking-raw-content"
++    if "</think>" in content:
++        before, final = content.split("</think>", 1)
++        return final, reasoning or before.split("<think>", 1)[-1], "first-closed-think-delimiter"
++    return "", reasoning or content, "unfinished-thinking-or-no-final-channel"
++
++
++def stream_request(base_url, row, request, destination, timeout, headers=None, thinking=False, native_max_model_len=None):
++    started = time.monotonic()
++    unix_started = time.time()
++    chunks, content, reasoning, error = [], [], [], None
++    usage, finish, first, done, http_success = None, None, None, False, False
++    reasoning_channel = False
++    endpoint = "/v1/chat/completions" if row["request_kind"] == "chat" else "/v1/completions"
++    reqheaders = {"Content-Type": "application/json", "Accept": "text/event-stream", **(headers or {})}
++    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
++    req = urllib.request.Request(base_url + endpoint, data=canonical(request).encode("utf-8"), headers=reqheaders, method="POST")
++    status = None
++    try:
++        with opener.open(req, timeout=timeout if timeout > 0 else None) as response:
++            status = response.status
++            http_success = 200 <= status < 300
++            if "text/event-stream" not in response.headers.get("Content-Type", "").lower():
++                raise ValueError("Expected text/event-stream response")
++            for data in sse_events(response, started + timeout if timeout > 0 else None):
++                received = time.monotonic()
++                if data == "[DONE]":
++                    done = True
++                    break
++                chunks.append({"elapsed_s": received - started, "raw_data": data})
++                chunk = json.loads(data)
++                chunks[-1]["data"] = chunk
++                if chunk.get("error") is not None:
++                    raise ValueError("Server stream error: " + str(chunk["error"]))
++                # Usage-only final chunks have choices=[], and must still be retained.
++                if isinstance(chunk.get("usage"), dict):
++                    usage = chunk["usage"]
++                for choice in chunk.get("choices") or []:
++                    if choice.get("index", 0) != 0:
++                        raise ValueError("Only n=1 / choice index 0 is supported")
++                    delta = choice.get("delta", {})
++                    reasoning_channel |= isinstance(delta.get("reasoning_content"), str) or isinstance(delta.get("reasoning"), str)
++                    piece = delta.get("content", "") if row["request_kind"] == "chat" else choice.get("text", "")
++                    rp = delta.get("reasoning_content")
++                    if rp is None:
++                        rp = delta.get("reasoning", "")
++                    if piece is not None and not isinstance(piece, str) or rp is not None and not isinstance(rp, str):
++                        raise ValueError("Unknown response content type")
++                    if piece or rp:
++                        if first is None:
++                            first = received
++                        content.append(piece or "")
++                        reasoning.append(rp or "")
++                    if choice.get("finish_reason") is not None:
++                        finish = choice["finish_reason"]
++    except urllib.error.HTTPError as exc:
++        status = exc.code
++        http_success = False
++        error = f"HTTP {exc.code}: " + exc.read(4096).decode("utf-8", errors="replace")
++    except Exception as exc:
++        error = type(exc).__name__ + ": " + str(exc)
++    ended = time.monotonic()
++    destination = Path(destination)
++    destination.parent.mkdir(parents=True, exist_ok=True)
++    with gzip.open(destination, "wt", encoding="utf-8") as f:
++        json.dump(chunks, f, ensure_ascii=False)
++    raw, raw_reasoning = "".join(content), "".join(reasoning)
++    final, full_reasoning, extraction = extract_final(raw, raw_reasoning, thinking, row["request_kind"], reasoning_channel)
++    native = bool(usage and all(isinstance(usage.get(k), int) and not isinstance(usage[k], bool) and usage[k] >= 0
++                              for k in ["prompt_tokens", "completion_tokens"]))
++    input_count = usage["prompt_tokens"] if native else None
++    output_count = usage["completion_tokens"] if native else None
++    remaining_native = native_max_model_len - input_count if native and native_max_model_len is not None else None
++    native_budget = (remaining_native if request["max_tokens"] is None else min(remaining_native, request["max_tokens"])) if remaining_native is not None else None
++    prompt_match = input_count == row.get("input_tokens") if native and row.get("input_tokens") is not None else None
++    complete = http_success and done and error is None and finish in ("stop", "length")
++    early_length = bool(complete and request["max_tokens"] is None and native_budget is not None
++                        and finish == "length" and output_count < native_budget)
++    budget_match = None if native_budget is None else native_budget > 0 and output_count <= native_budget
++    tpot = (ended - first) / (output_count - 1) if first is not None and native and output_count > 1 else None
++    return {"dataset": row["dataset"], "case_id": row["case_id"], "request": request,
++        "http_status": status, "http_success": http_success, "response_complete": complete,
++        "protocol_valid": complete and native and prompt_match is not False and budget_match is not False,
++        "error": error, "done_marker_received": done, "finish_reason": finish, "length_capped": finish == "length",
++        "raw_content": raw, "reasoning_content": full_reasoning, "final_answer": final,
++        "answer_extraction": extraction, "usage": usage, "native_usage_complete": native,
++        "input_tokens_expected": row.get("input_tokens"), "prompt_tokens": input_count,
++        "prompt_token_match": prompt_match, "completion_tokens": output_count,
++        "generation_budget_policy": row.get("generation_budget_policy"), "request_max_tokens": request["max_tokens"],
++        "remaining_context_tokens_local": row.get("remaining_context_tokens"),
++        "remaining_context_tokens_native": remaining_native, "generation_budget_tokens_native": native_budget,
++        "native_remaining_source": "computed_from_native_prompt_tokens_and_verified_model_window",
++        "native_max_model_len": native_max_model_len, "generation_budget_valid": budget_match,
++        "unexpected_length_before_budget": early_length,
++        "generation_budget_consistent": None if budget_match is None else budget_match and not early_length,
++        "token_count_source": "server_usage" if native else "missing-no-fallback",
++        "started_monotonic": started, "ended_monotonic": ended, "started_unix_time": unix_started,
++        "e2e_s": ended - started, "ttft_s": first - started if first else None, "tpot_s": tpot,
++        "raw_chunks_file": ("raw/" if destination.parent.name == "raw" else "") + destination.name,
++        "raw_chunks_sha256": sha_file(destination)}
++
++
++def metric_values(text, suffix):
++    values = []
++    for line in text.splitlines():
++        if line.startswith("#"):
++            continue
++        match = re.match(r"([^ {]+)(?:\{.*\})?\s+([^ ]+)", line)
++        if match and match[1].endswith(suffix):
++            try:
++                values.append(float(match[2]))
++            except ValueError:
++                pass
++    return values
++
++
++class Observer:
++    def __init__(self, base_url, path, gpu, interval, headers):
++        self.base, self.path, self.gpu, self.interval, self.headers = base_url, Path(path), gpu, interval, headers
++        self.stop_event = threading.Event()
++        self.thread = threading.Thread(target=self.loop, daemon=True)
++
++    def loop(self):
++        with self.path.open("w", encoding="utf-8") as target:
++            while not self.stop_event.is_set():
++                record = {"unix_time": time.time()}
++                try:
++                    text = http_text(self.base + "/metrics", timeout=3, headers=self.headers)
++                    record["kv_usage_fraction"] = metric_values(text, "kv_cache_usage_perc")
++                    record["preemptions_total"] = metric_values(text, "num_preemptions_total")
++                    record["num_requests_running"] = metric_values(text, "num_requests_running")
++                except Exception as exc:
++                    record["metrics_error"] = str(exc)
++                if self.gpu is not None:
++                    record["gpu"] = run_text(["nvidia-smi", "-i", self.gpu,
++                        "--query-gpu=memory.used,utilization.gpu,power.draw,temperature.gpu,clocks.sm,clocks.mem",
++                        "--format=csv,noheader,nounits"], timeout=4)
++                target.write(canonical(record) + "\n")
++                target.flush()
++                self.stop_event.wait(self.interval)
++
++    def start(self):
++        self.thread.start()
++
++    def stop(self):
++        self.stop_event.set()
++        self.thread.join(timeout=15)
++        if self.thread.is_alive():
++            raise RuntimeError("Observer did not stop; refusing overlapping measurement")
++
++
++def summarize(records, expected):
++    good = [r for r in records if r["response_complete"] and r["protocol_valid"]]
++    window = max(r["ended_monotonic"] for r in records) - min(r["started_monotonic"] for r in records) if records else None
++    usage_complete = bool(good) and all(r["native_usage_complete"] for r in good)
++    return {"expected_tasks": expected, "recorded_tasks": len(records), "valid_responses": len(good),
++        "measurement_complete": len(records) == expected and len(good) == expected,
++        "http_failed": sum(not r["http_success"] for r in records),
++        "incomplete_streams": sum(not r["response_complete"] for r in records),
++        "missing_native_usage": sum(not r["native_usage_complete"] for r in records),
++        "prompt_token_mismatches": sum(r["prompt_token_match"] is False for r in records),
++        "generation_budget_violations": sum(r.get("generation_budget_valid") is False for r in records),
++        "unexpected_length_before_budget_count": sum(r.get("unexpected_length_before_budget", False) for r in records),
++        "generation_budget_consistent": (all(r["generation_budget_consistent"] for r in records)
++            if records and all(r.get("generation_budget_consistent") is not None for r in records) else None),
++        "length_capped": sum(r["length_capped"] for r in good),
++        "length_limit_terminations": sum(r["length_capped"] for r in good),
++        "empty_final_answers": sum(not r["final_answer"].strip() for r in good),
++        "request_window_s": window, "valid_requests_per_s": len(good) / window if window else None,
++        "output_tokens_per_s": sum(r["completion_tokens"] for r in good) / window if window and usage_complete else None,
++        "prompt_tokens": describe([r["prompt_tokens"] for r in good]),
++        "completion_tokens": describe([r["completion_tokens"] for r in good]),
++        "ttft_s": describe([r["ttft_s"] for r in good]), "tpot_s": describe([r["tpot_s"] for r in good]),
++        "e2e_s": describe([r["e2e_s"] for r in good]),
++        "timing_definition": "TTFT=first nonempty content/reasoning chunk; TPOT=(E2E-TTFT)/(native completion_tokens-1); request-equal mean",
++        "timing_scope": "HTTP client service latency; includes scheduling/network, not a pure GPU kernel timer",
++        "quality": "Score separately with kvbench_longcontext.scoring; caps remain included"}
++
++
++def main(argv=None):
++    p = argparse.ArgumentParser(description=__doc__)
++    p.add_argument("--data-dir", type=Path, required=True)
++    p.add_argument("--out", type=Path, required=True)
++    p.add_argument("--server-manifest", type=Path)
++    p.add_argument("--concurrency", type=int, nargs="+", default=[1])
++    p.add_argument("--repeats", type=int, default=1)
++    p.add_argument("--temperature", type=float, default=0.6)
++    p.add_argument("--top-p", type=float, default=0.95)
++    p.add_argument("--top-k", type=int, default=20, help="-1 disables top-k; otherwise a positive integer")
++    p.add_argument("--min-p", type=float, default=0.0, help="Minimum relative token probability in [0, 1]")
++    p.add_argument("--seed", type=int, default=20261009)
++    p.add_argument("--request-timeout", type=float, default=0,
++                   help="0 disables request socket/elapsed limits; positive seconds enable socket timeout and checks between SSE lines")
++    p.add_argument("--warmup", type=int, default=1)
++    p.add_argument("--warmup-per-point", type=int, default=-1,
++                   help="Unmeasured real long prompts per point; -1 uses that point's concurrency, 0 disables; each output capped at 32")
++    p.add_argument("--gpu", help="Optional physical GPU index for nvidia-smi telemetry")
++    p.add_argument("--sample-interval", type=float, default=2.0)
++    p.add_argument("--api-key-env", help="Optional environment variable containing API key; key is never written to artifacts")
++    p.add_argument("--continue-on-error", action="store_true")
++    p.add_argument("--dry-run", action="store_true")
++    args = p.parse_args(argv)
++    manifest, datasets = checked_data(args.data_dir)
++    if (min(args.concurrency + [args.repeats]) < 1 or not math.isfinite(args.request_timeout) or args.request_timeout < 0 or args.sample_interval <= 0
++            or args.warmup < 0 or args.warmup_per_point < -1):
++        raise ValueError("Invalid count or timeout")
++    validate_sampling(args.temperature, args.top_p, args.top_k, args.min_p)
++    points = [{"id": f"r{rep:02d}_{name}_C{c}", "dataset": name, "repeat": rep, "concurrency": c,
++               "expected_tasks": len(rows)} for rep in range(1, args.repeats + 1)
++              for name, rows in datasets.items() for c in args.concurrency]
++    if any(p["concurrency"] > p["expected_tasks"] for p in points):
++        raise ValueError("Concurrency exceeds selected cases; prepare a larger cohort")
++    if any(args.warmup_per_point > p["expected_tasks"] for p in points):
++        raise ValueError("Requested per-point warmup exceeds selected cases")
++    if len({p["id"] for p in points}) != len(points):
++        raise ValueError("Duplicate concurrency levels")
++    if args.dry_run:
++        print(json.dumps({"status": "plan-only; no HTTP or GPU accessed", "points": points,
++                         "data_manifest_sha256": sha_file(args.data_dir / "manifest.json"),
++                         "thinking": manifest["settings"]["thinking"], "temperature": args.temperature,
++                         "top_p": args.top_p, "top_k": args.top_k, "min_p": args.min_p,
++                         "generation_budget_policy": manifest["generation_budget_policy"],
++                         "max_tokens_transport": manifest["max_tokens_transport"],
++                         "request_timeout": args.request_timeout,
++                         "warmup_per_point": args.warmup_per_point,
++                         "max_tokens": {k: v["max_tokens"] for k, v in manifest["datasets"].items()}}, indent=2))
++        return
++    if args.server_manifest is None:
++        raise ValueError("--server-manifest from the current serve launch is required")
++    launch = json.loads(args.server_manifest.read_text(encoding="utf-8"))
++    if launch.get("schema") != "kvbench.longcontext.server.v1" or not launch.get("native_verified"):
++        raise ValueError("Launcher has not verified its native cache configuration")
++    config, base = launch["config"], launch["base_url"].rstrip("/")
++    url = urllib.parse.urlsplit(base)
++    if url.scheme != "http" or url.hostname not in ("127.0.0.1", "localhost", "::1") or url.path:
++        raise ValueError("This runner supports only an explicitly launched local HTTP server")
++    if launch["tokenizer"]["fingerprint"] != manifest["tokenizer"]["fingerprint"]:
++        raise ValueError("Server model/tokenizer fingerprint differs from frozen preparation")
++    if config["max_model_len"] != manifest["settings"]["max_model_len"] or max(args.concurrency) > config["max_seqs"]:
++        raise ValueError("Server context window or max-seqs does not match planned data/concurrency")
++    headers = {}
++    if args.api_key_env:
++        key = os.environ.get(args.api_key_env)
++        if not key:
++            raise ValueError("API key environment variable is empty")
++        headers["Authorization"] = "Bearer " + key
++    models = json.loads(http_text(base + "/v1/models", headers=headers))
++    live_model = verify_model(models, config)
++    if config.get("generation_config") != "vllm" or config.get("override_generation_config") != {}:
++        raise ValueError("This protocol requires --generation-config vllm without generation overrides")
++    before = http_text(base + "/metrics", headers=headers)
++    actual = verify_cache(before, config)
++    if args.out.exists() and any(args.out.iterdir()):
++        raise ValueError("Run output directory must be new/empty; no automatic resume or overwrite")
++    args.out.mkdir(parents=True, exist_ok=True)
++    atomic_json(args.out / "server.launch.json", launch)
++    run = {"schema": "kvbench.longcontext.run.v1", "data_manifest_sha256": sha_file(args.data_dir / "manifest.json"),
++           "data_dir": str(args.data_dir.resolve()), "server_manifest_sha256": sha_file(args.server_manifest),
++           "method": config["method"], "native_cache_config": actual, "points": points,
++           "native_max_model_len": live_model["max_model_len"],
++           "native_kv_capacity_tokens": int(actual["num_gpu_blocks"]) * int(actual["block_size"]),
++           "settings": {"thinking": manifest["settings"]["thinking"], "temperature": args.temperature,
++                        "top_p": args.top_p, "top_k": args.top_k, "min_p": args.min_p,
++                        "generation_budget_policy": manifest["generation_budget_policy"],
++                        "max_tokens_transport": manifest["max_tokens_transport"],
++                        "request_seed_base": args.seed,
++                        "request_timeout": args.request_timeout, "warmup": args.warmup,
++                        "warmup_per_point": args.warmup_per_point, "warmup_output_cap": 32, "retries": 0},
++           "client_packages": package_versions(["transformers", "tokenizers"]),
++           "scripts_sha256": {x.name: sha_file(x) for x in Path(__file__).parent.glob("*.py")}}
++    atomic_json(args.out / "run.json", run)
++    # Short, separate warmup. It does not contain benchmark context or answers.
++    for i in range(args.warmup):
++        row = {"dataset": "warmup", "case_id": "warmup/" + str(i), "request_kind": "chat",
++               "prompt": "Reply with the word ready.", "max_tokens": 16, "input_tokens": None,
++               "generation_budget_policy": "unmeasured-health-warmup-fixed"}
++        req = make_request(row, config["model_name"], thinking=False, temperature=0.0, top_p=1.0,
++                           top_k=-1, min_p=0.0, seed=args.seed + i)
++        result = stream_request(base, row, req, args.out / f"warmup.{i}.chunks.json.gz", args.request_timeout, headers,
++                                native_max_model_len=live_model["max_model_len"])
++        atomic_json(args.out / f"warmup.{i}.json", result)
++        if not result["protocol_valid"]:
++            raise RuntimeError("Warmup stream/native-usage protocol failed; measurement was not started")
++    summaries = []
++    for point in points:
++        dest = args.out / point["id"]
++        dest.mkdir()
++        rows = datasets[point["dataset"]]
++        requests = [make_request(r, config["model_name"], manifest["settings"]["thinking"], args.temperature,
++                                args.top_p, int(digest([args.seed, point["repeat"], r["case_id"]])[:8], 16) % (2**31 - 1),
++                                top_k=args.top_k, min_p=args.min_p) for r in rows]
++        write_jsonl(dest / "measure.requests.jsonl", requests)
++        atomic_json(dest / "point.json", point)
++        warm_count = point["concurrency"] if args.warmup_per_point == -1 else args.warmup_per_point
++        if warm_count:
++            warm_dir = dest / "warmup"
++            warm_dir.mkdir()
++            warm_rows = [{**r, "max_tokens": min(32, r["remaining_context_tokens"],
++                          r["max_tokens"] if r["max_tokens"] is not None else r["remaining_context_tokens"]),
++                          "generation_budget_policy": "unmeasured-point-warmup-fixed"} for r in rows[:warm_count]]
++            warm_requests = [make_request(r, config["model_name"], manifest["settings"]["thinking"],
++                args.temperature, args.top_p, int(digest(["warmup", args.seed, point["repeat"], r["case_id"]])[:8], 16) % (2**31 - 1),
++                top_k=args.top_k, min_p=args.min_p)
++                for r in warm_rows]
++            write_jsonl(warm_dir / "requests.sent.jsonl", warm_requests)
++            with ThreadPoolExecutor(max_workers=min(point["concurrency"], warm_count)) as pool:
++                futures = [pool.submit(stream_request, base, row, request, warm_dir / "raw" / f"{i:05d}.json.gz",
++                    args.request_timeout, headers, manifest["settings"]["thinking"], live_model["max_model_len"])
++                    for i, (row, request) in enumerate(zip(warm_rows, warm_requests))]
++                warm_records = [f.result() for f in futures]
++            write_jsonl(warm_dir / "responses.jsonl", warm_records)
++            if not all(r["protocol_valid"] for r in warm_records):
++                raise RuntimeError("Long-input per-point warmup failed; measurement for this point was not started")
++        # APC is verified off. Real long-prompt warmup covers this concurrency's
++        # prefill/decode paths, with a short cap; only subsequent work is measured.
++        before = http_text(base + "/metrics", headers=headers)
++        (dest / "metrics.before.txt").write_text(before, encoding="utf-8")
++        verify_cache(before, config)
++        observer = Observer(base, dest / "telemetry.jsonl", args.gpu, args.sample_interval, headers)
++        observer.start()
++        records = []
++        try:
++            with (dest / "requests.jsonl").open("w", encoding="utf-8") as out, ThreadPoolExecutor(max_workers=point["concurrency"]) as pool:
++                futures = [pool.submit(stream_request, base, row, request, dest / "raw" / f"{i:05d}.json.gz",
++                                       args.request_timeout, headers, manifest["settings"]["thinking"], live_model["max_model_len"])
++                           for i, (row, request) in enumerate(zip(rows, requests))]
++                for future in as_completed(futures):
++                    record = future.result()
++                    records.append(record)
++                    out.write(canonical(record) + "\n")
++                    out.flush()
++        finally:
++            observer.stop()
++        after = http_text(base + "/metrics", headers=headers)
++        (dest / "metrics.after.txt").write_text(after, encoding="utf-8")
++        summary = summarize(records, len(rows))
++        a, b = metric_values(before, "num_preemptions_total"), metric_values(after, "num_preemptions_total")
++        summary.update(point, method=config["method"],
++                       generation_budget_policy=manifest["generation_budget_policy"],
++                       request_max_tokens=manifest["datasets"][point["dataset"]]["max_tokens"],
++                       remaining_context_tokens_local=manifest["datasets"][point["dataset"]]["remaining_context_tokens"],
++                       remaining_context_tokens_native=describe([r["remaining_context_tokens_native"] for r in records]),
++                       native_max_model_len=live_model["max_model_len"],
++                       native_kv_capacity_tokens=int(actual["num_gpu_blocks"]) * int(actual["block_size"]),
++                       request_timeout=args.request_timeout,
++                       unmeasured_long_warmup_requests=warm_count, unmeasured_long_warmup_output_cap=32,
++                       warmup_note="same frozen long prompts and point concurrency; APC off; a 32-token warmup is not proof of full steady state",
++                       preemptions_delta=sum(b) - sum(a) if len(a) == len(b) and a and sum(b) >= sum(a) else None)
++        atomic_json(dest / "performance.summary.json", summary)
++        summaries.append(summary)
++        atomic_json(args.out / "performance.summary.json", summaries)
++        print(json.dumps({"point": point["id"], "measurement_complete": summary["measurement_complete"],
++                          "request_window_s": summary["request_window_s"], "length_capped": summary["length_capped"]}), flush=True)
++        if not summary["measurement_complete"] and not args.continue_on_error:
++            raise RuntimeError("Incomplete/protocol-invalid point; raw outputs preserved. Score saved outputs and inspect diagnostics before rerunning")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/kvbench_longcontext/scoring.py b/kvbench_longcontext/scoring.py
+new file mode 100644
+index 0000000..f7cf375
+--- /dev/null
++++ b/kvbench_longcontext/scoring.py
+@@ -0,0 +1,172 @@
++"""English LongBench metrics adapted from the pinned official implementation.
++
++See LICENSE.LongBench and SOURCES.md. These are task scores, not pass@1.
++No generated code is executed. Missing metric dependencies fail explicitly.
++"""
++from __future__ import annotations
++
++import argparse
++from collections import Counter
++import json
++import re
++import string
++from pathlib import Path
++
++from .common import (LONGBENCH_COMMIT, TASKS, atomic_json, checked_data, digest,
++                     package_versions, read_jsonl, sha_file, write_jsonl)
++
++
++def normalize_answer(text):
++    text = "".join(c for c in text.lower() if c not in set(string.punctuation))
++    return " ".join(re.sub(r"\b(a|an|the)\b", " ", text).split())
++
++
++def qa_f1(prediction, reference):
++    p, r = normalize_answer(prediction).split(), normalize_answer(reference).split()
++    common = sum((Counter(p) & Counter(r)).values())
++    if not common:
++        return 0.0
++    precision, recall = common / len(p), common / len(r)
++    return 2 * precision * recall / (precision + recall)
++
++
++def retrieval(prediction, reference):
++    matches = re.findall(r"Paragraph (\d+)", reference)
++    if not matches:
++        raise ValueError("Malformed official retrieval reference: " + reference)
++    numbers = re.findall(r"\d+", prediction)
++    return sum(x == matches[0] for x in numbers) / len(numbers) if numbers else 0.0
++
++
++def rouge_l(prediction, reference):
++    from rouge import Rouge
++    try:
++        return Rouge().get_scores([prediction], [reference], avg=True)["rouge-l"]["f"]
++    except (ValueError, RecursionError):
++        # Official LongBench maps empty/invalid ROUGE inputs to zero.
++        return 0.0
++
++
++def first_code_line(prediction):
++    for line in prediction.lstrip("\n").split("\n"):
++        if "`" not in line and "#" not in line and "//" not in line:
++            return line
++    return ""
++
++
++def code_sim(prediction, reference):
++    # Fix the optional backend explicitly: fuzzywuzzy otherwise changes to difflib
++    # when python-Levenshtein is absent, which can change edit-similarity scores.
++    import Levenshtein  # noqa: F401
++    from fuzzywuzzy import fuzz
++    return fuzz.ratio(first_code_line(prediction), reference) / 100.0
++
++
++METRICS = {"qa_f1": qa_f1, "retrieval": retrieval, "rouge_l": rouge_l, "code_sim": code_sim}
++
++
++def check_dependencies(metrics):
++    versions = package_versions(["rouge", "fuzzywuzzy", "python-Levenshtein", "Levenshtein", "rapidfuzz"])
++    if "rouge_l" in metrics and versions["rouge"] != "1.0.1":
++        raise RuntimeError("Scoring requires rouge==1.0.1 in the client environment")
++    if "code_sim" in metrics and (versions["fuzzywuzzy"] != "0.18.0" or versions["Levenshtein"] != "0.25.1"):
++        raise RuntimeError("LCC scoring requires fuzzywuzzy==0.18.0 and python-Levenshtein==0.25.1")
++    return versions
++
++
++def score_one(row, prediction):
++    return max(METRICS[row["metric"]](prediction, ref) for ref in row["answers"])
++
++
++def score_records(expected, responses):
++    wanted = {r["case_id"]: r for r in expected}
++    observed = {}
++    for response in responses:
++        cid = response.get("case_id")
++        if cid not in wanted:
++            raise ValueError("Unexpected output case: " + str(cid))
++        if cid in observed:
++            raise ValueError("Duplicate output case: " + str(cid))
++        observed[cid] = response
++    output, missing, invalid = [], [], []
++    for cid, row in wanted.items():
++        response = observed.get(cid)
++        valid = bool(response and response.get("http_success") and response.get("response_complete")
++                     and response.get("protocol_valid") is True)
++        if response is None:
++            missing.append(cid)
++        elif not valid:
++            invalid.append(cid)
++        prediction = response.get("final_answer", "") if valid else ""
++        score = score_one(row, prediction) if valid else None
++        output.append({"dataset": row["dataset"], "case_id": cid, "metric": row["metric"],
++                       "score": score, "scored": valid, "missing_response": response is None,
++                       "finish_reason": response.get("finish_reason") if response else None,
++                       "empty_final_answer": not prediction.strip() if valid else None,
++                       "input_tokens": row["input_tokens"], "source_length": row.get("source_length"),
++                       "was_truncated": row["was_truncated"]})
++    values = [r["score"] for r in output if r["scored"]]
++    complete = not missing and not invalid
++    summary = {"expected_tasks": len(expected), "observed_tasks": len(observed), "scored_tasks": len(values),
++               "missing_tasks": len(missing), "invalid_response_tasks": len(invalid),
++               "unscored_tasks": len(expected) - len(values), "missing_case_ids": missing,
++               "invalid_case_ids": invalid, "evaluation_complete": complete,
++               "task_score_0_100": 100 * sum(values) / len(expected) if complete else None,
++               "partial_available_score_0_100": 100 * sum(values) / len(values) if values else None,
++               "all_expected_zero_filled_score_0_100": 100 * sum(values) / len(expected) if expected else None,
++               "score_name": expected[0]["metric"] if expected else None,
++               "score_is_binary_accuracy": False, "aggregation": "mean of per-case max over references"}
++    bins = {}
++    for label, test in [("0-4k", lambda x: x < 4000), ("4-8k", lambda x: 4000 <= x < 8000),
++                        ("8k+", lambda x: x >= 8000)]:
++        members = [r for r in output if isinstance(r.get("source_length"), (int, float)) and test(r["source_length"])]
++        good = [r["score"] for r in members if r["scored"]]
++        bins[label] = {"expected": len(members), "scored": len(good),
++                       "score_0_100": 100 * sum(good) / len(members) if members and len(good) == len(members) else None}
++    summary["official_word_length_bins"] = bins
++    summary["bin_unit"] = "original LongBench English words, not local tokenizer tokens"
++    token_bins = {}
++    for lower, upper in [(0, 4096), (4096, 8192), (8192, 16384), (16384, 24576), (24576, None)]:
++        label = f"{lower}-{upper}" if upper else f"{lower}+"
++        members = [r for r in output if lower <= r["input_tokens"] and (upper is None or r["input_tokens"] < upper)]
++        good = [r["score"] for r in members if r["scored"]]
++        token_bins[label] = {"expected": len(members), "scored": len(good),
++            "score_0_100": 100 * sum(good) / len(members) if members and len(good) == len(members) else None,
++            "mean_effective_input_tokens": sum(r["input_tokens"] for r in members) / len(members) if members else None,
++            "truncated_tasks": sum(r["was_truncated"] for r in members)}
++    summary["local_input_token_bins"] = token_bins
++    summary["local_bin_definition"] = "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template"
++    return output, summary
++
++
++def main(argv=None):
++    p = argparse.ArgumentParser(description=__doc__)
++    p.add_argument("--data-dir", type=Path, required=True)
++    p.add_argument("--run-dir", type=Path, required=True)
++    a = p.parse_args(argv)
++    manifest, datasets = checked_data(a.data_dir)
++    run = json.loads((a.run_dir / "run.json").read_text(encoding="utf-8"))
++    if run["data_manifest_sha256"] != sha_file(a.data_dir / "manifest.json"):
++        raise ValueError("Run and scoring data manifests do not match")
++    versions = check_dependencies({r["metric"] for rows in datasets.values() for r in rows})
++    all_summaries = []
++    for point in run["points"]:
++        folder = a.run_dir / point["id"]
++        response_path = folder / "requests.jsonl"
++        responses = read_jsonl(response_path) if response_path.is_file() else []
++        rows, summary = score_records(datasets[point["dataset"]], responses)
++        summary.update(point)
++        summary["response_file_sha256"] = sha_file(response_path) if response_path.is_file() else None
++        write_jsonl(folder / "scores.jsonl", rows)
++        atomic_json(folder / "scores.summary.json", summary)
++        all_summaries.append(summary)
++    atomic_json(a.run_dir / "grading_protocol.json", {"upstream_code_commit": LONGBENCH_COMMIT,
++                "scorer_file_sha256": sha_file(__file__), "dependencies": versions,
++                "data_manifest_sha256": sha_file(a.data_dir / "manifest.json"),
++                "variant": manifest.get("variant"), "policy": "max over references; capped outputs retained; missing outputs never hidden"})
++    atomic_json(a.run_dir / "quality.summary.json", all_summaries)
++    print(json.dumps(all_summaries, ensure_ascii=False, indent=2))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/kvbench_longcontext/serve.py b/kvbench_longcontext/serve.py
+new file mode 100644
+index 0000000..6207c5e
+--- /dev/null
++++ b/kvbench_longcontext/serve.py
+@@ -0,0 +1,212 @@
++"""Explicit vLLM launcher: records requested and native cache configuration."""
++from __future__ import annotations
++
++import argparse
++import importlib.util
++import json
++import os
++from pathlib import Path
++import re
++import signal
++import socket
++import subprocess
++import sys
++import time
++import urllib.request
++import uuid
++
++from .common import atomic_json, package_versions, sha_file, tokenizer_identity
++
++# g64 is a token group of 64, never a K6/V4 alias. Block size follows that group.
++METHODS = {
++    "fp16": ("auto", 128), "fp8": ("fp8_e4m3", 128),
++    "tq4": ("turboquant_4bit_nc", 128), "tq34": ("turboquant_k3v4_nc", 128),
++    "tq3": ("turboquant_3bit_nc", 128),
++    "kvarn": ("kvarn_k4v2_g128", 128), "kvarn44": ("kvarn_k4v4_g128", 128),
++    "kvarn64": ("kvarn_k4v2_g64", 64), "kvarn4464": ("kvarn_k4v4_g64", 64),
++}
++
++
++def http_text(url, timeout=5, headers=None):
++    # Benchmark endpoint is local; never route model traffic through an HTTP proxy.
++    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
++    with opener.open(urllib.request.Request(url, headers=headers or {}), timeout=timeout) as response:
++        return response.read().decode("utf-8")
++
++
++def cache_configs(text):
++    result = []
++    for line in text.splitlines():
++        if line.startswith("#") or "vllm:cache_config_info{" not in line:
++            continue
++        labels = {k: json.loads('"' + v + '"') for k, v in re.findall(r'(\w+)="((?:\\.|[^"\\])*)"', line)}
++        result.append(labels)
++    return result
++
++
++def verify_cache(text, expected):
++    configs = cache_configs(text)
++    if len(configs) != 1:
++        raise ValueError("Expected exactly one native vllm:cache_config_info record (single GPU); cannot verify cache")
++    actual = configs[0]
++    checks = {"cache_dtype": expected["kv_dtype"], "block_size": str(expected["block_size"]),
++              "enable_prefix_caching": "False"}
++    if expected["kv_dtype"] == "fp8_e4m3":
++        checks["calculate_kv_scales"] = "True"
++    mismatches = {k: {"expected": v, "actual": actual.get(k)} for k, v in checks.items() if actual.get(k) != v}
++    if mismatches:
++        raise ValueError("Actual server cache configuration differs: " + json.dumps(mismatches))
++    blocks = actual.get("num_gpu_blocks", "")
++    if not re.fullmatch(r"[0-9]+", blocks) or int(blocks) < 1:
++        raise ValueError("Native cache num_gpu_blocks must be a positive integer")
++    return actual
++
++
++def verify_model(models, expected):
++    matching = [m for m in models.get("data", []) if m.get("id") == expected["model_name"]]
++    if len(matching) != 1:
++        raise ValueError("Live server model identity does not match this launch")
++    actual = matching[0].get("max_model_len")
++    if not isinstance(actual, int) or isinstance(actual, bool) or actual != expected["max_model_len"]:
++        raise ValueError(f"Native /v1/models max_model_len={actual!r}, expected {expected['max_model_len']}; context budget not verified")
++    return matching[0]
++
++
++def launch_command(args, model_name):
++    dtype, block = METHODS[args.method]
++    command = [sys.executable, "-m", "vllm.entrypoints.openai.api_server",
++        "--model", str(args.model.resolve()), "--tokenizer", str(args.model.resolve()),
++        "--served-model-name", model_name, "--host", "127.0.0.1", "--port", str(args.port),
++        "--dtype", "float16", "--kv-cache-dtype", dtype, "--block-size", str(block),
++        "--max-model-len", str(args.max_model_len), "--max-num-seqs", str(args.max_seqs),
++        "--max-num-batched-tokens", str(args.batch_tokens), "--gpu-memory-utilization", str(args.gpu_util),
++        "--seed", str(args.server_seed), "--no-enable-prefix-caching", "--generation-config", "vllm"]
++    if dtype == "fp8_e4m3":
++        command.append("--calculate-kv-scales")
++    if args.kv_bytes is not None:
++        command.extend(["--kv-cache-memory-bytes", str(args.kv_bytes)])
++    if args.eager:
++        command.append("--enforce-eager")
++    return command
++
++
++def run_text(command, timeout=15):
++    try:
++        p = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
++        return {"returncode": p.returncode, "stdout": p.stdout.strip(), "stderr": p.stderr.strip()}
++    except (OSError, subprocess.TimeoutExpired) as exc:
++        return {"error": str(exc)}
++
++
++def main(argv=None):
++    p = argparse.ArgumentParser(description=__doc__)
++    p.add_argument("--model", type=Path, required=True)
++    p.add_argument("--method", choices=list(METHODS), required=True)
++    p.add_argument("--out", type=Path, required=True)
++    p.add_argument("--port", type=int, default=8000)
++    p.add_argument("--gpu", default="0")
++    p.add_argument("--max-model-len", type=int, default=32768)
++    p.add_argument("--max-seqs", type=int, default=16)
++    p.add_argument("--batch-tokens", type=int, default=1024)
++    p.add_argument("--gpu-util", type=float, default=.85)
++    p.add_argument("--kv-bytes", type=int)
++    p.add_argument("--server-seed", type=int, default=20260917)
++    p.add_argument("--eager", action="store_true")
++    p.add_argument("--startup-timeout", type=int, default=1800)
++    p.add_argument("--dry-run", action="store_true")
++    args = p.parse_args(argv)
++    if not 0 < args.gpu_util < 1 or min(args.max_model_len, args.max_seqs, args.batch_tokens, args.startup_timeout) < 1:
++        raise ValueError("Invalid server budget")
++    if args.kv_bytes is not None and args.kv_bytes < 1:
++        raise ValueError("--kv-bytes must be positive")
++    model_name = "kvlong-" + args.method + "-" + uuid.uuid4().hex[:10]
++    dtype, block = METHODS[args.method]
++    command = launch_command(args, model_name)
++    config = {"method": args.method, "kv_dtype": dtype, "block_size": block,
++              "model_name": model_name, "max_model_len": args.max_model_len, "max_seqs": args.max_seqs,
++              "batch_tokens": args.batch_tokens, "gpu_util": args.gpu_util, "kv_bytes": args.kv_bytes,
++              "eager": args.eager, "server_seed": args.server_seed, "apc": False,
++              "generation_config": "vllm", "override_generation_config": {}}
++    if args.dry_run:
++        print(json.dumps({"command": command, "config": config, "status": "plan-only; no GPU or server inspected"}, indent=2))
++        return
++    if args.out.exists() and any(args.out.iterdir()):
++        raise ValueError("Server output directory must be new/empty")
++    with socket.socket() as sock:
++        if sock.connect_ex(("127.0.0.1", args.port)) == 0:
++            raise RuntimeError("Port is already in use; existing processes are not stopped")
++    gpu = run_text(["nvidia-smi", "-i", args.gpu, "--query-compute-apps=pid,process_name", "--format=csv,noheader,nounits"])
++    if gpu.get("returncode") != 0:
++        raise RuntimeError("Unable to inspect target GPU: " + str(gpu))
++    if gpu["stdout"] and "No running processes found" not in gpu["stdout"]:
++        raise RuntimeError("Target GPU already has compute processes: " + gpu["stdout"])
++    args.out.mkdir(parents=True, exist_ok=True)
++    spec = importlib.util.find_spec("vllm")
++    if spec is None or spec.origin is None:
++        raise RuntimeError("Run serve in the existing kvarn-serve environment")
++    module_dir = str(Path(spec.origin).parent)
++    source_commit = run_text(["git", "-C", module_dir, "rev-parse", "HEAD"])
++    source_status = run_text(["git", "-C", module_dir, "status", "--porcelain"])
++    diff = run_text(["git", "-C", module_dir, "diff", "HEAD"], timeout=60)
++    (args.out / "engine_source.diff").write_text(diff.get("stdout", ""), encoding="utf-8")
++    launch = {"schema": "kvbench.longcontext.server.v1", "command": command, "config": config,
++              "base_url": f"http://127.0.0.1:{args.port}", "tokenizer": tokenizer_identity(args.model),
++              "packages": package_versions(["vllm", "torch", "triton", "transformers", "tokenizers"]),
++              "vllm_module": spec.origin, "source_commit": source_commit, "source_status": source_status,
++              "source_diff_sha256": sha_file(args.out / "engine_source.diff"), "python": sys.version,
++              "gpu": run_text(["nvidia-smi", "-i", args.gpu, "--query-gpu=uuid,name,driver_version,memory.total,power.limit",
++                               "--format=csv,noheader,nounits"]),
++              "weight_file_sizes_mtime_ns": {f.name: [f.stat().st_size, f.stat().st_mtime_ns]
++                                             for f in args.model.glob("*.safetensors")},
++              "environment": {k: os.environ.get(k) for k in ["CUDA_HOME", "TRITON_PTXAS_PATH", "KVARN_SINK_TOKENS",
++                              "KVARN_SINKHORN_ITERS", "VLLM_ATTENTION_BACKEND", "VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS"]},
++              "cuda_visible_devices": args.gpu, "native_verified": False}
++    atomic_json(args.out / "launch.json", launch)
++    env = os.environ.copy()
++    env.update(CUDA_VISIBLE_DEVICES=args.gpu, PYTHONNOUSERSITE="1")
++    env.pop("PYTHONHOME", None)
++    env.pop("PYTHONPATH", None)
++    proc = None
++    try:
++        with (args.out / "server.log").open("w", encoding="utf-8") as log:
++            proc = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=env, start_new_session=True)
++            deadline = time.monotonic() + args.startup_timeout
++            while time.monotonic() < deadline:
++                if proc.poll() is not None:
++                    raise RuntimeError("vLLM exited; inspect " + str(args.out / "server.log"))
++                try:
++                    models = json.loads(http_text(launch["base_url"] + "/v1/models"))
++                    metrics = http_text(launch["base_url"] + "/metrics")
++                except (OSError, ValueError):
++                    time.sleep(1)
++                    continue
++                live_model = verify_model(models, config)
++                native = verify_cache(metrics, config)
++                (args.out / "metrics.ready.txt").write_text(metrics, encoding="utf-8")
++                launch.update(native_verified=True, native_cache_config=native, models=models,
++                              native_max_model_len=live_model["max_model_len"], pid=proc.pid,
++                              native_kv_capacity_tokens=int(native["num_gpu_blocks"]) * int(native["block_size"]),
++                              ready_unix_time=time.time())
++                atomic_json(args.out / "launch.json", launch)
++                print("Ready; native dtype/block verified. Client manifest: " + str((args.out / "launch.json").resolve()), flush=True)
++                returncode = proc.wait()
++                if returncode:
++                    raise RuntimeError("vLLM exited with code " + str(returncode))
++                return
++            raise TimeoutError("Server startup/config verification timed out; inspect server.log")
++    except KeyboardInterrupt:
++        print("Stopping this launch's process group.", flush=True)
++    finally:
++        if proc and proc.poll() is None:
++            try:
++                os.killpg(proc.pid, signal.SIGTERM)
++                proc.wait(timeout=20)
++            except subprocess.TimeoutExpired:
++                os.killpg(proc.pid, signal.SIGKILL)
++                proc.wait(timeout=10)
++            except ProcessLookupError:
++                pass
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/kvbench_longcontext/tests/__init__.py b/kvbench_longcontext/tests/__init__.py
+new file mode 100644
+index 0000000..b01c307
+--- /dev/null
++++ b/kvbench_longcontext/tests/__init__.py
+@@ -0,0 +1 @@
++"""Offline protocol and report tests."""
+diff --git a/kvbench_longcontext/tests/test_protocol.py b/kvbench_longcontext/tests/test_protocol.py
+new file mode 100644
+index 0000000..ea605b3
+--- /dev/null
++++ b/kvbench_longcontext/tests/test_protocol.py
+@@ -0,0 +1,537 @@
++"""Offline protocol tests. Synthetic fixtures are not benchmark results."""
++from __future__ import annotations
++
++from contextlib import redirect_stdout
++from contextlib import suppress
++import gzip
++from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
++import io
++import json
++import os
++from pathlib import Path
++import tempfile
++import threading
++import time
++import types
++import unittest
++from unittest.mock import patch
++import zipfile
++
++from kvbench_longcontext import prepare, run, scoring, serve
++from kvbench_longcontext.common import TASKS, atomic_json, checked_data, package_versions, sha_file, tokenizer_identity
++
++
++class FakeTokenizer:
++    """Character tokens and 4/6 non-thinking/thinking wrapper tokens for boundary tests."""
++    chat_template = "test-template"
++
++    def encode(self, text, add_special_tokens=False):
++        return list(text.encode("ascii"))
++
++    def decode(self, ids, skip_special_tokens=True):
++        return bytes(ids).decode("ascii")
++
++    def apply_chat_template(self, messages, tokenize=True, add_generation_prompt=True, enable_thinking=False):
++        return [1, 2] + self.encode(messages[0]["content"]) + ([3, 4, 5, 6] if enable_thinking else [3, 4])
++
++
++def settings(**kw):
++    return {"max_model_len": 4096, "max_input_tokens": None, "min_input_tokens": 0,
++            "max_new_tokens": None, "generation_budget_policy": "reference", "sample_size": 0, "data_seed": 42,
++            "overflow": "error", "thinking": False, **kw}
++
++
++def source_record(idx, answer="alpha"):
++    return {"_id": str(idx), "context": "A report about long inputs. " * 12,
++            "input": "Which keyword is described?", "answers": [answer],
++            "length": 4000 if idx else 3999, "all_classes": []}
++
++
++METRICS = ('# TYPE vllm:cache_config_info gauge\n'
++           'vllm:cache_config_info{cache_dtype="auto",block_size="128",calculate_kv_scales="False",'
++           'enable_prefix_caching="False",num_gpu_blocks="1000"} 1\n'
++           'vllm:kv_cache_usage_perc{engine="0"} 0.1\n'
++           'vllm:num_preemptions_total{engine="0"} 0\n')
++
++
++class Handler(BaseHTTPRequestHandler):
++    mode = "ok"
++    received = []
++    model_max_len = 4096
++
++    def log_message(self, *args):
++        pass
++
++    def do_GET(self):
++        body = json.dumps({"data": [{"id": "mock-longcontext", "max_model_len": self.model_max_len}]}).encode() if self.path == "/v1/models" else METRICS.encode()
++        self.send_response(200)
++        self.end_headers()
++        self.wfile.write(body)
++
++    def do_POST(self):
++        body = self.rfile.read(int(self.headers["Content-Length"]))
++        request = json.loads(body)
++        self.received.append({"path": self.path, "request": request, "authorization": self.headers.get("Authorization"),
++                              "content_type": self.headers.get("Content-Type"), "raw_body": body.decode()})
++        if self.mode == "http_error":
++            self.send_response(503)
++            self.end_headers()
++            self.wfile.write(b"busy")
++            return
++        self.send_response(200)
++        self.send_header("Content-Type", "text/event-stream")
++        self.end_headers()
++        if self.mode == "slow":
++            time.sleep(.05)
++        is_chat = self.path.endswith("chat/completions")
++        thinking = is_chat and request.get("chat_template_kwargs", {}).get("enable_thinking", False)
++        prompt = request["messages"][0]["content"] if is_chat else request["prompt"]
++        count = len(prompt) + ((6 if thinking else 4) if is_chat else 0)
++        if self.mode == "mismatch":
++            count += 1
++        pieces = ["<think>synthetic reasoning", "</think>alpha"] if thinking else ["al", "pha"]
++        events = [{"choices": [{"index": 0, "delta": {"role": "assistant", "content": ""}}]},
++                  {"choices": [{"index": 0, "delta": {"content": pieces[0], "reasoning_content": None}, "text": pieces[0]}]},
++                  {"choices": [{"index": 0, "delta": {"content": pieces[1]}, "text": pieces[1]}]}]
++        budget = self.model_max_len - count if request["max_tokens"] is None else request["max_tokens"]
++        completion_tokens = min(2, budget)
++        if self.mode == "length_budget":
++            completion_tokens = budget
++            if budget == 1:
++                events[1]["choices"][0]["delta"]["content"] = "<think>unfinished"
++                events[2]["choices"][0]["delta"]["content"] = ""
++        if self.mode != "partial":
++            events.append({"choices": [{"index": 0, "delta": {}, "finish_reason": "length" if self.mode in ("length_budget", "early_length") else "stop"}]})
++        if self.mode != "missing_usage":
++            events.append({"choices": [], "usage": {"prompt_tokens": count, "completion_tokens": completion_tokens, "total_tokens": count + completion_tokens}})
++        with suppress(BrokenPipeError, ConnectionResetError):
++            for event in events:
++                self.wfile.write(("data: " + json.dumps(event) + "\n\n").encode())
++                self.wfile.flush()
++            if self.mode != "partial":
++                self.wfile.write(b"data: [DONE]\n\n")
++
++
++class ProtocolTests(unittest.TestCase):
++    def test_input_budget_and_explicit_truncation(self):
++        tok = FakeTokenizer()
++        self.assertEqual(prepare.fit_prompt(tok, "abcdefghij", "chat", False, 14, "error"),
++                         ("abcdefghij", 14, 14, False))
++        with self.assertRaises(ValueError):
++            prepare.fit_prompt(tok, "abcdefghij", "chat", False, 13, "error")
++        self.assertIsNone(prepare.fit_prompt(tok, "abcdefghij", "chat", False, 13, "skip")[0])
++        result = prepare.fit_prompt(tok, "abcdefghij", "chat", False, 10, "head-tail")
++        self.assertEqual(result, ("abchij", 14, 10, True))
++
++    def test_no_answer_injection_and_fixed_sample(self):
++        data = [source_record(i, "SECRET_REFERENCE_SENTINEL") for i in range(10)]
++        rows, excluded, count = prepare.prepare_rows(data, "qasper", FakeTokenizer(), settings(sample_size=3))
++        reversed_rows, _, _ = prepare.prepare_rows(list(reversed(data)), "qasper", FakeTokenizer(), settings(sample_size=3))
++        self.assertEqual([x["case_id"] for x in rows], [x["case_id"] for x in reversed_rows])
++        self.assertEqual(count, 10)
++        self.assertFalse(excluded)
++        for row in rows:
++            self.assertNotIn("SECRET_REFERENCE_SENTINEL", row["prompt"])
++            self.assertLessEqual(row["input_tokens"] + row["max_tokens"], 4096)
++            request = run.make_request(row, "test", thinking=False, temperature=0, top_p=1, top_k=-1)
++            self.assertNotIn("answers", request)
++            self.assertFalse(request["chat_template_kwargs"]["enable_thinking"])
++            self.assertEqual(request["max_tokens"], 128)
++            self.assertEqual((request["temperature"], request["top_p"], request["top_k"], request["min_p"]),
++                             (0.0, 1.0, -1, 0.0))
++
++    def test_sampling_parameter_validation(self):
++        for top_k in (-1, 1, 20):
++            for min_p in (0.0, 1.0):
++                run.validate_sampling(0.6, .95, top_k, min_p)
++        for top_k in (0, -2, 1.5, True):
++            with self.subTest(top_k=top_k), self.assertRaises(ValueError):
++                run.validate_sampling(0.6, .95, top_k, 0.0)
++        for min_p in (-.1, 1.1, float("nan"), float("inf")):
++            with self.subTest(min_p=min_p), self.assertRaises(ValueError):
++                run.validate_sampling(0.6, .95, 20, min_p)
++
++    def test_generation_budget_mode_guards(self):
++        with tempfile.TemporaryDirectory() as temp:
++            out = Path(temp) / "frozen"
++            # This must fail before tokenizer import, data download or output write.
++            base = ["--model", str(Path(temp) / "unused-model"), "--out", str(out), "--datasets", "qasper"]
++            for flags, error in [(["--generation-budget-policy", "fixed"], "requires an explicit"),
++                                 (["--generation-budget-policy", "reference"], "also select --no-thinking"),
++                                 (["--max-new-tokens", "8192"], "only used with")]:
++                with self.subTest(flags=flags), self.assertRaisesRegex(ValueError, error):
++                    prepare.main(base + flags)
++            self.assertFalse(out.exists())
++
++    def test_official_task_caps_and_code_route(self):
++        self.assertEqual({k: TASKS[k]["max_new_tokens"] for k in list(TASKS)[:6]},
++                         {"qasper": 128, "multifieldqa_en": 64, "hotpotqa": 32,
++                          "2wikimqa": 32, "gov_report": 512, "passage_retrieval_en": 32})
++        rows, _, _ = prepare.prepare_rows([source_record(1)], "lcc", FakeTokenizer(), settings())
++        req = run.make_request(rows[0], "test")
++        self.assertFalse(req["add_special_tokens"])
++        self.assertIn("prompt", req)
++        self.assertNotIn("messages", req)
++        self.assertEqual(rows[0]["input_tokens"], len(rows[0]["prompt"]))
++        code = "    if text == '</think>':\n"
++        self.assertEqual(run.extract_final(code, "", False, "completion")[0], code)
++        self.assertEqual(run.extract_final("<think> unfinished literal", "", False)[0], "<think> unfinished literal")
++        self.assertEqual(run.extract_final("<think>reason</think>the literal </think>", "", True)[0], "the literal </think>")
++        self.assertEqual(run.extract_final("literal </think>", "reason", True, reasoning_channel=True)[0], "literal </think>")
++
++    def test_qa_retrieval_code_cleaning_and_reference_max(self):
++        self.assertEqual(scoring.qa_f1("The red, car!", "red car"), 1)
++        self.assertAlmostEqual(scoring.qa_f1("red car", "red"), 2 / 3)
++        self.assertEqual(scoring.qa_f1("", ""), 0)
++        self.assertEqual(scoring.retrieval("Paragraph 3 or 7", "Paragraph 7"), .5)
++        self.assertEqual(scoring.first_code_line("```python\n# comment\nx = 1\n```"), "x = 1")
++        self.assertEqual(scoring.score_one({"metric": "qa_f1", "answers": ["wrong", "alpha"]}, "alpha"), 1)
++
++    @unittest.skipUnless(package_versions(["rouge"])["rouge"] == "1.0.1", "real rouge==1.0.1 backend not installed")
++    def test_real_rouge_backend_if_installed(self):
++        self.assertAlmostEqual(scoring.rouge_l("alpha beta", "alpha beta"), 1, places=6)
++        self.assertGreater(scoring.rouge_l("alpha beta", "alpha gamma"), 0)
++        self.assertLess(scoring.rouge_l("alpha beta", "alpha gamma"), 1)
++        self.assertEqual(scoring.rouge_l("", "alpha beta"), 0)
++
++    @unittest.skipUnless(package_versions(["fuzzywuzzy", "Levenshtein"]) == {"fuzzywuzzy": "0.18.0", "Levenshtein": "0.25.1"},
++                         "real fuzzywuzzy==0.18.0 / Levenshtein==0.25.1 backend not installed")
++    def test_real_lcc_backend_if_installed(self):
++        self.assertEqual(scoring.code_sim("    return x", "    return x"), 1)
++        self.assertLess(scoring.code_sim("    return x", "    raise ValueError()"), 1)
++        self.assertEqual(scoring.code_sim("```python\n# comment\n    return x\n```", "    return x"), 1)
++
++    def test_missing_partial_duplicates_and_e_bins(self):
++        rows, _, _ = prepare.prepare_rows([source_record(i) for i in range(4)], "qasper", FakeTokenizer(), settings())
++        for r, length in zip(rows, [3999, 4000, 7999, 8000]):
++            r["source_length"] = length
++        responses = [{"case_id": rows[0]["case_id"], "http_success": True, "response_complete": True,
++                      "protocol_valid": True, "final_answer": "alpha", "finish_reason": "length"},
++                     {"case_id": rows[1]["case_id"], "http_success": True, "response_complete": False}]
++        output, summary = scoring.score_records(rows, responses)
++        self.assertEqual(summary["missing_tasks"], 2)
++        self.assertEqual(summary["unscored_tasks"], 3)
++        self.assertEqual(summary["invalid_response_tasks"], 1)
++        self.assertIsNone(summary["task_score_0_100"])
++        self.assertEqual(summary["partial_available_score_0_100"], 100)
++        self.assertEqual(summary["all_expected_zero_filled_score_0_100"], 25)
++        self.assertEqual(summary["official_word_length_bins"]["4-8k"]["expected"], 2)
++        self.assertEqual(summary["local_input_token_bins"]["0-4096"]["expected"], 4)
++        self.assertEqual(output[0]["score"], 1)  # capped responses remain scored
++        with self.assertRaises(ValueError):
++            scoring.score_records(rows, responses + responses[:1])
++        with self.assertRaises(ValueError):
++            scoring.score_records(rows, [{"case_id": "unknown"}])
++
++    def test_native_cache_validation_and_g64(self):
++        config = {"kv_dtype": "auto", "block_size": 128}
++        self.assertEqual(serve.verify_cache(METRICS, config)["num_gpu_blocks"], "1000")
++        with self.assertRaises(ValueError):
++            serve.verify_cache(METRICS, {"kv_dtype": "kvarn_k4v4_g64", "block_size": 64})
++        self.assertEqual(serve.METHODS["kvarn4464"], ("kvarn_k4v4_g64", 64))
++        with self.assertRaisesRegex(ValueError, "max_model_len"):
++            serve.verify_model({"data": [{"id": "test", "max_model_len": 8192}]},
++                               {"model_name": "test", "max_model_len": 32768})
++        with self.assertRaises(ValueError):
++            serve.verify_cache(METRICS.replace('cache_dtype="auto"', 'cache_dtype="fp8_e4m3"'),
++                               {"kv_dtype": "fp8_e4m3", "block_size": 128})
++        with self.assertRaisesRegex(ValueError, "num_gpu_blocks"):
++            serve.verify_cache(METRICS.replace('num_gpu_blocks="1000"', 'num_gpu_blocks="None"'), config)
++
++
++class HTTPIntegrationTests(unittest.TestCase):
++    def setUp(self):
++        self.temp = tempfile.TemporaryDirectory()
++        self.root = Path(self.temp.name)
++        Handler.received = []
++        Handler.mode = "ok"
++        Handler.model_max_len = 4096
++        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
++        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
++        self.thread.start()
++        self.base = f"http://127.0.0.1:{self.server.server_port}"
++
++    def tearDown(self):
++        self.server.shutdown()
++        self.server.server_close()
++        self.thread.join()
++        self.temp.cleanup()
++
++    def call_one(self, mode="ok", kind="chat", timeout=3, max_tokens=32, native_max_model_len=None):
++        Handler.mode = mode
++        row = {"case_id": "mock/0", "dataset": "mock", "prompt": "question", "request_kind": kind,
++               "input_tokens": 12 if kind == "chat" else 8, "max_tokens": max_tokens}
++        req = run.make_request(row, "mock-longcontext", thinking=False, temperature=0, top_p=1, top_k=-1)
++        result = run.stream_request(self.base, row, req, self.root / "response.json.gz", timeout,
++                                    {"Authorization": "Bearer offline-test-key"}, native_max_model_len=native_max_model_len)
++        return result
++
++    def test_usage_only_chunk_auth_headers_and_content(self):
++        result = self.call_one()
++        self.assertTrue(result["response_complete"])
++        self.assertTrue(result["protocol_valid"])
++        self.assertEqual(result["completion_tokens"], 2)
++        self.assertEqual(result["final_answer"], "alpha")
++        self.assertEqual(result["token_count_source"], "server_usage")
++        with gzip.open(self.root / "response.json.gz", "rt") as f:
++            chunks = json.load(f)
++        self.assertEqual(chunks[-1]["data"]["choices"], [])
++        self.assertEqual(Handler.received[0]["authorization"], "Bearer offline-test-key")
++        self.assertEqual(Handler.received[0]["content_type"], "application/json")
++        self.assertEqual(Handler.received[0]["request"]["model"], "mock-longcontext")
++        self.assertGreaterEqual(result["e2e_s"], result["ttft_s"])
++        self.assertIsNotNone(result["tpot_s"])
++
++    def test_completion_route(self):
++        result = self.call_one(kind="completion")
++        self.assertTrue(result["protocol_valid"])
++        self.assertEqual(Handler.received[0]["path"], "/v1/completions")
++        self.assertFalse(Handler.received[0]["request"]["add_special_tokens"])
++        natural = self.call_one(kind="completion", timeout=0, max_tokens=None, native_max_model_len=4096)
++        self.assertTrue(natural["protocol_valid"])
++        self.assertIn('"max_tokens":null', Handler.received[-1]["raw_body"])
++        self.assertNotIn("max_completion_tokens", Handler.received[-1]["request"])
++
++    def test_zero_and_positive_time_limits_and_early_length_diagnostic(self):
++        self.assertTrue(self.call_one(timeout=0)["response_complete"])
++        timed = self.call_one(mode="slow", timeout=.01)
++        self.assertFalse(timed["response_complete"])
++        self.assertIsNone(timed["finish_reason"])
++        self.assertIn("timed out", timed["error"])
++        with self.assertRaises(TimeoutError):
++            list(run.sse_events(iter([b"data: {}\n", b"\n"]), time.monotonic() - 1))
++        self.assertEqual(list(run.sse_events(iter([b"data: {}\n", b"\n"]), None)), ["{}"])
++        early = self.call_one(mode="early_length", timeout=0, max_tokens=None, native_max_model_len=4096)
++        self.assertTrue(early["response_complete"])
++        self.assertTrue(early["unexpected_length_before_budget"])
++        self.assertFalse(early["generation_budget_consistent"])
++        self.assertTrue(early["protocol_valid"])
++        expected = {"case_id": "mock/0", "dataset": "mock", "metric": "qa_f1", "answers": ["alpha"],
++                    "input_tokens": 12, "source_length": 500, "was_truncated": False}
++        _, quality = scoring.score_records([expected], [early])
++        self.assertEqual(quality["task_score_0_100"], 100)
++        self.assertTrue(run.summarize([early], 1)["measurement_complete"])
++
++    def test_partial_http_error_usage_missing_count_mismatch(self):
++        for mode in ["partial", "http_error", "missing_usage", "mismatch"]:
++            result = self.call_one(mode)
++            self.assertFalse(result["protocol_valid"], mode)
++            summary = run.summarize([result], 1)
++            self.assertFalse(summary["measurement_complete"], mode)
++            if mode == "partial":
++                self.assertEqual(result["raw_content"], "alpha")
++                self.assertFalse(result["done_marker_received"])
++            elif mode == "http_error":
++                self.assertEqual(result["http_status"], 503)
++            elif mode == "missing_usage":
++                self.assertIsNone(result["completion_tokens"])
++            else:
++                self.assertFalse(result["prompt_token_match"])
++
++    def test_offline_prepare_run_score_roundtrip_and_dry_run(self):
++        model = self.root / "model"
++        model.mkdir()
++        (model / "tokenizer_config.json").write_text('{"test_fixture":true}')
++        source = self.root / "data.zip"
++        with zipfile.ZipFile(source, "w") as z:
++            z.writestr("data/qasper_e.jsonl", "\n".join(json.dumps(source_record(i)) for i in range(2)))
++        fake = types.ModuleType("transformers")
++        fake.AutoTokenizer = types.SimpleNamespace(from_pretrained=lambda *args, **kw: FakeTokenizer())
++        frozen = self.root / "frozen"
++        with patch.dict("sys.modules", {"transformers": fake}), redirect_stdout(io.StringIO()):
++            prepare.main(["--source", str(source), "--source-revision", "offline-synthetic-fixture",
++                          "--model", str(model), "--out", str(frozen), "--datasets", "qasper",
++                          "--variant", "longbench-e", "--max-model-len", "4096", "--no-thinking",
++                          "--generation-budget-policy", "reference"])
++        manifest, data = checked_data(frozen)
++        self.assertEqual(manifest["variant"], "longbench-e")
++        self.assertNotIn("greedy", manifest["protocol"])
++        self.assertIn("sampling specified by run.json", manifest["protocol"])
++        self.assertEqual(manifest["datasets"]["qasper"]["source_member"], "data/qasper_e.jsonl")
++        launch_path = self.root / "launch.json"
++        atomic_json(launch_path, {"schema": "kvbench.longcontext.server.v1", "native_verified": True,
++            "config": {"method": "fp16", "kv_dtype": "auto", "block_size": 128, "model_name": "mock-longcontext",
++                       "max_model_len": 4096, "max_seqs": 2, "generation_config": "vllm", "override_generation_config": {}}, "base_url": self.base,
++            "tokenizer": tokenizer_identity(model)})
++        output = self.root / "run"
++        with redirect_stdout(io.StringIO()):
++            run.main(["--data-dir", str(frozen), "--out", str(output), "--concurrency", "1", "2", "--dry-run"])
++        self.assertFalse(output.exists())
++        self.assertEqual(Handler.received, [])
++        with patch.dict(os.environ, {"MOCK_LONGCONTEXT_KEY": "offline-test-key"}), redirect_stdout(io.StringIO()):
++            run.main(["--data-dir", str(frozen), "--out", str(output), "--server-manifest", str(launch_path),
++                      "--concurrency", "1", "2", "--warmup", "0", "--api-key-env", "MOCK_LONGCONTEXT_KEY",
++                      "--temperature", "0", "--top-p", "1", "--top-k", "-1"])
++            scoring.main(["--data-dir", str(frozen), "--run-dir", str(output)])
++        stats = json.loads((output / "performance.summary.json").read_text())
++        quality = json.loads((output / "quality.summary.json").read_text())
++        self.assertEqual(len(stats), 2)
++        self.assertTrue(all(s["measurement_complete"] for s in stats))
++        self.assertEqual([s["unmeasured_long_warmup_requests"] for s in stats], [1, 2])
++        self.assertEqual([s["recorded_tasks"] for s in stats], [2, 2])
++        self.assertEqual(len(Handler.received), 7)  # 3 warmups excluded from 4 measured requests
++        self.assertTrue(all(s["task_score_0_100"] == 100 for s in quality))
++        for path in output.rglob("*.json*"):
++            if path.suffix != ".gz":
++                self.assertNotIn("offline-test-key", path.read_text())
++        # A modified frozen file must be detected before any new request can run.
++        (frozen / "qasper.jsonl").write_text("{}\n")
++        with self.assertRaises(ValueError):
++            checked_data(frozen)
++
++    def test_thinking_sampling_reaches_measured_and_long_warmup_requests(self):
++        model = self.root / "thinking_model"
++        model.mkdir()
++        (model / "tokenizer_config.json").write_text('{"test_fixture":true}')
++        source = self.root / "thinking_data.zip"
++        with zipfile.ZipFile(source, "w") as z:
++            z.writestr("data/qasper.jsonl", "\n".join(json.dumps(source_record(i)) for i in range(2)))
++        fake = types.ModuleType("transformers")
++        fake.AutoTokenizer = types.SimpleNamespace(from_pretrained=lambda *args, **kw: FakeTokenizer())
++        frozen = self.root / "thinking_frozen"
++        with patch.dict("sys.modules", {"transformers": fake}), redirect_stdout(io.StringIO()):
++            prepare.main(["--source", str(source), "--source-revision", "offline-synthetic-fixture",
++                          "--model", str(model), "--out", str(frozen), "--datasets", "qasper",
++                          "--thinking", "--generation-budget-policy", "fixed", "--max-new-tokens", "1024", "--max-model-len", "4096"])
++        manifest, data = checked_data(frozen)
++        self.assertTrue(manifest["settings"]["thinking"])
++        self.assertEqual(manifest["settings"]["max_new_tokens"], 1024)
++        self.assertTrue(all(r["max_tokens"] == 1024 and r["input_tokens"] == len(r["prompt"]) + 6 for r in data["qasper"]))
++        launch_path = self.root / "thinking_launch.json"
++        atomic_json(launch_path, {"schema": "kvbench.longcontext.server.v1", "native_verified": True,
++            "config": {"method": "fp16", "kv_dtype": "auto", "block_size": 128, "model_name": "mock-longcontext",
++                       "max_model_len": 4096, "max_seqs": 2, "generation_config": "vllm", "override_generation_config": {}}, "base_url": self.base,
++            "tokenizer": tokenizer_identity(model)})
++        # min_p=0 matches V8; a nonzero value additionally detects accidental hardcoding.
++        for number, min_p in enumerate((0.0, .05)):
++            with self.subTest(min_p=min_p):
++                output = self.root / f"thinking_run_{number}"
++                flags = ["--data-dir", str(frozen), "--out", str(output), "--server-manifest", str(launch_path),
++                         "--concurrency", "2", "--temperature", "0.6", "--top-p", "0.95",
++                         "--top-k", "20", "--min-p", str(min_p)]
++                expected = {"thinking": True, "temperature": .6, "top_p": .95, "top_k": 20, "min_p": min_p}
++                count_before = len(Handler.received)
++                preview = io.StringIO()
++                with redirect_stdout(preview):
++                    run.main(flags + ["--dry-run"])
++                plan = json.loads(preview.getvalue())
++                self.assertEqual({k: plan[k] for k in expected}, expected)
++                self.assertFalse(output.exists())
++                self.assertEqual(len(Handler.received), count_before)
++                with redirect_stdout(io.StringIO()):
++                    run.main(flags)
++                    scoring.main(["--data-dir", str(frozen), "--run-dir", str(output)])
++                saved = json.loads((output / "run.json").read_text())["settings"]
++                self.assertEqual({k: saved[k] for k in expected}, expected)
++                observed = [r["request"] for r in Handler.received[count_before:]]
++                self.assertEqual(len(observed), 5)  # one health check, two long warmups, two measurements
++                health = [r for r in observed if r["max_tokens"] == 16]
++                self.assertEqual(len(health), 1)
++                self.assertFalse(health[0]["chat_template_kwargs"]["enable_thinking"])
++                active = [r for r in observed if r["max_tokens"] != 16]
++                self.assertEqual(sorted(r["max_tokens"] for r in active), [32, 32, 1024, 1024])
++                for request in active:
++                    self.assertTrue(request["chat_template_kwargs"]["enable_thinking"])
++                    self.assertEqual({k: request[k] for k in ["temperature", "top_p", "top_k", "min_p"]},
++                                     {k: expected[k] for k in ["temperature", "top_p", "top_k", "min_p"]})
++                point = output / "r01_qasper_C2"
++                for filename in ["measure.requests.jsonl", "warmup/requests.sent.jsonl"]:
++                    sent = [json.loads(x) for x in (point / filename).read_text().splitlines()]
++                    self.assertTrue(all(x["top_k"] == 20 and x["min_p"] == min_p for x in sent))
++                performance = json.loads((output / "performance.summary.json").read_text())[0]
++                self.assertTrue(performance["measurement_complete"])
++                self.assertEqual(performance["recorded_tasks"], 2)
++                self.assertEqual(performance["unmeasured_long_warmup_requests"], 2)
++                quality = json.loads((output / "quality.summary.json").read_text())[0]
++                self.assertEqual(quality["task_score_0_100"], 100)
++                whitespace = json.loads((point / "requests.jsonl").read_text().splitlines()[0])
++                whitespace["final_answer"] = run.extract_final("reason</think>\n\n", "", True)[0]
++                expected_row = next(r for r in data["qasper"] if r["case_id"] == whitespace["case_id"])
++                score_rows, _ = scoring.score_records([expected_row], [whitespace])
++                self.assertEqual((whitespace["final_answer"], run.summarize([whitespace], 1)["empty_final_answers"],
++                                  score_rows[0]["empty_final_answer"]), ("\n\n", 1, True))
++
++    def test_default_remaining_context_null_length_scoring_and_warmup_boundary(self):
++        Handler.model_max_len = 32768
++        Handler.mode = "length_budget"
++        model = self.root / "natural_model"
++        model.mkdir()
++        (model / "tokenizer_config.json").write_text('{"test_fixture":true}')
++        records = []
++        for idx, target in enumerate((1024, 24000, 32767)):
++            record = source_record(idx)
++            record["context"] = ""
++            empty_prompt = TASKS["qasper"]["prompt"].format(context="", input=record["input"])
++            record["context"] = "x" * (target - len(empty_prompt) - 6)
++            records.append(record)
++        source = self.root / "natural_data.zip"
++        with zipfile.ZipFile(source, "w") as z:
++            z.writestr("data/qasper.jsonl", "\n".join(json.dumps(r) for r in records))
++        fake = types.ModuleType("transformers")
++        fake.AutoTokenizer = types.SimpleNamespace(from_pretrained=lambda *args, **kw: FakeTokenizer())
++        frozen = self.root / "natural_frozen"
++        with patch.dict("sys.modules", {"transformers": fake}), redirect_stdout(io.StringIO()):
++            # No --thinking, no output-cap flags: these are the actual v3 defaults.
++            prepare.main(["--source", str(source), "--source-revision", "offline-synthetic-fixture",
++                          "--model", str(model), "--out", str(frozen), "--datasets", "qasper"])
++        manifest, data = checked_data(frozen)
++        self.assertTrue(manifest["settings"]["thinking"])
++        self.assertEqual(manifest["generation_budget_policy"], "remaining-context")
++        self.assertEqual(sorted(r["remaining_context_tokens"] for r in data["qasper"]), [1, 8768, 31744])
++        self.assertTrue(all(r["max_tokens"] is None and r["minimum_generation_reserve"] == 1 for r in data["qasper"]))
++        self.assertTrue(all(r["generation_budget_tokens"] == r["remaining_context_tokens"] for r in data["qasper"]))
++        too_long = {**records[-1], "context": records[-1]["context"] + "x"}
++        with self.assertRaisesRegex(ValueError, "32768 tokens"):
++            prepare.prepare_rows([too_long], "qasper", FakeTokenizer(), settings(
++                max_model_len=32768, generation_budget_policy="remaining-context", thinking=True))
++        launch_path = self.root / "natural_launch.json"
++        atomic_json(launch_path, {"schema": "kvbench.longcontext.server.v1", "native_verified": True,
++            "config": {"method": "fp16", "kv_dtype": "auto", "block_size": 128, "model_name": "mock-longcontext",
++                       "max_model_len": 32768, "max_seqs": 16, "generation_config": "vllm", "override_generation_config": {}},
++            "base_url": self.base, "tokenizer": tokenizer_identity(model)})
++        output = self.root / "natural_run"
++        flags = ["--data-dir", str(frozen), "--out", str(output), "--server-manifest", str(launch_path),
++                 "--warmup-per-point", "3"]
++        for bad in ("-1", "nan", "inf"):
++            with self.subTest(timeout=bad), self.assertRaises(ValueError):
++                run.main(flags + ["--request-timeout", bad, "--dry-run"])
++        preview = io.StringIO()
++        with redirect_stdout(preview):
++            run.main(flags + ["--dry-run"])
++        plan = json.loads(preview.getvalue())
++        self.assertEqual((plan["thinking"], plan["temperature"], plan["top_p"], plan["top_k"], plan["min_p"], plan["request_timeout"]),
++                         (True, .6, .95, 20, 0.0, 0))
++        self.assertEqual(plan["max_tokens"], {"qasper": None})
++        self.assertEqual(Handler.received, [])
++        with redirect_stdout(io.StringIO()):
++            run.main(flags)
++            scoring.main(["--data-dir", str(frozen), "--run-dir", str(output)])
++        point = output / "r01_qasper_C1"
++        measured = [json.loads(line) for line in (point / "requests.jsonl").read_text().splitlines()]
++        warmed = [json.loads(line) for line in (point / "warmup/responses.jsonl").read_text().splitlines()]
++        self.assertEqual(sorted(r["request"]["max_tokens"] for r in warmed), [1, 32, 32])
++        self.assertTrue(all(r["protocol_valid"] for r in warmed))
++        actual_formal = [r for r in Handler.received if r["request"]["max_tokens"] is None]
++        self.assertEqual(len(actual_formal), 3)
++        for request in actual_formal:
++            self.assertIn('"max_tokens":null', request["raw_body"])
++            self.assertNotIn("max_completion_tokens", request["request"])
++            self.assertEqual((request["request"]["temperature"], request["request"]["top_p"], request["request"]["top_k"]), (.6, .95, 20))
++        self.assertTrue(all(r["finish_reason"] == "length" and r["protocol_valid"] for r in measured))
++        self.assertTrue(all(r["remaining_context_tokens_local"] == r["remaining_context_tokens_native"] == r["completion_tokens"] for r in measured))
++        perf = json.loads((output / "performance.summary.json").read_text())[0]
++        self.assertTrue(perf["measurement_complete"])
++        self.assertEqual((perf["recorded_tasks"], perf["length_limit_terminations"], perf["empty_final_answers"]), (3, 3, 1))
++        self.assertIsNone(perf["request_max_tokens"])
++        quality = json.loads((output / "quality.summary.json").read_text())[0]
++        self.assertTrue(quality["evaluation_complete"])
++        self.assertAlmostEqual(quality["task_score_0_100"], 200 / 3)
++        scored = [json.loads(line) for line in (point / "scores.jsonl").read_text().splitlines()]
++        self.assertEqual(sorted(r["score"] for r in scored), [0, 1, 1])
++        _, incomplete = scoring.score_records(data["qasper"], measured[:2])
++        self.assertEqual(incomplete["missing_tasks"], 1)
++        self.assertIsNone(incomplete["task_score_0_100"])
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/kvbench_longcontext/tests/test_report.py b/kvbench_longcontext/tests/test_report.py
+new file mode 100644
+index 0000000..62f2394
+--- /dev/null
++++ b/kvbench_longcontext/tests/test_report.py
+@@ -0,0 +1,63 @@
++"""Reporting must not hide planned missing points or conflate zero and missing."""
++import csv
++import io
++import json
++import tempfile
++import unittest
++from contextlib import redirect_stdout
++from pathlib import Path
++
++from kvbench_longcontext import report
++
++
++class ReportTests(unittest.TestCase):
++    def test_zero_score_capped_output_and_missing_points_remain_distinct(self):
++        with tempfile.TemporaryDirectory() as td:
++            root = Path(td)
++            run_dir = root / "fp16_test"
++            run_dir.mkdir()
++            points = [{"id": "r01_qasper_C1", "dataset": "qasper", "repeat": 1,
++                       "concurrency": 1, "expected_tasks": 1},
++                      {"id": "r01_hotpotqa_C1", "dataset": "hotpotqa", "repeat": 1,
++                       "concurrency": 1, "expected_tasks": 1}]
++            (run_dir / "run.json").write_text(json.dumps({"schema": "kvbench.longcontext.run.v1",
++                "method": "fp16", "points": points, "data_manifest_sha256": "fixture-data",
++                "settings": {"thinking": True, "generation_budget_policy": "remaining-context",
++                             "temperature": .6, "top_p": .95, "top_k": 20, "min_p": 0}}))
++            dest = run_dir / points[0]["id"]
++            dest.mkdir()
++            (dest / "performance.summary.json").write_text(json.dumps({**points[0], "method": "fp16",
++                "measurement_complete": True, "valid_responses": 1, "length_capped": 1,
++                "generation_budget_consistent": False, "unexpected_length_before_budget_count": 1,
++                "empty_final_answers": 1, "tpot_s": {"n": 1, "mean": .012},
++                "ttft_s": {"mean": .25, "p95": .25}}))
++            (dest / "scores.summary.json").write_text(json.dumps({**points[0], "evaluation_complete": True,
++                "scored_tasks": 1, "task_score_0_100": 0.0, "score_name": "qa_f1",
++                "missing_tasks": 0, "invalid_response_tasks": 0, "unscored_tasks": 0}))
++            rows = report.collect_run(run_dir)
++            self.assertEqual(len(rows), 2)
++            self.assertEqual(rows[0]["task_score_0_100"], 0)
++            self.assertEqual(rows[0]["length_capped_percent_of_valid"], 100)
++            self.assertEqual(rows[0]["tpot_ms_mean"], 12)
++            self.assertEqual(rows[0]["ttft_ms_mean"], 250)
++            self.assertEqual(rows[0]["unexpected_length_before_budget_count"], 1)
++            self.assertIs(rows[0]["generation_budget_consistent"], False)
++            self.assertIsNone(rows[1]["task_score_0_100"])
++            self.assertFalse(rows[1]["measurement_complete"])
++            self.assertFalse(rows[1]["evaluation_complete"])
++            with redirect_stdout(io.StringIO()):
++                report.main(["--run-dir", str(run_dir), "--out", str(root / "readout")])
++            with (root / "readout/overview.csv").open(encoding="utf-8-sig", newline="") as f:
++                saved = list(csv.DictReader(f))
++            self.assertEqual(saved[0]["task_score_0_100"], "0.0")
++            self.assertEqual(saved[0]["unexpected_length_before_budget_count"], "1")
++            self.assertEqual(saved[1]["task_score_0_100"], "")
++            self.assertIn("hotpotqa", (root / "readout/overview.md").read_text())
++            # A wrongly matched result must not be attached to the planned task.
++            (dest / "scores.summary.json").write_text(json.dumps({**points[0], "dataset": "other"}))
++            with self.assertRaises(ValueError):
++                report.collect_run(run_dir)
++
++
++if __name__ == "__main__":
++    unittest.main()

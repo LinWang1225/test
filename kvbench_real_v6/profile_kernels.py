@@ -178,7 +178,10 @@ def summarize_profile(profile_dir: Path, out_dir: Path, method: str, profile_ite
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--method", required=True, choices=["fp16","tq4","tq3","kvarn","kvarn44","kvarn64"])
+    ap.add_argument("--method", required=True, choices=[
+        "fp16","fp8","tq84","tq4","tq34","tq3",
+        "kvarn","kvarn44","kvarn64","kvarn4464"
+    ])
     ap.add_argument("--requests-jsonl", type=Path, required=True,
                     help="Use a validated v7 measure.requests.jsonl; max_tokens:null sentinel should be present.")
     ap.add_argument("--out", type=Path, required=True)
@@ -244,8 +247,18 @@ def main():
     }, separators=(",", ":"))
 
     server_log = (args.out / "server.log").open("w")
+    _BASE={
+        "fp8":"fp16","tq84":"tq4","tq34":"tq4","kvarn4464":"kvarn64",
+    }
+    _EXTRA={
+        "fp8":["--kv-cache-dtype","fp8_e4m3","--calculate-kv-scales"],
+        "tq84":["--kv-cache-dtype","turboquant_k8v4"],
+        "tq34":["--kv-cache-dtype","turboquant_k3v4_nc"],
+        "kvarn4464":["--kv-cache-dtype","kvarn_k4v4_g64"],
+    }
     cmd = conda_command(serve_env, [
-        "bash", str(kit / "serve.sh"), args.method,
+        "bash", str(kit / "serve.sh"), _BASE.get(args.method,args.method),
+        *_EXTRA.get(args.method,[]),
         "--profiler-config", profiler_cfg,
     ])
     (args.out / "server.command.json").write_text(json.dumps(cmd, indent=2), encoding="utf-8")

@@ -216,7 +216,9 @@ class ServerManager:
         env.update(KVBENCH_ROOT=self.cfg['root'], OUT=str(self.server_folder), MODEL=self.cfg['model'], PORT=str(self.cfg['port']), CUDA_VISIBLE_DEVICES=self.cfg['gpu'], APC=str(p['apc']), MAXLEN=str(self.cfg['max_len']), MAXSEQ=str(self.cfg['max_seqs']), BATCHED_TOKENS=str(self.cfg['batch_tokens']), GPU_UTIL=str(self.cfg['gpu_util']), KV_BYTES=str(self.cfg.get('kv_bytes') or ''), PYTHONNOUSERSITE='1', KVBENCH_SERVE_ENV=self.cfg['serve_env'])
         env.pop('PYTHONHOME', None)
         env.pop('PYTHONPATH', None)
-        args = ['bash', str(Path(self.cfg['kit']) / 'serve.sh'), p['method']]
+        base_method=p.get('serve_base_method',p['method'])
+        extra_args=list(p.get('serve_extra_args') or [])
+        args = ['bash', str(Path(self.cfg['kit']) / 'serve.sh'), base_method, *extra_args]
         if self.cfg['eager']:
             args.append('--enforce-eager')
         command = conda_command(self.cfg['serve_env'], args)

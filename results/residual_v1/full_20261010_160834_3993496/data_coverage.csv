@@ -1,0 +1,7 @@
+﻿dataset,source_count,eligible_count,selected_count,excluded_count,truncated_count
+qasper,200,200,200,0,0
+multifieldqa_en,150,150,150,0,0
+hotpotqa,200,200,200,0,0
+2wikimqa,200,200,200,0,0
+gov_report,200,197,197,3,0
+passage_retrieval_en,200,200,200,0,0

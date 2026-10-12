@@ -1,0 +1,4 @@
+# Only needed if adding optional LCC edit-similarity scoring.
+-r requirements-client.txt
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.25.1

@@ -10,8 +10,36 @@ from engine import (ServerManager,Telemetry,log,run_text,sha,port_busy,ensure_gp
 from metrics import atomic_json,native_metrics,extract_server_log,sampled_telemetry
 from outputs import export_run
 
-DTYPES={'fp16':'auto','tq4':'turboquant_4bit_nc','tq3':'turboquant_3bit_nc',
-        'kvarn':'kvarn_k4v2_g128','kvarn44':'kvarn_k4v4_g128','kvarn64':'kvarn_k4v2_g64'}
+DTYPES={
+    'fp16':'auto',
+    'fp8':'fp8_e4m3',
+    'tq84':'turboquant_k8v4',
+    'tq4':'turboquant_4bit_nc',
+    'tq34':'turboquant_k3v4_nc',
+    'tq3':'turboquant_3bit_nc',
+    'kvarn':'kvarn_k4v2_g128',
+    'kvarn44':'kvarn_k4v4_g128',
+    'kvarn64':'kvarn_k4v2_g64',
+    'kvarn4464':'kvarn_k4v4_g64',
+}
+
+# New methods reuse already-tested serve.sh launch cases. Extra args are passed
+# through serve.sh after its fixed args, so the last --kv-cache-dtype wins.
+# This avoids modifying the frozen service launcher itself.
+SERVE_BASE={
+    'fp8':'fp16',
+    'tq84':'tq4',
+    'tq34':'tq4',
+    'kvarn4464':'kvarn64',
+}
+SERVE_EXTRA={
+    # Qwen3-4B does not ship calibrated KV scales in this benchmark snapshot.
+    # Without this flag standard FP8 would otherwise fall back to scale=1.0.
+    'fp8':['--kv-cache-dtype','fp8_e4m3','--calculate-kv-scales'],
+    'tq84':['--kv-cache-dtype','turboquant_k8v4'],
+    'tq34':['--kv-cache-dtype','turboquant_k3v4_nc'],
+    'kvarn4464':['--kv-cache-dtype','kvarn_k4v4_g64'],
+}
 KNOBS=('CUDA_HOME','TRITON_PTXAS_PATH','LD_LIBRARY_PATH','KVARN_SINKHORN_ITERS','KVARN_SINK_TOKENS',
        'VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS','VLLM_ATTENTION_BACKEND')
 
@@ -98,6 +126,8 @@ def plan_points(cfg,rows):
                     cap=cfg['math_max_tokens'] if dataset=='math_500' else cfg['human_max_tokens']
                     p=dict(id=f'r{rep:02d}_{method}_{dataset}_apc{apc}_C{c}',repeat=rep,method=method,
                         dataset=dataset,apc=apc,concurrency=c,number=n,max_tokens=cap,request_max_tokens=cap,
+                        serve_base_method=SERVE_BASE.get(method,method),
+                        serve_extra_args=SERVE_EXTRA.get(method,[]),
                         max_tokens_transport=('explicit_int' if cap is not None else 'json_null_sentinel'),
                         output_limit_policy=('explicit_request_cap' if cap is not None else 'server_context_window_only'),
                         kv_dtype=DTYPES[method],kv_cache_memory_bytes_requested=cfg.get('kv_bytes'),
