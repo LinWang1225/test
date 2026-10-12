@@ -1,0 +1,67 @@
+DELIVERY VALIDATION — 2026-10-12
+
+Executed locally:
+- 39 CPU mathematical / workflow / mock-tensor tests passed.
+- 2 existing-source bridge tests skipped: kvbench_residual is not installed here.
+- All Python modules passed AST/compileall checks.
+- Bash launcher passed bash -n.
+- All three Python CLI --help commands exited successfully.
+- Actual pinned driver source reviewed, including flattened rotated Query and stage-2 output buffer.
+
+NOT EXECUTED:
+- CUDA or Triton GPU compilation.
+- Real Qwen3/vLLM activation capture.
+- RTX 3090 replay, DRAM counters, or model quality evaluation.
+
+Mock tensors are only unit-test fixtures; they are not distributed as research results.
+The run script executes source-bridge tests again in the user's actual repository.
+GPU output/reference checks are performed before selective GPU results are accepted.
+
+UNIT TEST OUTPUT:
+
+test_active_pages_compacted_and_pool_preserved (test_capture.CaptureTests.test_active_pages_compacted_and_pool_preserved) ... ok
+test_byte_cap_enforced_before_snapshot (test_capture.CaptureTests.test_byte_cap_enforced_before_snapshot) ... ok
+test_capture_graph_refused (test_capture.CaptureTests.test_capture_graph_refused) ... ok
+test_changed_dtype_refused (test_capture.CaptureTests.test_changed_dtype_refused) ... ok
+test_checksum_mutation_detected (test_capture.CaptureTests.test_checksum_mutation_detected) ... ok
+test_epoch_resets_decode_call_index (test_capture.CaptureTests.test_epoch_resets_decode_call_index) ... ok
+test_indirect_verify_refused (test_capture.CaptureTests.test_indirect_verify_refused) ... ok
+test_real_driver_flattened_query_roundtrip (test_capture.CaptureTests.test_real_driver_flattened_query_roundtrip) ... ok
+test_split_snapshot_waits_for_stage2 (test_capture.CaptureTests.test_split_snapshot_waits_for_stage2) ... ok
+test_unarmed_warmup_not_captured (test_capture.CaptureTests.test_unarmed_warmup_not_captured) ... ok
+test_unknown_autotune_geometry_refused (test_capture.CaptureTests.test_unknown_autotune_geometry_refused) ... ok
+test_anchor_and_v_only_code_limits (test_math.MathTests.test_anchor_and_v_only_code_limits) ... ok
+test_best_prefix_monotone (test_math.MathTests.test_best_prefix_monotone) ... ok
+test_bound_budget_real_arithmetic (test_math.MathTests.test_bound_budget_real_arithmetic) ... ok
+test_bound_zero_reads_full (test_math.MathTests.test_bound_zero_reads_full) ... ok
+test_budget_never_overspent (test_math.MathTests.test_budget_never_overspent) ... ok
+test_exact_no_worse_than_greedy (test_math.MathTests.test_exact_no_worse_than_greedy) ... ok
+test_exact_solver_refuses_large (test_math.MathTests.test_exact_solver_refuses_large) ... ok
+test_full_budget_reaches_full_fidelity (test_math.MathTests.test_full_budget_reaches_full_fidelity) ... ok
+test_full_read_exact (test_math.MathTests.test_full_read_exact) ... ok
+test_gqa_mask_shape_rejected (test_math.MathTests.test_gqa_mask_shape_rejected) ... ok
+test_larger_prefix_tightens_mass (test_math.MathTests.test_larger_prefix_tightens_mass) ... ok
+test_lower_bound_valid_against_exact (test_math.MathTests.test_lower_bound_valid_against_exact) ... ok
+test_lower_bound_zero_for_full_read (test_math.MathTests.test_lower_bound_zero_for_full_read) ... ok
+test_mass_prefix_empty_is_one (test_math.MathTests.test_mass_prefix_empty_is_one) ... ok
+test_nonfinite_output_rejected (test_math.MathTests.test_nonfinite_output_rejected) ... ok
+test_order_unique_and_reproducible (test_math.MathTests.test_order_unique_and_reproducible) ... ok
+test_pool_always_full (test_math.MathTests.test_pool_always_full) ... ok
+test_sufficient_statistics_match_dense (test_math.MathTests.test_sufficient_statistics_match_dense) ... ok
+test_v_linear_decomposition (test_math.MathTests.test_v_linear_decomposition) ... ok
+test_zero_output_relative_is_na (test_math.MathTests.test_zero_output_relative_is_na) ... ok
+test_existing_sliding_window (test_source_bridge.SourceBridgeTests.test_existing_sliding_window) ... skipped 'Existing kvbench_residual package is required for source-bridge tests'
+test_existing_v1_cpu_oracle (test_source_bridge.SourceBridgeTests.test_existing_v1_cpu_oracle) ... skipped 'Existing kvbench_residual package is required for source-bridge tests'
+test_atomic_finite_json (test_workflow.WorkflowTests.test_atomic_finite_json) ... ok
+test_existing_directory_refused (test_workflow.WorkflowTests.test_existing_directory_refused) ... ok
+test_hash_changes_with_content (test_workflow.WorkflowTests.test_hash_changes_with_content) ... ok
+test_insufficient_data_refused (test_workflow.WorkflowTests.test_insufficient_data_refused) ... ok
+test_prompt_selection_not_mutated (test_workflow.WorkflowTests.test_prompt_selection_not_mutated) ... ok
+test_trace_empty_is_error (test_workflow.WorkflowTests.test_trace_empty_is_error) ... ok
+test_trace_selection_spreads_range (test_workflow.WorkflowTests.test_trace_selection_spreads_range) ... ok
+test_unknown_task_refused (test_workflow.WorkflowTests.test_unknown_task_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 41 tests in 0.223s
+
+OK (skipped=2)

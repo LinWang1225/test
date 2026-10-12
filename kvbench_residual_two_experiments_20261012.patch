@@ -1,0 +1,2226 @@
+diff --git a/kvbench_residual_diag/.gitignore b/kvbench_residual_diag/.gitignore
+new file mode 100644
+index 0000000..7a60b85
+--- /dev/null
++++ b/kvbench_residual_diag/.gitignore
+@@ -0,0 +1,2 @@
++__pycache__/
++*.pyc
+diff --git a/kvbench_residual_diag/README.zh-CN.md b/kvbench_residual_diag/README.zh-CN.md
+new file mode 100644
+index 0000000..3291ce0
+--- /dev/null
++++ b/kvbench_residual_diag/README.zh-CN.md
+@@ -0,0 +1,256 @@
++# Anchor + Residual：两个真实 trace 诊断实验
++
++版本：2026-10-12 / v1.0.0。
++
++这是**诊断补丁**，不是加速版 v2，也不是重新执行六组正式任务评分。仅新增 `kvbench_residual_diag/`，依赖仓库已经存在的 `kvbench_residual/`、`kvbench_longcontext/` 和原 `kvarn-serve` 环境。
++
++## 两个实验及其边界
++
++| 实验 | 数据/执行方式 | 输出 | 不代表什么 |
++|---|---|---|---|
++| 实验一：真实跳读诊断 | 在独立 vLLM Parent 服务采集真正旋转后的 Query、原生 K4V4 缓存和 GPU 输出；离线用原 AR Triton 内核重放、计数 | GPU K/V skipped chunks、逻辑字节；CPU 误差界/真实误差比、预算比、GQA 阻断情况 | 不是随机 KV；也不是 bound 策略自然生成全程的跳读率。逻辑字节不是 DRAM 实测 |
++| 实验二：Oracle 参考曲线 | 同一批真实 Q/KV，float64 反事实 attention；共享 GQA 读取掩码 | K-only/V-only/KV 的误差—读取预算曲线、可行选择掩码、V-only 有效下界、小规模精确枚举 | 不测任务准确率、TPOT、显存事务；离线贪心不保证全局最优 |
++
++两个实验共用一次采集。实际驱动传入 `[B*Hq,D]` 的持久化旋转 Query 缓冲区；采集器读取后仅恢复为 `[1,Hq,D]` 存储，不把测试夹具的三维输入形状强加给实际服务。所有 token 的 Anchor 始终进入 attention；FP16 sink/tail 不降低精度。默认在 Parent 轨迹上做同输入反事实比较，排除了不同策略自然生成轨迹不一致的干扰；但仍需后续闭环实验验证真实生成效果。
++
++**更正 Oracle 的术语：** `offline_greedy` 是用完整 Residual 做一步前瞻的可行参考；它的误差是最优误差的上界，而不是“最优误差本身”。只有 `exhaustive_exact_small` 的相应小问题才精确求解。V-only 另给有效但可能很松的误差下界。贪心效果不好、下界为零时，不能据此否定该方向。
++
++## 1. 应用与预检
++
++在已有项目根目录执行，PATCH 替换为补丁实际存放路径：
++
++```bash
++cd /home/wanglin/kvbench-3090-cu126
++PATCH=/绝对路径/kvbench_residual_two_experiments_20261012.patch
++
++git apply --check "$PATCH"
++git apply "$PATCH"
++```
++
++源码 ZIP 与 patch 是**替代交付形式**，不需要叠加应用。ZIP 中只有新增包；选择 ZIP 时把 `kvbench_residual_diag/` 解压到项目根目录。
++
++查看计划，不启动服务器或 GPU 推理，也不创建结果目录：
++
++```bash
++bash kvbench_residual_diag/run_two_experiments.sh --plan
++```
++
++默认读取以下成功旧批次：
++
++```text
++results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json
++```
++
++从这个 `suite.json` 读取原模型、冻结数据目录、KIT、环境、采样、thinking 和服务窗口。不要传 `residual_v1` 的 suite。只有 GitHub 摘要、缺少原机器冻结 `data/*.jsonl` 时会停止，不下载替代数据、不伪造输入。`checked_data` 检查全部任务文件哈希、case ID 顺序与预算信息。
++
++默认 Miniconda 根目录为 `/home/wanglin/miniconda3`；变化时设置 `CONDA_BASE`。默认 BLAS 线程为 4，可通过 `AR_DIAG_BLAS_THREADS` 修改。
++
++## 2. 默认一条命令执行两个实验
++
++```bash
++cd /home/wanglin/kvbench-3090-cu126
++bash kvbench_residual_diag/run_two_experiments.sh
++```
++
++默认设置：
++
++| 项目 | 值 |
++|---|---|
++| 采集任务 | qasper、hotpotqa、passage_retrieval_en |
++| 每任务样本数 | 2；按冻结输入长度排序后均匀抽样，不改原 prompt |
++| 总请求 | 6 个诊断请求；另有 1 个明确不采集的预热请求 |
++| layer cache 采样 | 按本地模型层数取约 4 个 cache ordinal；对 36 层模型为 0、12、24、35 |
++| decode 调用位置 | 0、15、63；是采集器观察的单 token decode 调用序号，不声称绝对生成 token 位置 |
++| trace 上限 | 默认计划至多 72 个；EOS 早结束时少于此数，记录缺失，不强制续写 |
++| 采集环境 | 独立 C1、eager、APC 关闭、真实原生 K4V4；端口 18080；GPU 0 |
++| 诊断生成 cap | 96 tokens；只为采集短 decode 前缀。**不是正式任务输出上限，也不评分** |
++| thinking / sampling | 复用旧 suite，不改 greedy，不人为强制输出到 96 |
++| 总 trace guard | 至多 256 个、8 GiB 数组字节；上限不含私有 runtime/logs |
++| 实验一 | 全部采集 trace，全部 8 KV heads，epsilon=0.02，bound_k / bound_v / bound_kv，原采集 BLOCK_N/splits |
++| 实验二 | 最多 12 个按采集顺序均匀分布的 trace，KV heads 0/3/7；默认 V-only、KV；预算 0/10/25/50/75/100% |
++| 输出隔离 | `results/residual_diag/run_<时间>_<PID>/`；存在即拒绝覆盖 |
++
++采集使用 `--enforce-eager` 是为了 Python hook 能看见每次实际 decode。C1 和短前缀是**明确的诊断协议变化**，因此不会输出可与旧 C8 结果比较的 TPOT/吞吐。
++
++`cache_ordinal` 是同一请求 forward 过程中观察到的不同缓存地址的顺序，不伪称已经验证了模型的语义层名。正式论文图表应标为 cache ordinal，或后续补充后端 layer-name 映射。
++
++流程顺序：CPU 单元测试和原 v1 桥接检查 → 建立私有 Parent runtime → 原生服务配置检查 → 不采集的 eager 预热和来源检查 → arming 后采集实际请求 → **彻底停止本次服务器** → GPU 重放诊断 → CPU Oracle。
++
++GPU 正忙、端口占用、source pin 不匹配、数值校验失败均停止；不停止其他实验进程。只清理本次创建的服务进程组。无需手动另开服务端。
++
++## 3. 后台执行与日志路径
++
++```bash
++cd /home/wanglin/kvbench-3090-cu126
++DIAG="$PWD/results/residual_diag/run_$(date +%Y%m%d_%H%M%S)_$$"
++mkdir -p "$(dirname "$DIAG")"
++
++nohup bash kvbench_residual_diag/run_two_experiments.sh \
++  --out "$DIAG" \
++  >"${DIAG}.driver.log" 2>&1 &
++
++DIAG_PID=$!
++printf 'PID=%s\n结果=%s\n主日志=%s\n' "$DIAG_PID" "$DIAG" "${DIAG}.driver.log"
++```
++
++```bash
++tail -f "${DIAG}.driver.log"
++```
++
++主日志位于批次目录**旁边**，不是 `.console` 文件。GPU 重放和 Oracle 的逐 trace 进度分别在 `experiment1.log`、`experiment2.log`，服务端详细日志在 `server/server.log`。
++
++## 4. 首次只做较小贯通检查
++
++该命令仍然完成两个实验，只减少 trace 数：
++
++```bash
++bash kvbench_residual_diag/run_two_experiments.sh \
++  --per-task 1 \
++  --layer-ordinals 0 18 \
++  --decode-calls 0 15 \
++  --diagnostic-max-tokens 32 \
++  --oracle-trace-limit 6
++```
++
++短输出可能在后续采集点之前结束，属于自然 EOS；查看 `capture_coverage.csv`。不因缺少晚期 trace 而重新选择更有利的题目。完全没有可用 trace 时会失败，不用合成数据替代。
++
++## 5. 分开运行：同一 trace 不重复采集
++
++先只采集：
++
++```bash
++bash kvbench_residual_diag/run_two_experiments.sh --capture-only
++```
++
++下面在已有 `kvarn-serve` 环境、项目根目录运行。DIAG 设置为实际已经生成的批次路径，不要填尚不存在的目录。
++
++### 实验一：多预算 + split 保守性诊断
++
++```bash
++source /home/wanglin/miniconda3/etc/profile.d/conda.sh
++conda activate kvarn-serve
++source /home/wanglin/kv_evalscope_3090_cu126_v2/env.sh
++cd /home/wanglin/kvbench-3090-cu126
++
++DIAG=/绝对路径/已经完成采集的批次
++CUDA_VISIBLE_DEVICES=0 python -m kvbench_residual_diag.diagnose \
++  --traces "$DIAG/traces" \
++  --out "$DIAG/experiment1_epsilon_split_$(date +%Y%m%d_%H%M%S)" \
++  --epsilons 0.01 0.02 0.05 0.10 \
++  --splits 1 32 \
++  --trace-limit 12
++```
++
++`--splits 1 32` 在相同数据上检查 split 前缀下界的影响；不是部署性能结论。不传此参数时使用真实采集的 split 数。`--block-n 16/32/64` 是另一维消融，不默认大网格全扫。
++
++只做 CPU 解释时必须显式添加 `--cpu-only`。该模式输出 `completed_cpu_only`，GPU skipped/bytes 保留 NA，不能用于声称已经在 GPU 上跳读。
++
++GPU 校验包括：真实保存的 Parent 输出 vs float64 完整量化参考、Parent 重放 vs 保存的真实输出、选择策略 GPU 输出 vs CPU 对应策略。沿用原 v1 的经验数值门槛：整体 relative L2 和最大元素绝对误差均不超过 0.02。门槛只是实现检查，**不是任务非劣保证或浮点形式化认证**。
++
++原始 autotune 的 BLOCK_N、warps、stages、maxnreg 均记录；重放固定 BLOCK_N/warps/stages。现有 GpuCase 不透传 maxnreg，因此它仅记录不复用；本补丁不计时，并通过原输出数值校验防止静默错误。
++
++### 实验二：扩大 Oracle 覆盖
++
++```bash
++OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4 python -m kvbench_residual_diag.oracle \
++  --traces "$DIAG/traces" \
++  --out "$DIAG/experiment2_all_$(date +%Y%m%d_%H%M%S)" \
++  --trace-limit 0 \
++  --kv-heads 0 1 2 3 4 5 6 7 \
++  --modes k v kv \
++  --fractions 0 0.10 0.25 0.50 0.75 1.0
++```
++
++Oracle 不需要 GPU，不加载模型。离线贪心计算量约随 chunk 数平方增长；先看默认子集结果，再扩大所有 trace/head。不会悄悄裁短 KV 来声称全上下文结果。
++
++## 6. 实验一先看这些列
++
++`experiment1/summary.csv`：
++
++- `gpu_executed`：是否真的调用了原 AR Triton kernel。
++- `gpu_key_skipped_chunks` / `gpu_value_skipped_chunks`：真实输入重放中的 GPU 分支统计。
++- `gpu_logical_code_reduction_fraction`：量化码逻辑字节减少，不含 scale、FP16 pool，也不等于 DRAM。
++- `k/v_threshold_ratio_p50/p95`：待比较界项 / 当前局部预算；大于 1 表示未通过。
++- `k/v_gqa_blocked_chunks`：有部分 query head 可跳，但 GQA 共享组不能整体跳过。
++- `cpu_gpu_count_match`：CPU 数学预测与 GPU 计数是否一致。边界差异保留，不以 CPU 数字覆盖 GPU。
++- `gpu_vs_full_*`、`gpu_vs_cpu_policy_*`：相对完整量化参考和同策略 CPU 输出的误差。
++
++`chunk_decisions.jsonl`：每个真实 chunk 的误差界、实际 logit 残差、真实完整 attention mass、前缀质量上界、通过的 query head 数。真实 mass/Residual 只用于**离线解释**，没有被偷偷用于在线选择。
++
++`counts_*.npy`：每个 KV head/split 的计数，列顺序见原 `kvbench_residual.kernel.STATS_FIELDS`。
++
++## 7. 实验二的算法、预算与下界
++
++### 可行算法
++
++`attention`：按 attention mass/字节排序。V-only 使用完整 K 得到的 attention；K/KV 使用 Anchor logits。`random_seed_*`：默认三条固定随机排序。`offline_greedy`：读取全部 Residual 做离线一步前瞻，每次选择单位字节收益最大的 K 或 V chunk。以上均共享同一 GQA mask。
++
++残差贡献可能互相抵消，读取更多块不必严格改善误差。算法保留预算内最好的可行前缀，实际读取比例可能小于预算上限，必须读取对应 `read_*` 字段。
++
++`best_feasible_envelope`：在相同预算下，从上述可行候选中选择误差最小者，并保存实际选中的算法名称。这仍然不是全局最优。
++
++### V-only 的有效误差下界
++
++K 固定全读时，chunk b 的实际输出修正是：
++
++```text
++delta_b,h = sum_{t in chunk b} p_full(h,t) * Residual_V(t)
++error_h(S) = sum_b delta_b,h - sum_{b in selected S} delta_b,h
++```
++
++三角不等式给出 `||error_h(S)|| >= max(0, ||sum_b delta_b,h|| - sum_{b in S} ||delta_b,h||)`。
++
++在字节预算下，用分数背包放宽“可移除的残差范数总和”，得到其上界；代回得到最优误差的有效下界。允许每个 query head 各自选择只会放宽问题；取各头下界最大值，仍是共享 GQA mask 的有效下界。相对误差分母接近零时保留 NA，并另外报告绝对误差。
++
++下界为 0 时通常只是**没有判别力**。只有下界显著高于目标误差时，才可排除这一 V-only 读取预算。
++
++### 精确枚举
++
++完整 GQA 组的可选动作不超过 `--exact-max-actions`（默认 14，硬上限 20）时，枚举所有子集，得到该组、该预算、最大头相对 L2 目标的精确解。K/KV 大规模问题没有实现精确下界，字段为 NA。长 trace 通常超过阈值，这是正常状态，不是假装精确求解失败。选择目标用 `max(||误差_h|| / max(||参考_h||,1e-12))`，相应 floor 与目标值保存在曲线行里；正式相对误差报告对近零参考头保留 NA，不用 floor 伪装有定义的相对误差。
++
++### 四个比例不要混淆
++
++`requested_fraction`：可控侧的 Residual 预算上限。
++
++`controllable_read_fraction`：实际可控侧读取比例。
++
++`all_residual_read_fraction`：包含另一侧固定全读的低位读取比例。
++
++`logical_code_reduction_fraction`：相对同位平面完整读取，K/V **量化码**字节减少比例。
++
++在等大 K/V、2+2 位、完整 chunk 情况下，V-only 即使不读任何 V Residual，也只减少 K+V 总量化码的 25%；K/V 都跳过 Residual 才达到 50%。这不是全部 attention 流量，更不是端到端速度提升百分比。
++
++## 8. 输出目录与最少回传文件
++
++```text
++<DIAG>/
++  plan.json                    # 原协议、诊断改动、采样计划、数据哈希
++  status.json
++  cpu_preflight.log
++  diagnostic_requests.json     # 诊断请求及 native usage；无性能比较指标
++  capture_coverage.csv
++  server/server.log
++  server/launch.json
++  server/dispatch_verified.json
++  traces/trace_*.json           # provenance、真实 shape、kernel hash
++  traces/trace_*.npz            # 当前请求活跃页、旋转 Q、原生码、pool、真实输出
++  experiment1/summary.csv
++  experiment1/validation.json
++  experiment1/chunk_decisions.jsonl
++  experiment1/readout.md
++  experiment2/curves.csv
++  experiment2/aggregate.csv
++  experiment2/coverage.csv
++  experiment2/readout.md
++  experiment2/masks/*.npz
++```
++
++先回传 `status.json`、`capture_coverage.csv`、两个实验的 `readout.md` 和 CSV、实验一 `validation.json`。排错再补日志和少量 trace。无需为了结果分析先上传全部缓存快照；快照包含真实模型中间状态，应按自己的数据管理要求保存。
++
++## 9. 验证状态与使用限制
++
++交付环境：39 项 CPU/模拟 API 测试通过；2 项依赖原 `kvbench_residual` 的源码桥接测试因本地无该包而跳过；Python 编译及 shell 语法检查通过。**没有运行 RTX 3090、GPU 编译或真实模型采集。** 参见 `TEST_RESULTS.txt`。
++
++运行脚本会在原仓库自动执行全部测试，此时源码桥接测试不能因为找不到依赖而成为研究证据。私有 runtime 仍使用原 v1 的精确 SHA pin；未知版本停止，不篡改已安装 vLLM。真正 GPU 跳读结论必须等实验一的 GPU 检查通过。
++
++不涉及模型微调、不构造拟真的假结果、不复用随机 KV 作为真实证据、不自动更改驱动权限、不修改旧结果。
+diff --git a/kvbench_residual_diag/SHA256SUMS b/kvbench_residual_diag/SHA256SUMS
+new file mode 100644
+index 0000000..63d0e88
+--- /dev/null
++++ b/kvbench_residual_diag/SHA256SUMS
+@@ -0,0 +1,18 @@
++862263fa1f46c20f0d1e4dac5ffcc75abd55c08211b2c3864c5f8764b9d87793  .gitignore
++b2667d204b507b7b3a6ddaae352c98b247871a46c560a046a14ff31086583f1e  README.zh-CN.md
++0cc69768c66596826fa947866ea200199117ac859821f92ac84a5c896f2d5ca4  SOURCES.md
++9abbe1d73d9bfef9adf9bba4ab317a74bf8b5e5309dc7671e06aaff8f6285fd0  TEST_RESULTS.txt
++2d76b167e9e6035aacbd895e109c008d3a006a73073d9fe766094e1342c60f14  __init__.py
++f3e41bff451fc2286e1626fe960dfc1a1fc5f4d96ed929619ddcca9db30cfb3d  capture.py
++fd0638631351597212569a76ac7cf2d6396ad35bb99db45833f210ed4b583d4c  common.py
++9c220af3ea97d67c346d4ef4a829e2d19fb1c81ed196c7c5805381eef16cb95d  diagnose.py
++485e9d1358866ecdc612fe87be2a7918f3b5a2329fce89cd2cb35d84a1d0fbc6  math_ops.py
++f62d9f13524fa42afeb7ee0360756b6cce473086dd5a7cd3763ae7bf2d292c58  oracle.py
++9e1d76b55e3e210ad0dc5cd481c4b062821d2ebec85fd17f3413bc583cec8027  run.py
++ce4c516b009dedc7c2af8e73c37f2e5826217e96b08141770feb6b61b377c479  run_two_experiments.sh
++34d24c72202b8c2daa3fbbe765cfdeeeec73f58064becb102cca65e55eed34d5  runtime.py
++f94b705883cc2837d1bf1453bc8150c113e580029db558d551ce1e8fd43df281  tests/__init__.py
++04cd179c692c0d891c896fba43bf73fe47ae2eaa7f8d300c1072468013fe882f  tests/test_capture.py
++7a7d570cb3b34e1f1c166ae6b862ed06624b211e54e20516408d1f47e9e09855  tests/test_math.py
++3bfdfe0d341af83c3aa097855974cb4a3afb2c132d50587bce01fb477389b2cc  tests/test_source_bridge.py
++abf5dada322cb054fbf9e2365ed5fae33c0c1f7ebef161b8d651c4c742c46fde  tests/test_workflow.py
+diff --git a/kvbench_residual_diag/SOURCES.md b/kvbench_residual_diag/SOURCES.md
+new file mode 100644
+index 0000000..1cce73f
+--- /dev/null
++++ b/kvbench_residual_diag/SOURCES.md
+@@ -0,0 +1,21 @@
++# Reviewed integration sources
++
++User repository: https://github.com/LinWang1225/test
++
++Existing integration contracts inspected on 2026-10-12:
++
++- `kvbench_residual/runtime.py`: isolated overlay and exact source pins.
++- `kvbench_residual/bootstrap.py`: private package import ordering and worker propagation.
++- `kvbench_residual/trace.py`: launch proxy and source provenance verification.
++- `kvbench_residual/fixtures.py`: native packed K4V4 layout, real-arithmetic policy reference, and GpuCase launch/statistics API.
++- `kvbench_residual/kernel.py`, `TECH_CONTRACT.md`: chunk budgets, prefix mass lower bounds, GQA union semantics.
++- `kvbench_residual/serve.py`: architecture validation and owned-process cleanup.
++- `kvbench_longcontext/common.py`, `run.py`, `serve.py`: frozen dataset checks, request construction, streaming protocol, and native model/cache checks.
++- Frozen source suite: `results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json`.
++
++KVarN parent package commit: `7586257f1c632e63187bfacbbe21ccb51540f7b3`.
++https://github.com/huawei-csl/KVarN/blob/7586257f1c632e63187bfacbbe21ccb51540f7b3/vllm/v1/attention/ops/triton_kvarn_decode.py
++
++Runtime construction reuses the existing six-file SHA256 verification. This package adds a separate observer and counterfactual analysis; it does not claim GPU validation in the delivery environment.
++
++The offline V-only lower bound is derived directly from the triangle inequality and a fractional-knapsack relaxation. It is not attributed to an external paper and is not advertised as a tight optimum. K/KV greedy selection is an achievable reference only.
+diff --git a/kvbench_residual_diag/TEST_RESULTS.txt b/kvbench_residual_diag/TEST_RESULTS.txt
+new file mode 100644
+index 0000000..c034d28
+--- /dev/null
++++ b/kvbench_residual_diag/TEST_RESULTS.txt
+@@ -0,0 +1,67 @@
++DELIVERY VALIDATION — 2026-10-12
++
++Executed locally:
++- 39 CPU mathematical / workflow / mock-tensor tests passed.
++- 2 existing-source bridge tests skipped: kvbench_residual is not installed here.
++- All Python modules passed AST/compileall checks.
++- Bash launcher passed bash -n.
++- All three Python CLI --help commands exited successfully.
++- Actual pinned driver source reviewed, including flattened rotated Query and stage-2 output buffer.
++
++NOT EXECUTED:
++- CUDA or Triton GPU compilation.
++- Real Qwen3/vLLM activation capture.
++- RTX 3090 replay, DRAM counters, or model quality evaluation.
++
++Mock tensors are only unit-test fixtures; they are not distributed as research results.
++The run script executes source-bridge tests again in the user's actual repository.
++GPU output/reference checks are performed before selective GPU results are accepted.
++
++UNIT TEST OUTPUT:
++
++test_active_pages_compacted_and_pool_preserved (test_capture.CaptureTests.test_active_pages_compacted_and_pool_preserved) ... ok
++test_byte_cap_enforced_before_snapshot (test_capture.CaptureTests.test_byte_cap_enforced_before_snapshot) ... ok
++test_capture_graph_refused (test_capture.CaptureTests.test_capture_graph_refused) ... ok
++test_changed_dtype_refused (test_capture.CaptureTests.test_changed_dtype_refused) ... ok
++test_checksum_mutation_detected (test_capture.CaptureTests.test_checksum_mutation_detected) ... ok
++test_epoch_resets_decode_call_index (test_capture.CaptureTests.test_epoch_resets_decode_call_index) ... ok
++test_indirect_verify_refused (test_capture.CaptureTests.test_indirect_verify_refused) ... ok
++test_real_driver_flattened_query_roundtrip (test_capture.CaptureTests.test_real_driver_flattened_query_roundtrip) ... ok
++test_split_snapshot_waits_for_stage2 (test_capture.CaptureTests.test_split_snapshot_waits_for_stage2) ... ok
++test_unarmed_warmup_not_captured (test_capture.CaptureTests.test_unarmed_warmup_not_captured) ... ok
++test_unknown_autotune_geometry_refused (test_capture.CaptureTests.test_unknown_autotune_geometry_refused) ... ok
++test_anchor_and_v_only_code_limits (test_math.MathTests.test_anchor_and_v_only_code_limits) ... ok
++test_best_prefix_monotone (test_math.MathTests.test_best_prefix_monotone) ... ok
++test_bound_budget_real_arithmetic (test_math.MathTests.test_bound_budget_real_arithmetic) ... ok
++test_bound_zero_reads_full (test_math.MathTests.test_bound_zero_reads_full) ... ok
++test_budget_never_overspent (test_math.MathTests.test_budget_never_overspent) ... ok
++test_exact_no_worse_than_greedy (test_math.MathTests.test_exact_no_worse_than_greedy) ... ok
++test_exact_solver_refuses_large (test_math.MathTests.test_exact_solver_refuses_large) ... ok
++test_full_budget_reaches_full_fidelity (test_math.MathTests.test_full_budget_reaches_full_fidelity) ... ok
++test_full_read_exact (test_math.MathTests.test_full_read_exact) ... ok
++test_gqa_mask_shape_rejected (test_math.MathTests.test_gqa_mask_shape_rejected) ... ok
++test_larger_prefix_tightens_mass (test_math.MathTests.test_larger_prefix_tightens_mass) ... ok
++test_lower_bound_valid_against_exact (test_math.MathTests.test_lower_bound_valid_against_exact) ... ok
++test_lower_bound_zero_for_full_read (test_math.MathTests.test_lower_bound_zero_for_full_read) ... ok
++test_mass_prefix_empty_is_one (test_math.MathTests.test_mass_prefix_empty_is_one) ... ok
++test_nonfinite_output_rejected (test_math.MathTests.test_nonfinite_output_rejected) ... ok
++test_order_unique_and_reproducible (test_math.MathTests.test_order_unique_and_reproducible) ... ok
++test_pool_always_full (test_math.MathTests.test_pool_always_full) ... ok
++test_sufficient_statistics_match_dense (test_math.MathTests.test_sufficient_statistics_match_dense) ... ok
++test_v_linear_decomposition (test_math.MathTests.test_v_linear_decomposition) ... ok
++test_zero_output_relative_is_na (test_math.MathTests.test_zero_output_relative_is_na) ... ok
++test_existing_sliding_window (test_source_bridge.SourceBridgeTests.test_existing_sliding_window) ... skipped 'Existing kvbench_residual package is required for source-bridge tests'
++test_existing_v1_cpu_oracle (test_source_bridge.SourceBridgeTests.test_existing_v1_cpu_oracle) ... skipped 'Existing kvbench_residual package is required for source-bridge tests'
++test_atomic_finite_json (test_workflow.WorkflowTests.test_atomic_finite_json) ... ok
++test_existing_directory_refused (test_workflow.WorkflowTests.test_existing_directory_refused) ... ok
++test_hash_changes_with_content (test_workflow.WorkflowTests.test_hash_changes_with_content) ... ok
++test_insufficient_data_refused (test_workflow.WorkflowTests.test_insufficient_data_refused) ... ok
++test_prompt_selection_not_mutated (test_workflow.WorkflowTests.test_prompt_selection_not_mutated) ... ok
++test_trace_empty_is_error (test_workflow.WorkflowTests.test_trace_empty_is_error) ... ok
++test_trace_selection_spreads_range (test_workflow.WorkflowTests.test_trace_selection_spreads_range) ... ok
++test_unknown_task_refused (test_workflow.WorkflowTests.test_unknown_task_refused) ... ok
++
++----------------------------------------------------------------------
++Ran 41 tests in 0.223s
++
++OK (skipped=2)
+diff --git a/kvbench_residual_diag/__init__.py b/kvbench_residual_diag/__init__.py
+new file mode 100644
+index 0000000..696faa3
+--- /dev/null
++++ b/kvbench_residual_diag/__init__.py
+@@ -0,0 +1,2 @@
++"""Real KVarN trace diagnostics. These are not production performance tests."""
++__version__ = "1.0.0"
+diff --git a/kvbench_residual_diag/capture.py b/kvbench_residual_diag/capture.py
+new file mode 100644
+index 0000000..ee36900
+--- /dev/null
++++ b/kvbench_residual_diag/capture.py
+@@ -0,0 +1,206 @@
++"""Private eager-server hook. Never imported into an unmodified production runtime.
++
++A client arm file excludes warmup. The hook observes the actual rotated query,
++original native packed pages, FP16 sink/tail and the final rotated GPU output.
++Only active pages are copied. D2H synchronization makes timing unusable.
++"""
++from __future__ import annotations
++from dataclasses import asdict
++import json
++import os
++from pathlib import Path
++import time
++import numpy as np
++from .common import ARRAYS, SCHEMA, atomic_json, sha_file
++
++
++class Capture:
++    def __init__(self, root, source):
++        self.root = Path(root).resolve()
++        self.source = str(Path(source).resolve())
++        self.source_sha = sha_file(source)
++        self.epoch = None
++        self.layers = {}
++        self.calls = {}
++        self.pending = None
++        self.saved = 0
++        self.bytes = 0
++        self.config = json.loads((self.root / "capture_config.json").read_text())
++        atomic_json(self.root / f"hook_{os.getpid()}.json", {
++            "source": self.source, "sha256": self.source_sha, "pid": os.getpid(),
++            "installed": True, "scope": "eager diagnostic only; no timings"})
++
++    def arm(self):
++        path = self.root / "arm.json"
++        if not path.exists():
++            return None
++        arm = json.loads(path.read_text())
++        if arm["epoch"] != self.epoch:
++            self.epoch = arm["epoch"]
++            self.layers, self.calls = {}, {}
++            self.pending = None
++        return arm
++
++    def choose(self, args, kwargs, inner, mode):
++        arm = self.arm()
++        if arm is None:
++            return None
++        import torch
++        q, _, bt, sl, _, kv = args[:6]
++        if torch.cuda.is_current_stream_capturing():
++            raise RuntimeError("Real trace capture requires --eager; CUDA graph capture is not allowed")
++        if bool(kwargs.get("VQ_INDIRECT", False)):
++            raise RuntimeError("Speculative/indirect verify cannot be labelled as direct decode")
++        # The real driver passes the persistent [B*Hq,D] rotation buffer.
++        # GpuCase uses a [B,Hq,D] view; both represent the same C1 layout.
++        if tuple(q.shape) not in ((32,128),(1,32,128)) or q.dtype != torch.float16:
++            raise RuntimeError(f"Armed capture expects C1 rotated FP16 [32,128] or [1,32,128], got {q.shape}/{q.dtype}")
++        if kv.dtype != torch.uint8 or kv.ndim != 3 or kv.shape[1] != 8:
++            raise RuntimeError("Unsupported actual KV cache")
++        if (kwargs.get("D"), kwargs.get("GROUP"), kwargs.get("K_BITS"), kwargs.get("V_BITS")) != (128,128,4,4):
++            raise RuntimeError("Expected pinned K4V4/G128 launch")
++        identity = int(kv.data_ptr())
++        ordinal = self.layers.setdefault(identity, len(self.layers))
++        step = self.calls.get(identity, 0)
++        self.calls[identity] = step + 1
++        if ordinal not in self.config["layer_ordinals"] or step not in self.config["decode_calls"]:
++            return None
++        length = int(sl[0].item())
++        if length < self.config["min_context"]:
++            return None
++        if self.saved >= self.config["max_traces"]:
++            raise RuntimeError("Trace count cap reached; increase --max-traces explicitly")
++        cfg = getattr(inner, "best_config", None)
++        bn = kwargs.get("BLOCK_N", None if cfg is None else cfg.kwargs.get("BLOCK_N"))
++        if bn not in (16,32,64):
++            raise RuntimeError("Cannot resolve actual selected BLOCK_N; refusing guessed geometry")
++        return {"arm": arm, "ordinal": ordinal, "step": step, "length": length,
++                "mode": mode, "block_n": int(bn),
++                "splits": int(kwargs.get("NUM_KV_SPLITS", 1)),
++                "num_warps": int(kwargs.get("num_warps", getattr(cfg, "num_warps", 4))),
++                "num_stages": int(kwargs.get("num_stages", getattr(cfg, "num_stages", 1))),
++                "maxnreg": kwargs.get("maxnreg", getattr(cfg, "maxnreg", None)),
++                "autotune_config": str(cfg), "kwargs": kwargs, "args": args}
++
++    def save(self, item, output):
++        import torch
++        from kvbench_residual.fixtures import Layout
++        q, _, bt, sl, b2s, kv, pk, pv = item["args"][:8]
++        layout = Layout()
++        if kv.shape[2] != layout.tile_bytes:
++            raise RuntimeError("Unexpected cache tile width")
++        for k,v in layout.offsets.items():
++            if item["kwargs"].get(k) != v:
++                raise RuntimeError("Actual packed offset differs: " + k)
++        n = (item["length"] + 127)//128
++        ids = bt[0,:n].detach().cpu().numpy().astype(np.int64)
++        if len(ids) != n or np.any(ids < 0) or np.any(ids >= kv.shape[0]):
++            raise RuntimeError("Incomplete active block table")
++        unique, reverse = np.unique(ids, return_inverse=True)
++        ix = torch.as_tensor(unique, device=kv.device, dtype=torch.long)
++        slots = b2s.index_select(0, ix).detach().cpu().numpy().astype(np.int64)
++        active_slots = np.unique(slots[slots >= 0])
++        if np.any(slots < -1) or np.any(active_slots >= pk.shape[0]):
++            raise RuntimeError("Invalid live pool map")
++        estimated = (len(unique)*kv.shape[1]*kv.shape[2] + max(1,len(active_slots))*128*8*128*4 + 65536)
++        if self.bytes+estimated > self.config["max_bytes"]:
++            raise RuntimeError("Trace byte cap reached before D2H copy; increase --max-gib explicitly")
++        native = kv.index_select(0, ix).detach().cpu().numpy()
++        # Pool-backed packed fields can be uninitialised; never consume them as codes.
++        native[slots >= 0] = 0
++        compact_slots = np.full(len(unique), -1, np.int32)
++        for j,s in enumerate(active_slots):
++            compact_slots[slots == s] = j
++        if len(active_slots):
++            pi = torch.as_tensor(active_slots, device=pk.device, dtype=torch.long)
++            poolk = pk.index_select(0, pi).detach().cpu().numpy()
++            poolv = pv.index_select(0, pi).detach().cpu().numpy()
++        else:
++            poolk = np.zeros((1,128,8,128), np.float16)
++            poolv = np.zeros_like(poolk)
++        table = np.full((1, bt.shape[1]), -1, np.int32)
++        table[0,:n] = reverse
++        arrays = {"query": q.detach().reshape(1,32,128).cpu().numpy().copy(), "cache": native,
++                  "block_table": table, "seq_lens": np.array([item["length"]],np.int32),
++                  "block_to_slot": compact_slots, "pool_k": poolk, "pool_v": poolv,
++                  "req_rows": np.array([0],np.int32),
++                  "reference_gpu_rot": output.detach().reshape(1,32,128).cpu().numpy().copy()}
++        if any(not np.isfinite(arrays[k]).all() for k in ("query","pool_k","pool_v","reference_gpu_rot")):
++            # Entire selected pool page is copied, so unused pool tail can be nonfinite;
++            # sanitize only unused token positions below, never valid activations.
++            for logical,bid in enumerate(table[0,:n]):
++                slot = compact_slots[bid]
++                if slot >= 0 and logical == n-1:
++                    valid = item["length"] - logical*128
++                    arrays["pool_k"][slot,valid:] = 0
++                    arrays["pool_v"][slot,valid:] = 0
++            if any(not np.isfinite(arrays[k]).all() for k in ("query","pool_k","pool_v","reference_gpu_rot")):
++                raise RuntimeError("Nonfinite valid live activation")
++        if set(arrays) != set(ARRAYS):
++            raise AssertionError("Trace schema implementation error")
++        stamp = time.time_ns()
++        stem = f"trace_{stamp}_{os.getpid()}_c{item['ordinal']:03d}_d{item['step']:04d}"
++        tmp = self.root/(stem+".tmp.npz")
++        np.savez(tmp, **arrays)
++        dest = self.root/(stem+".npz")
++        tmp.replace(dest)
++        kw = item["kwargs"]
++        scale = float(item["args"][9 if item["mode"] == "single" else 10])
++        meta = {"schema": SCHEMA, "source_kind": "real_vllm_decode", "arrays_file": dest.name,
++                "arrays_sha256": sha_file(dest), "uncompressed_bytes": int(sum(x.nbytes for x in arrays.values())),
++                "layout": asdict(layout), "hq":32, "hk":8, "scale":scale,
++                "window":int(kw.get("SLIDING_WINDOW",0)), "mode":item["mode"],
++                "block_n":item["block_n"], "splits":item["splits"], "num_warps":item["num_warps"],
++                "num_stages":item["num_stages"], "maxnreg":item["maxnreg"],
++                "autotune_config":item["autotune_config"], "request":item["arm"],
++                "cache_ordinal":item["ordinal"], "decode_call_index":item["step"],
++                "context_tokens":item["length"], "kernel_source":self.source,
++                "kernel_sha256":self.source_sha, "original_cache_shape":list(kv.shape),
++                "active_pages":len(unique), "active_pool_pages":len(active_slots), "original_query_shape":list(q.shape),
++                "eager":True, "batch":1, "capture_pid":os.getpid(),
++                "scope":"Parent trajectory; real rotated GPU Q/KV/output. No runtime speed or DRAM claim. Cache ordinal is acquisition order, not a verified model layer name."}
++        atomic_json(self.root/(stem+".json"), meta)
++        self.saved += 1
++        self.bytes += meta["uncompressed_bytes"]
++        atomic_json(self.root/f"capture_progress_{os.getpid()}.json", {"traces":self.saved,"bytes":self.bytes})
++
++
++class ObservedLaunch:
++    def __init__(self, inner, name, capture):
++        self.inner, self.name, self.capture = inner,name,capture
++    def __getattr__(self,name):
++        return getattr(self.inner,name)
++    def __getitem__(self,grid):
++        fn = self.inner[grid]
++        def invoke(*args,**kwargs):
++            result = fn(*args,**kwargs)
++            c = self.capture
++            try:
++                if self.name.endswith("stage2"):
++                    if c.pending is not None:
++                        item,c.pending = c.pending,None
++                        c.save(item,args[2])
++                else:
++                    mode = "split" if self.name.endswith("stage1") else "single"
++                    item = c.choose(args,kwargs,self.inner,mode)
++                    if item is not None:
++                        if mode == "single": c.save(item,args[8])
++                        else: c.pending = item
++            except BaseException as exc:
++                atomic_json(c.root/f"capture_error_{os.getpid()}.json", {"error":repr(exc),"kernel":self.name})
++                raise
++            return result
++        return invoke
++
++
++def install(namespace, source):
++    root = os.environ.get("AR_DIAG_TRACE_ROOT")
++    if not root:
++        raise RuntimeError("Diagnostic runtime requires AR_DIAG_TRACE_ROOT")
++    if namespace.get("AR_POLICY_NAME") != "parent":
++        raise RuntimeError("Capture native Parent trajectories only")
++    cap = Capture(root,source)
++    for name in ("_kvarn_fused_decode_kernel","_kvarn_fused_decode_stage1","_kvarn_fused_decode_stage2"):
++        if name not in namespace:
++            raise RuntimeError("Missing pinned kernel: "+name)
++        namespace[name] = ObservedLaunch(namespace[name],name,cap)
+diff --git a/kvbench_residual_diag/common.py b/kvbench_residual_diag/common.py
+new file mode 100644
+index 0000000..91bbfb2
+--- /dev/null
++++ b/kvbench_residual_diag/common.py
+@@ -0,0 +1,139 @@
++"""Versioned, non-pickle trace files and deterministic report utilities."""
++from __future__ import annotations
++import csv
++import hashlib
++import json
++import os
++from pathlib import Path
++import numpy as np
++
++SCHEMA = "kvbench.residual.real_trace.v1"
++ARRAYS = ("query", "cache", "block_table", "seq_lens", "block_to_slot", "pool_k", "pool_v", "req_rows", "reference_gpu_rot")
++
++
++def sha_file(path):
++    h = hashlib.sha256()
++    with Path(path).open("rb") as f:
++        for chunk in iter(lambda: f.read(1048576), b""):
++            h.update(chunk)
++    return h.hexdigest()
++
++
++def atomic_json(path, obj):
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    tmp = path.with_name(path.name + f".tmp.{os.getpid()}")
++    tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
++    tmp.replace(path)
++
++
++def write_csv(path, rows):
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    keys = list(dict.fromkeys(k for r in rows for k in r))
++    with path.open("w", newline="", encoding="utf-8-sig") as f:
++        w = csv.DictWriter(f, keys)
++        w.writeheader()
++        w.writerows(rows)
++
++
++def new_output(path):
++    path = Path(path).expanduser().resolve()
++    if path.exists():
++        raise ValueError(f"Output must not already exist: {path}")
++    path.mkdir(parents=True)
++    return path
++
++
++def trace_paths(directory, limit=0):
++    paths = sorted(Path(directory).glob("trace_*.json"))
++    if not paths:
++        raise ValueError(f"No committed real traces under {directory}; do not substitute synthetic data")
++    if limit < 0:
++        raise ValueError("Trace limit cannot be negative")
++    # Spread a bounded diagnostic across acquisition order, not just the first layer/case.
++    if limit and len(paths) > limit:
++        positions = np.linspace(0, len(paths)-1, limit).round().astype(int)
++        paths = [paths[i] for i in positions]
++    return paths
++
++
++def load_trace(path):
++    """Read locally produced uint8/fp16 snapshots, never pickle or torch.load."""
++    from kvbench_residual.fixtures import Case, Layout
++    path = Path(path)
++    meta = json.loads(path.read_text(encoding="utf-8"))
++    if meta.get("schema") != SCHEMA or meta.get("source_kind") != "real_vllm_decode":
++        raise ValueError("Expected a real, versioned vLLM trace")
++    name = meta["arrays_file"]
++    if Path(name).name != name or not name.endswith(".npz"):
++        raise ValueError("Unsafe trace array path")
++    af = path.parent / name
++    if sha_file(af) != meta["arrays_sha256"]:
++        raise ValueError(f"Trace checksum mismatch: {af}")
++    with np.load(af, allow_pickle=False) as z:
++        if set(z.files) != set(ARRAYS):
++            raise ValueError("Trace array schema mismatch")
++        data = {k: z[k] for k in ARRAYS}
++    layout = Layout(**meta["layout"])
++    lengths = tuple(int(x) for x in data["seq_lens"])
++    if len(lengths) != 1 or min(lengths) <= 0:
++        raise ValueError("This version intentionally captures one request per trace")
++    if meta["hq"] != 32 or meta["hk"] != 8 or layout.group != 128:
++        raise ValueError("Only the validated Qwen3-4B K4V4/G128 shape is supported")
++    if data["cache"].dtype != np.uint8 or data["cache"].shape[1:] != (8, layout.tile_bytes):
++        raise ValueError("Invalid native packed cache")
++    if data["query"].shape != (1, 32, 128) or data["query"].dtype != np.float16:
++        raise ValueError("Expected actual rotated FP16 query, not an HF activation substitute")
++    if data["reference_gpu_rot"].shape != data["query"].shape:
++        raise ValueError("Invalid live attention output shape")
++    for key in ("seq_lens", "block_table", "block_to_slot", "req_rows"):
++        if data[key].dtype != np.int32:
++            raise ValueError("Invalid integer metadata dtype: " + key)
++    for key in ("pool_k", "pool_v"):
++        if data[key].dtype != np.float16 or data[key].shape[1:] != (128, 8, 128):
++            raise ValueError("Invalid FP16 sink/tail pool: " + key)
++    if data["pool_k"].shape != data["pool_v"].shape:
++        raise ValueError("K/V pool shape mismatch")
++    blocks = (lengths[0]+127)//128
++    if data["block_table"].shape[0] != 1 or data["block_table"].shape[1] < blocks:
++        raise ValueError("Incomplete active block table")
++    ids = data["block_table"][0, :blocks]
++    if np.any(ids < 0) or np.any(ids >= len(data["cache"])):
++        raise ValueError("Invalid compacted page mapping")
++    if data["block_to_slot"].shape != (len(data["cache"]),):
++        raise ValueError("Invalid pool mapping")
++    slots = data["block_to_slot"][ids]
++    if np.any(slots < -1) or np.any(slots >= len(data["pool_k"])):
++        raise ValueError("Invalid active pool index")
++    if data["req_rows"].tolist() != [0]:
++        raise ValueError("Only direct decode snapshots are supported")
++    if meta["block_n"] not in (16, 32, 64) or meta["splits"] < 1:
++        raise ValueError("Invalid captured launch geometry")
++    if not np.isfinite(meta["scale"]) or meta["scale"] <= 0:
++        raise ValueError("Invalid attention scale")
++    for key in ("query", "reference_gpu_rot"):
++        if not np.isfinite(data[key]).all():
++            raise ValueError("Nonfinite actual activation: " + key)
++    data["case"] = Case(path.stem, lengths, layout, window=meta["window"], hq=32, hk=8)
++    data["scale"] = float(meta["scale"])
++    return data, meta
++
++
++def output_metrics(output, reference, vref=None):
++    o = np.asarray(output, np.float64)
++    r = np.asarray(reference, np.float64)
++    if o.shape != r.shape or not np.isfinite(o).all() or not np.isfinite(r).all():
++        raise ValueError("Nonfinite or incompatible attention output")
++    err = np.linalg.norm(o-r, axis=-1)
++    norms = np.linalg.norm(r, axis=-1)
++    rel = np.divide(err, norms, out=np.full_like(err, np.nan), where=norms > 1e-12)
++    den = float(np.linalg.norm(r))
++    result = {"abs_l2_mean": float(err.mean()), "abs_l2_max": float(err.max()),
++              "relative_l2_fro": float(np.linalg.norm(o-r)/den) if den > 1e-12 else None,
++              "relative_l2_max_head": float(np.nanmax(rel)) if np.any(np.isfinite(rel)) else None,
++              "relative_undefined_heads": int((norms <= 1e-12).sum()),
++              "max_abs_element": float(np.max(np.abs(o-r)))}
++    if vref is not None:
++        result["error_over_vref_max"] = float(err.max()/vref) if vref > 0 else (0.0 if err.max() == 0 else None)
++    return result
+diff --git a/kvbench_residual_diag/diagnose.py b/kvbench_residual_diag/diagnose.py
+new file mode 100644
+index 0000000..569a0d0
+--- /dev/null
++++ b/kvbench_residual_diag/diagnose.py
+@@ -0,0 +1,156 @@
++"""Experiment 1: actual GPU branch counts on real saved decode inputs.
++
++The original sampling run is not instrumented for timing. CPU explanations and
++GPU branch counts are explicitly different fields, with mismatch rates reported.
++"""
++from __future__ import annotations
++import argparse
++import importlib.util
++import json
++from pathlib import Path
++import traceback
++import numpy as np
++from .common import atomic_json, load_trace, new_output, output_metrics, trace_paths, write_csv
++from .math_ops import build_group, bound_policy
++
++
++def main(argv=None):
++    p=argparse.ArgumentParser(description=__doc__)
++    p.add_argument("--traces",type=Path,required=True)
++    p.add_argument("--out",type=Path,required=True)
++    p.add_argument("--source-root",type=Path)
++    p.add_argument("--device",default="cuda:0")
++    p.add_argument("--cpu-only",action="store_true")
++    p.add_argument("--epsilons",nargs="+",type=float,default=[.02])
++    p.add_argument("--policies",nargs="+",choices=["bound_k","bound_v","bound_kv"],default=["bound_k","bound_v","bound_kv"])
++    p.add_argument("--block-n",type=int,choices=[16,32,64],help="Default: recorded parent BLOCK_N")
++    p.add_argument("--splits",nargs="+",type=int,help="Default: recorded parent split count; use 1 32 for ablation")
++    p.add_argument("--trace-limit",type=int,default=0)
++    a=p.parse_args(argv)
++    if any(not np.isfinite(e) or e<0 for e in a.epsilons): p.error("Finite nonnegative epsilons required")
++    if a.splits and any(x<1 or x&(x-1) for x in a.splits): p.error("Splits must be powers of two")
++    paths=trace_paths(a.traces,a.trace_limit)
++    out=new_output(a.out)
++    state={"schema":"kvbench.residual.real_diagnosis.v1","status":"running", "gpu_executed":False,
++           "source_kind":"real_vllm_decode","trace_count":len(paths),"timings_available":False,
++           "dram_bytes":None,"scope":"GPU replay branch counts are logical address bytes, NOT DRAM. CPU bounds are float64 explanations, NOT task quality."}
++    atomic_json(out/"status.json",state)
++    rows=[]; validations=[]
++    try:
++        modules={}
++        if not a.cpu_only:
++            import torch
++            if not torch.cuda.is_available(): raise RuntimeError("CUDA unavailable; --cpu-only is an explicit partial alternative, not a GPU result")
++            from kvbench_residual.fixtures import GpuCase
++            from kvbench_residual.transform import load_variant
++            if a.source_root is None:
++                spec=importlib.util.find_spec("vllm")
++                if spec is None or not spec.origin: raise RuntimeError("Use the existing kvarn-serve environment")
++                a.source_root=Path(spec.origin).parent
++            parent=load_variant(a.source_root,"parent",.02)
++        with (out/"chunk_decisions.jsonl").open("w",encoding="utf-8") as detail_file:
++            for ti,path in enumerate(paths):
++                data,meta=load_trace(path)
++                bn=a.block_n or meta["block_n"]
++                split_values=a.splits or [meta["splits"]]
++                groups=[build_group(data,h,bn) for h in range(8)]
++                full=np.concatenate([g.full for g in groups],axis=0)[None,:,:]
++                live=output_metrics(full,data["reference_gpu_rot"])
++                validation={"trace":path.name,"live_gpu_vs_float64":live}
++                if live["relative_l2_fro"] is None or live["relative_l2_fro"]>.02 or live["max_abs_element"]>.02:
++                    raise RuntimeError(f"Full quantized reference mismatch on {path.name}: {live}; do not interpret selective results")
++                if not a.cpu_only:
++                    # Verify original parent geometry against its original rotated output.
++                    original=GpuCase(data,a.device,meta["splits"],meta["block_n"],meta["num_warps"],meta["num_stages"])
++                    original.launch(parent,mode=meta["mode"],autotune=False)
++                    torch.cuda.synchronize()
++                    check=output_metrics(original.out.view(1,32,128).cpu().numpy(),data["reference_gpu_rot"])
++                    validation["replayed_parent_vs_live_gpu"]=check
++                    if check["relative_l2_fro"] is None or check["relative_l2_fro"]>.02 or check["max_abs_element"]>.02:
++                        raise RuntimeError(f"GPU parent replay mismatch: {path.name}: {check}")
++                    del original
++                validations.append(validation)
++                atomic_json(out/"validation.json",validations)
++                for splits in split_values:
++                    mode="single" if splits==1 else "split"
++                    gpu=None
++                    if not a.cpu_only:
++                        gpu=GpuCase(data,a.device,splits,bn,meta["num_warps"],meta["num_stages"])
++                    for epsilon in a.epsilons:
++                        for policy in a.policies:
++                            results=[bound_policy(g,policy,epsilon,splits) for g in groups]
++                            predicted=np.concatenate([r["output"] for r in results],axis=0)[None,:,:]
++                            row={"trace":path.name,"dataset":meta["request"]["dataset"],
++                                 "case_id":meta["request"]["case_id"],"cache_ordinal":meta["cache_ordinal"],
++                                 "decode_call_index":meta["decode_call_index"],"context_tokens":meta["context_tokens"],
++                                 "block_n":bn,"splits":splits,"policy":policy,"epsilon":epsilon,
++                                 "quantized_chunks":sum(r["quantized_chunks"] for r in results),
++                                 "cpu_key_skipped_chunks":sum(r["key_skipped_chunks"] for r in results),
++                                 "cpu_value_skipped_chunks":sum(r["value_skipped_chunks"] for r in results),
++                                 "cpu_logical_code_bytes":sum(r["logical_code_bytes"] for r in results),
++                                 "native_code_bytes":sum(r["native_code_bytes"] for r in results)}
++                            row.update({"cpu_"+k:v for k,v in output_metrics(predicted,full).items()})
++                            all_details=[d for r in results for d in r["details"]]
++                            for side in ("k","v"):
++                                row[side+"_gqa_blocked_chunks"]=sum(d[side+"_gqa_prevented_skip"] is True for d in all_details)
++                                v=[d[side+"_threshold_ratio_max"] for d in all_details if d[side+"_threshold_ratio_max"] is not None]
++                                row[side+"_threshold_ratio_p50"]=float(np.median(v)) if v else None
++                                row[side+"_threshold_ratio_p95"]=float(np.quantile(v,.95)) if v else None
++                            for d in all_details:
++                                detail_file.write(json.dumps({"trace":path.name,"policy":policy,"epsilon":epsilon,"splits":splits,"block_n":bn,**d},allow_nan=False)+"\n")
++                            if gpu is not None:
++                                key=(policy,epsilon)
++                                if key not in modules: modules[key]=load_variant(a.source_root,policy,epsilon)
++                                gpu.stats.zero_()
++                                gpu.launch(modules[key],mode=mode,autotune=False,collect_stats=True)
++                                torch.cuda.synchronize()
++                                from kvbench_residual.kernel import STATS_FIELDS
++                                nr=8 if mode=="single" else 8*splits
++                                stat_array=gpu.stats[:nr].cpu().numpy()
++                                stat={k:int(v) for k,v in zip(STATS_FIELDS,stat_array.sum(axis=0))}
++                                code=sum(stat[x] for x in ("key_anchor_code_bytes","key_residual_code_bytes","value_anchor_code_bytes","value_residual_code_bytes"))
++                                row.update({"gpu_executed":True,"gpu_key_skipped_chunks":stat["key_skipped_chunks"],
++                                    "gpu_value_skipped_chunks":stat["value_skipped_chunks"],"gpu_logical_code_bytes":code,
++                                    "gpu_logical_code_reduction_fraction":1-code/stat["native_quantized_code_bytes"] if stat["native_quantized_code_bytes"] else None,
++                                    "gpu_scale_logical_bytes":stat["scale_logical_bytes"],"gpu_fp16_pool_logical_bytes":stat["pool_kv_bytes"],
++                                    "cpu_gpu_count_match":stat["key_skipped_chunks"]==row["cpu_key_skipped_chunks"] and stat["value_skipped_chunks"]==row["cpu_value_skipped_chunks"]})
++                                actual=gpu.out.view(1,32,128).cpu().numpy()
++                                row.update({"gpu_vs_full_"+k:v for k,v in output_metrics(actual,full).items()})
++                                policy_check=output_metrics(actual,predicted)
++                                row.update({"gpu_vs_cpu_policy_"+k:v for k,v in policy_check.items()})
++                                row["gpu_policy_numerics_passed"]=(policy_check["relative_l2_fro"] is not None
++                                    and policy_check["relative_l2_fro"]<=.02 and policy_check["max_abs_element"]<=.02)
++                                # Save per-GQA-group/split counters, not only the aggregate.
++                                safe_e=str(epsilon).replace(".","p")
++                                np.save(out/f"counts_{ti:04d}_{policy}_e{safe_e}_s{splits}_n{bn}.npy",stat_array,allow_pickle=False)
++                                state["gpu_executed"]=True
++                            else:
++                                row.update(gpu_executed=False,gpu_key_skipped_chunks=None,gpu_value_skipped_chunks=None,
++                                           gpu_logical_code_bytes=None,gpu_logical_code_reduction_fraction=None,cpu_gpu_count_match=None)
++                            rows.append(row)
++                            write_csv(out/"summary.csv",rows)
++                            if row.get("gpu_policy_numerics_passed") is False:
++                                raise RuntimeError("Selective GPU kernel differs from the CPU policy reference; inspect summary.csv")
++                    if gpu is not None: del gpu
++                print(f"diagnose {ti+1}/{len(paths)}: {path.name}",flush=True)
++        state.update(status="completed_cpu_only" if a.cpu_only else "completed",rows=len(rows),
++                     cpu_gpu_count_mismatch_rows=sum(r.get("cpu_gpu_count_match") is False for r in rows))
++        atomic_json(out/"status.json",state)
++        lines=["# 实验一：真实 decode 跳读诊断","",f"状态：{state['status']}；真实 trace：{len(paths)}；结果行：{len(rows)}。",
++               "","这些是 Parent 轨迹上相同 Query/KV 的反事实重放，不是 bound 策略自然生成全程的跳读率。",
++               "没有 TPOT、吞吐或 DRAM 实测。GPU 字节数来自实际分支逻辑地址计数。",
++               "","## 读数方法","",
++               "`summary.csv`：先看 gpu_executed，再看 gpu_key/value_skipped_chunks 与 gpu_logical_code_reduction_fraction。",
++               "`chunk_decisions.jsonl`：threshold_ratio > 1 表示该头/组没有通过预算；查看 bound/actual、mass 上界和 GQA 阻断。",
++               "`counts_*.npy`：列名顺序是 kvbench_residual.kernel.STATS_FIELDS，保存每个 KV head/split 的 GPU 计数。",
++               "`validation.json`：完整量化 float64 输出与真实 GPU 输出、Parent 重放对照。CPU/GPU 分支不同必须检查边界，不能悄悄覆盖计数。",
++               "","建议用 --splits 1 32 在相同 trace 比较 split 保守性的影响；这是数学/分支消融，不是调度性能结论。"]
++        (out/"readout.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
++    except BaseException as exc:
++        state.update(status="failed",error=repr(exc),traceback=traceback.format_exc(),completed_rows=len(rows))
++        atomic_json(out/"status.json",state)
++        if rows: write_csv(out/"summary.csv",rows)
++        raise
++
++
++if __name__=="__main__": main()
+diff --git a/kvbench_residual_diag/math_ops.py b/kvbench_residual_diag/math_ops.py
+new file mode 100644
+index 0000000..833f657
+--- /dev/null
++++ b/kvbench_residual_diag/math_ops.py
+@@ -0,0 +1,332 @@
++"""Float64 counterfactual attention on the SAME captured Q/KV.
++
++Full quantized attention is the reference, not an FP16-model output. Residual
++selection is shared by all query heads in a GQA group. A block is never deleted:
++its anchor numerator and denominator always participate in attention.
++"""
++from __future__ import annotations
++from dataclasses import dataclass
++import math
++import numpy as np
++
++
++@dataclass
++class Group:
++    z: np.ndarray              # [chunks, key_state=2, query_heads]
++    u: np.ndarray              # [chunks, key_state=2, value_state=2, query_heads, dim]
++    chunks: list
++    vref: float
++    full: np.ndarray
++    origin: np.ndarray
++
++    @property
++    def n(self): return len(self.chunks)
++    @property
++    def quantized(self): return np.array([c["quantized"] for c in self.chunks], bool)
++    @property
++    def costs(self): return np.array([[c["k_bytes"],c["v_bytes"]] for c in self.chunks],np.int64)
++
++
++def lse(a):
++    a = np.asarray(a, np.float64)
++    m = a.max(axis=-1)
++    return m + np.log(np.exp(a-m[...,None]).sum(axis=-1))
++
++
++def mass_upper(log_mass, epsilon, prefix):
++    lower = np.logaddexp(prefix, log_mass-epsilon)
++    return np.exp(np.minimum(0.0,log_mass+epsilon-lower)),lower
++
++
++def build_group(data, hk, block_n=32):
++    from kvbench_residual.fixtures import unpack_block
++    c, cfg = data["case"], data["case"].layout
++    if len(c.seq_lens) != 1 or block_n not in (16,32,64):
++        raise ValueError("Group builder requires C1 and BLOCK_N in {16,32,64}")
++    L,g,d = c.seq_lens[0],cfg.group,cfg.head_dim
++    ratio = c.hq//c.hk
++    if hk < 0 or hk >= c.hk:
++        raise ValueError("Invalid KV head")
++    q = data["query"][0,hk*ratio:(hk+1)*ratio].astype(np.float64)
++    first = max(0,L-c.window) if c.window else 0
++    raw,chunks = [],[]
++    vref = 0.0
++    for block in range(math.ceil(L/g)):
++        bid = int(data["block_table"][0,block])
++        slot = int(data["block_to_slot"][bid])
++        unpacked = unpack_block(data,bid,hk) if slot < 0 else None
++        for begin in range(0,g,block_n):
++            cols = np.arange(begin,begin+block_n)
++            cols = cols[(block*g+cols >= first)&(block*g+cols < L)]
++            if not len(cols): continue
++            if slot >= 0:
++                Kf = data["pool_k"][slot,cols,hk].astype(np.float64).T
++                Vf = data["pool_v"][slot,cols,hk].astype(np.float64)
++                Ka,Va = Kf,Vf
++                eb = np.zeros(ratio)
++                vrange = eta = B = 0.0
++                vref = max(vref,float(np.linalg.norm(Vf,axis=1).max()))
++            else:
++                x = unpacked
++                kq,vq = x["kq"][:,cols],x["vq"][cols]
++                sk,zk,rk = x["sk"],x["zk"],x["rk"][cols]
++                sv,rv,zv = x["sv"],x["rv"][cols],x["zv"][cols]
++                Kf = (kq*sk[:,None]+zk[:,None])*rk[None,:]
++                Ka = ((4*np.floor(kq/4)+1.5)*sk[:,None]+zk[:,None])*rk[None,:]
++                Vf = (vq*rv[:,None]+zv[:,None])*sv[None,:]
++                Va = ((4*np.floor(vq/4)+1.5)*rv[:,None]+zv[:,None])*sv[None,:]
++                eb = 1.5*np.max(np.abs(rk))*np.sum(np.abs(q)*np.abs(sk)[None,:],axis=1)*abs(data["scale"])
++                eb = eb*1.000001+1e-7
++                vrange = float(np.maximum(np.abs(zv),np.abs(zv+15*rv)).max())
++                eta = 1.5*float(np.max(np.abs(rv)))*float(np.linalg.norm(sv))
++                B = vrange*float(np.linalg.norm(sv))
++                vref = max(vref,B)
++            sf,sa = q@Kf*data["scale"],q@Ka*data["scale"]
++            if not all(np.isfinite(t).all() for t in (sf,sa,Vf,Va,eb)):
++                raise ValueError("Nonfinite decoded active cache")
++            kb = (int(cols[-1])//4-int(cols[0])//4+1)*d if slot < 0 else 0
++            vb = len(cols)*d//4 if slot < 0 else 0
++            chunks.append({"block":block,"chunk":begin,"tokens":len(cols),"quantized":slot<0,
++                           "kv_head":hk,"k_bytes":kb,"v_bytes":vb,"native_code_bytes":block_n*d if slot<0 else 0,
++                           "lse_a":lse(sa),"lse_f":lse(sf),"epsilon_k":eb,
++                           "actual_k_logit_error":np.max(np.abs(sf-sa),axis=1),
++                           "v_bound":B,"eta_v":eta,"v_ratio":eta/B if B>0 else 0.0,
++                           "fraction":len(cols)/(L-first),"seq_blocks":math.ceil(L/g)})
++            raw.append((sa,sf,Va,Vf))
++    if not raw: raise ValueError("No attended chunks")
++    origin = np.stack([np.maximum(sa.max(axis=1),sf.max(axis=1)) for sa,sf,_,_ in raw]).max(axis=0)
++    z = np.empty((len(raw),2,ratio),np.float64)
++    u = np.empty((len(raw),2,2,ratio,d),np.float64)
++    for i,(sa,sf,Va,Vf) in enumerate(raw):
++        for ki,s in enumerate((sa,sf)):
++            p = np.exp(s-origin[:,None])
++            z[i,ki] = p.sum(axis=1)
++            u[i,ki,0] = p@Va
++            u[i,ki,1] = p@Vf
++    full = u[:,1,1].sum(axis=0)/z[:,1].sum(axis=0)[:,None]
++    if not np.isfinite(full).all(): raise ValueError("Invalid complete-quantized output")
++    return Group(z,u,chunks,vref,full,origin)
++
++
++def evaluate(group, read_k, read_v):
++    k,v = np.asarray(read_k,np.int64),np.asarray(read_v,np.int64)
++    if k.shape != (group.n,) or v.shape != k.shape or np.any((k<0)|(k>1)|(v<0)|(v>1)):
++        raise ValueError("Invalid shared GQA masks")
++    i = np.arange(group.n)
++    z = group.z[i,k].sum(axis=0)
++    u = group.u[i,k,v].sum(axis=0)
++    if np.any(z <= 0): raise ValueError("Counterfactual denominator underflow")
++    return u/z[:,None]
++
++
++def bound_policy(group, policy, epsilon, splits):
++    """Reproduce v1's real-arithmetic decisions, plus reasons for each rejection.
++    Diagnostic actual mass is explanatory only, never used by the controller.
++    """
++    if policy not in ("parent","repacked_full","anchor","bound_k","bound_v","bound_kv"):
++        raise ValueError(policy)
++    if not np.isfinite(epsilon) or epsilon < 0 or splits<1 or splits&(splits-1):
++        raise ValueError("Invalid epsilon/splits")
++    h = group.full.shape[0]
++    read_k,read_v = np.ones(group.n,bool),np.ones(group.n,bool)
++    tau_k = epsilon if policy=="bound_k" else epsilon/2 if policy=="bound_kv" else 0.0
++    tau_v = epsilon if policy=="bound_v" else epsilon/2 if policy=="bound_kv" else 0.0
++    blocks_per = math.ceil(group.chunks[0]["seq_blocks"]/splits)
++    previous = None
++    prefix = np.full(h,-np.inf)
++    details = []
++    full_denom = group.z[:,1].sum(axis=0)
++    for i,c in enumerate(group.chunks):
++        split = c["block"]//blocks_per
++        if split != previous:
++            prefix = np.full(h,-np.inf)
++            previous = split
++        if not c["quantized"]:
++            if policy.startswith("bound_"):
++                _,prefix = mass_upper(c["lse_f"],np.zeros(h),prefix)
++            continue
++        kp = np.zeros(h,bool)
++        vp = np.zeros(h,bool)
++        k_term = np.zeros(h)
++        k_upper = None
++        k_ratio = v_ratio = None
++        err = np.zeros(h)
++        used_lse = c["lse_f"]
++        if policy in ("anchor","bound_k","bound_kv"):
++            k_upper,_ = mass_upper(c["lse_a"],c["epsilon_k"],prefix)
++            k_term = 2*k_upper*c["epsilon_k"]
++            kp = k_term <= tau_k*c["fraction"]
++            if tau_k > 0:
++                k_ratio = k_term/(tau_k*c["fraction"])
++            read_k[i] = not (policy=="anchor" or kp.all())
++            if not read_k[i]:
++                err = c["epsilon_k"]
++                used_lse = c["lse_a"]
++        if policy.startswith("bound_"):
++            v_upper,prefix = mass_upper(used_lse,err,prefix)
++        else:
++            v_upper = None
++        if policy=="anchor": read_v[i] = False
++        elif policy in ("bound_v","bound_kv"):
++            v_term = v_upper*c["v_ratio"]*1.000001
++            vp = v_term <= tau_v*c["fraction"]
++            if tau_v > 0: v_ratio = v_term/(tau_v*c["fraction"])
++            read_v[i] = not vp.all()
++        true_mass = group.z[i,1]/full_denom
++        actual = c["actual_k_logit_error"]
++        positive = actual>1e-15
++        details.append({"kv_head":c["kv_head"],"split":split,"block":c["block"],"chunk":c["chunk"],
++            "tokens":c["tokens"],"skip_k_cpu":not bool(read_k[i]),"skip_v_cpu":not bool(read_v[i]),
++            "k_individual_pass_heads":int(kp.sum()) if tau_k>0 else None,
++            "v_individual_pass_heads":int(vp.sum()) if tau_v>0 else None,
++            "gqa_heads":h,"k_gqa_prevented_skip":bool(kp.any() and not kp.all()) if tau_k>0 else None,
++            "v_gqa_prevented_skip":bool(vp.any() and not vp.all()) if tau_v>0 else None,
++            "k_threshold_ratio_max":float(k_ratio.max()) if k_ratio is not None else None,
++            "k_threshold_ratio_min":float(k_ratio.min()) if k_ratio is not None else None,
++            "v_threshold_ratio_max":float(v_ratio.max()) if v_ratio is not None else None,
++            "v_threshold_ratio_min":float(v_ratio.min()) if v_ratio is not None else None,
++            "k_bound_max":float(c["epsilon_k"].max()),"k_actual_logit_error_max":float(actual.max()),
++            "k_bound_over_actual_max":float((c["epsilon_k"][positive]/actual[positive]).max()) if positive.any() else None,
++            "full_attention_mass_max":float(true_mass.max()),
++            "k_mass_upper_max":float(k_upper.max()) if k_upper is not None else None,
++            "v_mass_upper_max":float(v_upper.max()) if v_upper is not None else None,
++            "k_bytes":c["k_bytes"],"v_bytes":c["v_bytes"]})
++    quant = group.quantized
++    cost = group.costs
++    residual = int((cost[:,0]*read_k+cost[:,1]*read_v).sum())
++    anchor = int(cost.sum())
++    native = int(sum(c["native_code_bytes"] for c in group.chunks))
++    return {"output":evaluate(group,read_k,read_v),"read_k":read_k,"read_v":read_v,
++            "details":details,"key_skipped_chunks":int((quant&~read_k).sum()),
++            "value_skipped_chunks":int((quant&~read_v).sum()),"quantized_chunks":int(quant.sum()),
++            "logical_code_bytes":anchor+residual,"native_code_bytes":native,
++            "logical_code_reduction_fraction":1-(anchor+residual)/native if native else None}
++
++
++def action_setup(group, mode):
++    if mode not in ("k","v","kv"): raise ValueError(mode)
++    k,v = np.ones(group.n,bool),np.ones(group.n,bool)
++    if "k" in mode: k[group.quantized] = False
++    if "v" in mode: v[group.quantized] = False
++    actions = [(i,s) for i,c in enumerate(group.chunks) if c["quantized"]
++               for s in (0,1) if (s==0 and "k" in mode) or (s==1 and "v" in mode)]
++    return k,v,actions
++
++
++def objective(output, reference):
++    # Used only for ranking. Reports retain undefined near-zero-relative heads.
++    den = np.maximum(np.linalg.norm(reference,axis=1),1e-12)
++    return float(np.max(np.linalg.norm(output-reference,axis=1)/den))
++
++
++def select_order(group,mode,kind,seed=0):
++    """Return a feasible, offline ordering. Greedy is NOT a certified optimum."""
++    k,v,actions = action_setup(group,mode)
++    if not actions: return []
++    if kind=="random":
++        idx = np.random.default_rng(seed).permutation(len(actions))
++        return [actions[j] for j in idx]
++    if kind=="attention":
++        # Implementable proxy uses anchor logits for K/KV; V-only already reads K fully.
++        key_state = 1 if mode=="v" else 0
++        masses = group.z[:,key_state]/group.z[:,key_state].sum(axis=0)
++        rank = [float(masses[i].max())/max(1,group.costs[i,s]) for i,s in actions]
++        return [actions[j] for j in np.argsort(-np.array(rank),kind="stable")]
++    if kind!="greedy": raise ValueError(kind)
++    # Vectorized exact one-action lookahead on the full recorded residuals.
++    # Negative immediate improvements are allowed; cancellation can make the path nonmonotone.
++    order=[]
++    remaining=list(actions)
++    indices=np.arange(group.n)
++    while remaining:
++        z=group.z[indices,k.astype(int)].sum(axis=0)
++        u=group.u[indices,k.astype(int),v.astype(int)].sum(axis=0)
++        ii=np.array([a[0] for a in remaining],int)
++        side=np.array([a[1] for a in remaining],int)
++        kk=k[ii].astype(int); vv=v[ii].astype(int)
++        kn=np.where(side==0,1,kk); vn=np.where(side==1,1,vv)
++        dz=group.z[ii,kn]-group.z[ii,kk]
++        du=group.u[ii,kn,vn]-group.u[ii,kk,vv]
++        candidates=(u[None,:,:]+du)/(z[None,:]+dz)[:,:,None]
++        den=np.maximum(np.linalg.norm(group.full,axis=1),1e-12)
++        values=np.max(np.linalg.norm(candidates-group.full[None,:,:],axis=2)/den[None,:],axis=1)
++        now=objective(u/z[:,None],group.full)
++        costs=group.costs[ii,side]
++        gain=(now-values)/costs
++        j=int(np.argmax(gain))
++        i,s=remaining.pop(j)
++        if s==0: k[i]=True
++        else: v[i]=True
++        order.append((i,s))
++    return order
++
++
++def apply_budget(group,mode,order,budget):
++    """A nested prefix only. Never overspend a byte budget; actual spend is reported."""
++    k,v,_=action_setup(group,mode)
++    spent=0
++    best_k,best_v=k.copy(),v.copy()
++    best=objective(evaluate(group,k,v),group.full)
++    best_spent=0
++    for i,s in order:
++        cost=int(group.costs[i,s])
++        if spent+cost>budget: break
++        spent+=cost
++        if s==0: k[i]=True
++        else: v[i]=True
++        value=objective(evaluate(group,k,v),group.full)
++        # Keep the best feasible prefix, because cancellation defeats monotonicity.
++        if value < best or (value==best and spent<best_spent):
++            best=value;best_k=k.copy();best_v=v.copy();best_spent=spent
++    return best_k,best_v,best_spent
++
++
++def v_lower_bound(group,budget):
++    """Rigorous triangle/fractional-knapsack lower bound on optimum V-only error.
++    This is often zero and is then inconclusive, NOT a prediction of zero error.
++    K is fixed full; all query heads share the same mask. Relaxing that mask per
++    head only weakens the bound, so max over per-head lower bounds remains valid.
++    """
++    ix=np.flatnonzero(group.quantized)
++    if not len(ix): return 0.0
++    denom=group.z[:,1].sum(axis=0)
++    delta=(group.u[ix,1,1]-group.u[ix,1,0])/denom[None,:,None]
++    total=np.linalg.norm(delta.sum(axis=0),axis=1)
++    norms=np.linalg.norm(delta,axis=2)
++    costs=group.costs[ix,1]
++    ref=np.linalg.norm(group.full,axis=1)
++    if np.any(ref<=1e-12): return None
++    lower=[]
++    for h in range(len(ref)):
++        order=np.argsort(-norms[:,h]/costs,kind="stable")
++        left=float(budget); removable=0.0
++        for j in order:
++            take=min(left,float(costs[j]))
++            removable+=norms[j,h]*take/costs[j]
++            left-=take
++            if left<=0: break
++        lower.append(max(0.0,total[h]-removable)/ref[h])
++    return float(max(lower))
++
++
++def exact_small(group,mode,budget,max_actions=14):
++    """Exhaustive optimum for THIS small captured group/byte budget/objective.
++    Larger problems return None; no approximate solution is called exact.
++    """
++    k0,v0,actions=action_setup(group,mode)
++    n=len(actions)
++    if n>max_actions: return None
++    costs=np.array([group.costs[i,s] for i,s in actions])
++    best=(float("inf"),None,None,None)
++    for mask in range(1<<n):
++        take=np.array([(mask>>j)&1 for j in range(n)],bool)
++        spent=int(costs[take].sum())
++        if spent>budget: continue
++        k,v=k0.copy(),v0.copy()
++        for use,(i,s) in zip(take,actions):
++            if use:
++                if s==0: k[i]=True
++                else: v[i]=True
++        val=objective(evaluate(group,k,v),group.full)
++        if val<best[0] or (val==best[0] and spent<best[3]): best=(val,k,v,spent)
++    return best
+diff --git a/kvbench_residual_diag/oracle.py b/kvbench_residual_diag/oracle.py
+new file mode 100644
+index 0000000..97d99cc
+--- /dev/null
++++ b/kvbench_residual_diag/oracle.py
+@@ -0,0 +1,184 @@
++"""Experiment 2: offline counterfactual error-versus-read-byte curves.
++
++Greedy residual-aware selection is an achievable reference, NOT a global
++optimum. V-only also receives a valid lower bound; tiny groups can be solved
++exhaustively. No task accuracy, DRAM savings or speed is inferred from the curves.
++"""
++from __future__ import annotations
++import argparse
++import json
++from pathlib import Path
++import traceback
++import numpy as np
++from .common import atomic_json,load_trace,new_output,output_metrics,trace_paths,write_csv
++from .math_ops import (build_group,evaluate,action_setup,select_order,apply_budget,
++                       v_lower_bound,exact_small,bound_policy,objective)
++
++
++def main(argv=None):
++    p=argparse.ArgumentParser(description=__doc__)
++    p.add_argument("--traces",type=Path,required=True)
++    p.add_argument("--out",type=Path,required=True)
++    p.add_argument("--modes",nargs="+",choices=["k","v","kv"],default=["v","kv"])
++    p.add_argument("--fractions",nargs="+",type=float,default=[0,.1,.25,.5,.75,1])
++    p.add_argument("--kv-heads",nargs="+",type=int,default=[0,3,7])
++    p.add_argument("--trace-limit",type=int,default=12,help="0=all; positive=evenly spread acquisition indices")
++    p.add_argument("--block-n",type=int,choices=[16,32,64],help="Default recorded BLOCK_N")
++    p.add_argument("--random-seeds",nargs="+",type=int,default=[42,43,44])
++    p.add_argument("--exact-max-actions",type=int,default=14)
++    p.add_argument("--bound-epsilon",type=float,default=.02)
++    a=p.parse_args(argv)
++    if any(not np.isfinite(f) or not 0<=f<=1 for f in a.fractions): p.error("Read fractions must be in [0,1]")
++    if not a.kv_heads or len(set(a.kv_heads))!=len(a.kv_heads) or any(h<0 or h>7 for h in a.kv_heads): p.error("KV heads must be 0..7")
++    if not 0<=a.exact_max_actions<=20: p.error("Exhaustive solver is limited to 20 actions")
++    if not np.isfinite(a.bound_epsilon) or a.bound_epsilon<0: p.error("Invalid bound epsilon")
++    paths=trace_paths(a.traces,a.trace_limit)
++    out=new_output(a.out)
++    (out/"masks").mkdir()
++    rows=[];coverage=[]
++    state={"schema":"kvbench.residual.real_oracle.v1","status":"running", "trace_count":len(paths),
++           "trace_selection":"evenly_spaced_acquisition_indices" if a.trace_limit else "all",
++           "kv_heads":a.kv_heads,"modes":a.modes,"gpu_executed":False,
++           "scope":"Float64 attention-output fidelity on fixed real Parent Q/KV. Greedy is feasible, not optimal. No model accuracy/speed or DRAM claim."}
++    atomic_json(out/"status.json",state)
++    try:
++        for ti,path in enumerate(paths):
++            data,meta=load_trace(path)
++            bn=a.block_n or meta["block_n"]
++            for hk in a.kv_heads:
++                group=build_group(data,hk,bn)
++                # Group-specific original full reference verification.
++                live=data["reference_gpu_rot"][0,hk*4:(hk+1)*4]
++                vm=output_metrics(group.full,live)
++                if vm["relative_l2_fro"] is None or vm["relative_l2_fro"]>.02 or vm["max_abs_element"]>.02:
++                    raise RuntimeError(f"Full reference mismatch on {path.name}, KV head {hk}: {vm}")
++                for mode in a.modes:
++                    _,_,actions=action_setup(group,mode)
++                    controllable=int(sum(group.costs[i,s] for i,s in actions))
++                    coverage.append({"trace":path.name,"kv_head":hk,"mode":mode,"actions":len(actions),
++                                     "controllable_residual_bytes":controllable,"exact_eligible":len(actions)<=a.exact_max_actions})
++                    methods=[("attention",select_order(group,mode,"attention")),("offline_greedy",select_order(group,mode,"greedy"))]
++                    methods += [(f"random_seed_{seed}",select_order(group,mode,"random",seed)) for seed in a.random_seeds]
++                    for fraction in sorted(set(a.fractions)):
++                        budget=int(np.floor(controllable*fraction+1e-9))
++                        lb=v_lower_bound(group,budget) if mode=="v" else None
++                        exact=exact_small(group,mode,budget,a.exact_max_actions)
++                        candidates=[]
++                        for name,order in methods:
++                            k,v,spent=apply_budget(group,mode,order,budget)
++                            candidates.append((name,k,v,spent))
++                        if exact is not None:
++                            _,k,v,spent=exact
++                            candidates.append(("exhaustive_exact_small",k,v,spent))
++                        # Minimum across feasible methods is still only an upper bound on optimal error.
++                        best=min(candidates,key=lambda x:objective(evaluate(group,x[1],x[2]),group.full))
++                        candidates.append(("best_feasible_envelope",best[1],best[2],best[3]))
++                        for name,k,v,spent in candidates:
++                            row=make_row(group,meta,path.name,hk,mode,name,k,v,spent,controllable)
++                            row.update(requested_fraction=fraction,budget_bytes=budget,
++                                       certified_v_error_lower_bound=lb,
++                                       exact_optimum_relative_error=exact[0] if exact is not None else None,
++                                       exact_solver_status="solved" if exact is not None else "not_attempted_too_many_actions",
++                                       selected_envelope_method=best[0] if name=="best_feasible_envelope" else None)
++                            metrics=output_metrics(evaluate(group,k,v),group.full,group.vref)
++                            row.update(metrics)
++                            row["selection_objective_norm_floor"]=1e-12
++                            row["selection_objective_value"]=objective(evaluate(group,k,v),group.full)
++                            if lb is not None and row["relative_l2_max_head"] is not None and lb>row["relative_l2_max_head"]+1e-9:
++                                raise AssertionError("Lower bound exceeds a feasible solution")
++                            filename=f"t{ti:04d}_h{hk}_{mode}_{name}_b{budget}.npz"
++                            np.savez(out/"masks"/filename,read_k=k,read_v=v,
++                                     logical_blocks=np.array([c["block"] for c in group.chunks]),
++                                     chunk_offsets=np.array([c["chunk"] for c in group.chunks]),
++                                     quantized=group.quantized)
++                            row["mask_file"]="masks/"+filename
++                            rows.append(row)
++                    # Compare the actual v1 bound at its own measured logical read point.
++                    policy={"k":"bound_k","v":"bound_v","kv":"bound_kv"}[mode]
++                    b=bound_policy(group,policy,a.bound_epsilon,meta["splits"])
++                    k,v=b["read_k"],b["read_v"]
++                    spent=int(sum(group.costs[i,s]*(k[i] if s==0 else v[i]) for i,s in actions))
++                    row=make_row(group,meta,path.name,hk,mode,"current_bound_cpu",k,v,spent,controllable)
++                    row.update(output_metrics(b["output"],group.full,group.vref))
++                    row.update(epsilon=a.bound_epsilon,splits=meta["splits"],requested_fraction=None,
++                               budget_bytes=None,certified_v_error_lower_bound=None,
++                               exact_optimum_relative_error=None,exact_solver_status="not_applicable",mask_file=None)
++                    rows.append(row)
++                    write_csv(out/"curves.csv",rows)
++            print(f"oracle {ti+1}/{len(paths)}: {path.name}",flush=True)
++        write_csv(out/"coverage.csv",coverage)
++        atomic_json(out/"coverage.json",coverage)
++        summary=summarize(rows)
++        write_csv(out/"aggregate.csv",summary)
++        state.update(status="completed",rows=len(rows),groups=len(coverage),
++                     exact_eligible_groups=sum(c["exact_eligible"] for c in coverage))
++        atomic_json(out/"status.json",state)
++        lines=["# 实验二：真实 trace 的读取量—attention 输出误差","",
++            f"Trace：{len(paths)}；KV heads：{a.kv_heads}；结果行：{len(rows)}。默认只是显式子样本，不代表所有层/请求。",
++            "","`curves.csv` 保留每个 trace/GQA 组，`aggregate.csv` 为组等权统计，不是模型总体准确率。",
++            "K-only 固定 V 全读；V-only 固定 K 全读；KV 联合决定两类低位读取。所有 token 的 Anchor 始终保留，sink/tail 始终完整。",
++            "`controllable_read_fraction` 仅指本实验可控制的 Residual；`all_residual_read_fraction` 包含固定全读的另一侧。",
++            "`logical_code_reduction_fraction` 只统计量化码；scale/FP16 pool 不变且未含其中。不是 DRAM 节省。",
++            "","## Oracle 的准确含义","",
++            "offline_greedy 使用完整 Residual 做离线一步前瞻，不可部署，也不保证最优；记录 best-feasible-prefix，以处理残差抵消导致的非单调。",
++            "best_feasible_envelope 是各可行算法在相同预算下的最佳误差，因而是最优误差的上界，不是信息论下界。",
++            "V-only 的 certified_v_error_lower_bound 使用三角不等式和分数背包松弛；为 0 时通常没有判别力。",
++            "exhaustive_exact_small 只在动作数不超过阈值的完整 GQA 组枚举所有子集。不裁短序列伪装原序列最优。",
++            "K/KV 的大规模精确下界本补丁没有实现；相应字段为 NA。",
++            "","## 判读","",
++            "可行方案在低读取比例达到低误差：说明存在可实现选择空间，但还须设计廉价在线控制器。",
++            "有效下界仍明显高于目标误差：可排除该 V-only 读取预算。",
++            "贪心表现差、下界为 0：证据不足，不能据此否定方法。",
++            "误差相对完整量化 attention 输出计算；不等同 FP16 模型误差、任务得分、生成长度或 TPOT。",
++            "","| 模式 | 策略 | 预算比例 | 组数 | 平均实际可控残差读取 | 平均码字节减少 | 最大头相对误差中位数 |",
++            "|---|---|---:|---:|---:|---:|---:|"]
++        for r in summary:
++            if r["method"] not in ("best_feasible_envelope","current_bound_cpu"): continue
++            def fmt(x): return "NA" if x is None else f"{x:.5f}"
++            lines.append(f"| {r['mode']} | {r['method']} | {fmt(r['requested_fraction'])} | {r['groups']} | {fmt(r['mean_controllable_read_fraction'])} | {fmt(r['mean_logical_code_reduction_fraction'])} | {fmt(r['median_relative_l2_max_head'])} |")
++        (out/"readout.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
++    except BaseException as exc:
++        state.update(status="failed",error=repr(exc),traceback=traceback.format_exc(),completed_rows=len(rows))
++        atomic_json(out/"status.json",state)
++        if rows: write_csv(out/"curves.csv",rows)
++        raise
++
++
++def make_row(group,meta,trace,hk,mode,name,k,v,spent,controllable):
++    costs=group.costs
++    all_full=int(costs.sum())
++    all_read=int((costs[:,0]*k+costs[:,1]*v).sum())
++    return {"trace":trace,"dataset":meta["request"]["dataset"],"case_id":meta["request"]["case_id"],
++        "cache_ordinal":meta["cache_ordinal"],"decode_call_index":meta["decode_call_index"],
++        "context_tokens":meta["context_tokens"],"kv_head":hk,"gqa_heads":group.full.shape[0],
++        "mode":mode,"method":name,"controllable_residual_bytes":controllable,"read_controllable_bytes":spent,
++        "controllable_read_fraction":spent/controllable if controllable else None,
++        "all_residual_bytes":all_full,"read_all_residual_bytes":all_read,
++        "all_residual_read_fraction":all_read/all_full if all_full else None,
++        "logical_code_bytes":all_full+all_read,"full_planar_code_bytes":2*all_full,
++        "logical_code_reduction_fraction":1-(all_full+all_read)/(2*all_full) if all_full else None,
++        "quantized_chunks":int(group.quantized.sum()),"vref":group.vref}
++
++
++def summarize(rows):
++    groups={}
++    for r in rows:
++        key=(r["mode"],r["method"],r.get("requested_fraction"))
++        groups.setdefault(key,[]).append(r)
++    result=[]
++    for (mode,method,fraction),rs in groups.items():
++        def vals(k): return [r[k] for r in rs if r.get(k) is not None]
++        def mean(k):
++            x=vals(k);return float(np.mean(x)) if x else None
++        x=vals("relative_l2_max_head")
++        result.append({"mode":mode,"method":method,"requested_fraction":fraction,"groups":len(rs),
++                       "mean_controllable_read_fraction":mean("controllable_read_fraction"),
++                       "mean_logical_code_reduction_fraction":mean("logical_code_reduction_fraction"),
++                       "median_relative_l2_max_head":float(np.median(x)) if x else None,
++                       "p95_relative_l2_max_head":float(np.quantile(x,.95)) if x else None,
++                       "mean_abs_l2_max":mean("abs_l2_max"),
++                       "mean_certified_v_error_lower_bound":mean("certified_v_error_lower_bound")})
++    return result
++
++
++if __name__=="__main__": main()
+diff --git a/kvbench_residual_diag/run.py b/kvbench_residual_diag/run.py
+new file mode 100644
+index 0000000..448ede0
+--- /dev/null
++++ b/kvbench_residual_diag/run.py
+@@ -0,0 +1,248 @@
++"""Capture real Parent decode inputs, stop our server, run both diagnostic experiments.
++
++Reuse frozen LongBench inputs and the existing server environment. The default
++C1/eager/96-token prefix is a diagnostic protocol, not the prior C8 quality run.
++"""
++from __future__ import annotations
++import argparse
++from datetime import datetime
++import json
++import os
++from pathlib import Path
++import signal
++import socket
++import subprocess
++import sys
++import time
++import traceback
++from types import SimpleNamespace
++import uuid
++import numpy as np
++from .common import atomic_json,new_output,sha_file,trace_paths,write_csv
++
++DEFAULT_SUITE="results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json"
++
++
++def choose_samples(datasets,tasks,count,min_context,max_tokens,window):
++    selected=[]
++    for task in tasks:
++        if task not in datasets: raise ValueError("Task absent from frozen data: "+task)
++        eligible=[r for r in datasets[task] if r["input_tokens"]>=min_context and r["input_tokens"]+max_tokens<=window]
++        eligible=sorted(eligible,key=lambda r:(r["input_tokens"],str(r["case_id"])))
++        if len(eligible)<count:
++            raise ValueError(f"Only {len(eligible)} eligible {task} cases, requested {count}; no clipping/substitution")
++        indices=np.linspace(0,len(eligible)-1,count+2)[1:-1].round().astype(int)
++        if len(set(indices))!=count: raise ValueError("Sampling indices are not unique")
++        selected.extend(eligible[i] for i in indices)
++    return selected
++
++
++def ready(proc,base,config,timeout):
++    from kvbench_longcontext.serve import http_text,verify_cache,verify_model
++    until=time.monotonic()+timeout
++    while time.monotonic()<until:
++        if proc.poll() is not None: raise RuntimeError("Diagnostic server exited; inspect server/server.log")
++        try:
++            models=json.loads(http_text(base+"/v1/models"))
++            metrics=http_text(base+"/metrics")
++        except (OSError,ValueError):
++            time.sleep(1);continue
++        return {"model":verify_model(models,config),"cache":verify_cache(metrics,config)}
++    raise TimeoutError("Diagnostic server startup timed out; inspect server/server.log")
++
++
++def request_one(base,model,row,settings,cap,dest):
++    from kvbench_longcontext.run import make_request,stream_request
++    row=dict(row)
++    row["max_tokens"]=cap
++    request=make_request(row,model,thinking=settings.get("thinking",True),
++                         temperature=settings.get("temperature",.6),top_p=settings.get("top_p",.95),
++                         seed=settings.get("request_seed",20261009),top_k=settings.get("top_k",20),
++                         min_p=settings.get("min_p",0.0))
++    result=stream_request(base,row,request,dest,timeout=0,thinking=settings.get("thinking",True),
++                          native_max_model_len=settings["max_model_len"])
++    if not result["protocol_valid"]:
++        raise RuntimeError("Diagnostic request failed native protocol checks: "+str({k:result.get(k) for k in ("case_id","error","response_complete","prompt_token_match")}))
++    # Intentionally remove wall-clock TPOT/E2E fields; captures invalidate them.
++    keep=("dataset","case_id","finish_reason","completion_tokens","prompt_tokens","response_complete","protocol_valid","usage","request","raw_chunks_file","raw_chunks_sha256")
++    return {k:result[k] for k in keep}
++
++
++def main(argv=None):
++    p=argparse.ArgumentParser(description=__doc__)
++    p.add_argument("--upstream-suite",type=Path,default=Path(DEFAULT_SUITE))
++    p.add_argument("--out",type=Path)
++    p.add_argument("--tasks",nargs="+",default=["qasper","hotpotqa","passage_retrieval_en"])
++    p.add_argument("--per-task",type=int,default=2)
++    p.add_argument("--decode-calls",nargs="+",type=int,default=[0,15,63])
++    p.add_argument("--layer-ordinals",nargs="+",type=int)
++    p.add_argument("--diagnostic-max-tokens",type=int,default=96)
++    p.add_argument("--min-context",type=int,default=1024)
++    p.add_argument("--max-traces",type=int,default=256)
++    p.add_argument("--max-gib",type=float,default=8)
++    p.add_argument("--gpu",default="0")
++    p.add_argument("--port",type=int,default=18080)
++    p.add_argument("--startup-timeout",type=int,default=1800)
++    p.add_argument("--epsilons",nargs="+",type=float,default=[.02])
++    p.add_argument("--oracle-trace-limit",type=int,default=12)
++    p.add_argument("--oracle-modes",nargs="+",choices=["k","v","kv"],default=["v","kv"])
++    p.add_argument("--capture-only",action="store_true")
++    p.add_argument("--plan",action="store_true")
++    a=p.parse_args(argv)
++    if min(a.per_task,a.diagnostic_max_tokens,a.min_context,a.max_traces,a.startup_timeout)<1: p.error("Counts must be positive")
++    if any(x<0 or x>=a.diagnostic_max_tokens-1 for x in a.decode_calls): p.error("Decode-call indices need room for the initial prefill token")
++    if not a.decode_calls or len(set(a.decode_calls))!=len(a.decode_calls): p.error("Distinct decode-call indices required")
++    if not np.isfinite(a.max_gib) or a.max_gib<=0: p.error("max-gib must be positive finite")
++    if not a.gpu.isdigit() or not 1<=a.port<=65535: p.error("Use one numeric GPU and a valid port")
++    if len(set(a.tasks))!=len(a.tasks): p.error("Duplicate tasks")
++    if a.oracle_trace_limit<0 or any(not np.isfinite(e) or e<0 for e in a.epsilons): p.error("Invalid analysis setting")
++    suite_path=a.upstream_suite.resolve(strict=True)
++    upstream=json.loads(suite_path.read_text())
++    if upstream.get("schema")!="kvbench.longcontext.full_suite.v1" or upstream.get("fatal_error"):
++        raise ValueError("Use the successful frozen V3 suite.json, not the residual suite")
++    if not upstream.get("methods") or any(m.get("state")!="completed" for m in upstream["methods"]):
++        raise ValueError("Upstream suite is not complete; diagnostic capture does not wait for/stop it")
++    s=upstream["settings"]
++    from kvbench_longcontext.common import checked_data,tokenizer_identity,digest,package_versions
++    from kvbench_residual.serve import validate_architecture
++    data_dir=Path(s["data"]).resolve(strict=True)
++    model=Path(s["model"]).resolve(strict=True)
++    arch=validate_architecture(model)
++    manifest,datasets=checked_data(data_dir)
++    if manifest["settings"]["max_model_len"]!=s["max_model_len"]: raise ValueError("Frozen context window mismatch")
++    samples=choose_samples(datasets,a.tasks,a.per_task,a.min_context,a.diagnostic_max_tokens,s["max_model_len"])
++    nlayers=arch.get("num_hidden_layers")
++    if not isinstance(nlayers,int) or nlayers<1: raise ValueError("Cannot infer diagnostic layer-ordinal sampling range")
++    layers=a.layer_ordinals or sorted(set([0,nlayers//3,2*nlayers//3,nlayers-1]))
++    if any(x<0 or x>=nlayers for x in layers) or len(set(layers))!=len(layers): raise ValueError("Invalid layer ordinal sampling")
++    planned=len(samples)*len(layers)*len(a.decode_calls)
++    if planned>a.max_traces: raise ValueError("Planned captures exceed --max-traces")
++    plan={"schema":"kvbench.residual.real_diagnostics_plan.v1","upstream_suite":str(suite_path),
++          "upstream_sha256":sha_file(suite_path),"data_manifest_sha256":sha_file(data_dir/"manifest.json"),
++          "model":str(model),"architecture":arch,"tasks":a.tasks,"samples":[{k:r[k] for k in ("dataset","case_id","input_tokens")} for r in samples],
++          "layer_cache_ordinals":layers,"decode_call_indices":a.decode_calls,"planned_upper_bound_traces":planned,
++          "diagnostic_max_tokens":a.diagnostic_max_tokens,"batch":1,"eager":True,"port":a.port,"gpu":a.gpu,
++          "generation_note":"Same sampling/thinking as upstream, but C1 eager and limited diagnostic prefixes. No task score, TPOT or natural full-length conclusion.",
++          "oracle_note":"Default uses at most 12 evenly spaced traces and KV heads 0,3,7; see coverage.csv. Offline greedy is not a global optimum."}
++    if a.plan:
++        print(json.dumps(plan,indent=2,ensure_ascii=False));return
++    from kvbench_longcontext.serve import launch_command,run_text
++    from kvbench_residual.serve import stop_owned_group
++    with socket.socket() as sock:
++        sock.settimeout(1)
++        if sock.connect_ex(("127.0.0.1",a.port))==0: raise RuntimeError("Port occupied; no existing process is stopped")
++    gpu_info=run_text(["nvidia-smi","-i",a.gpu,"--query-compute-apps=pid,process_name","--format=csv,noheader,nounits"])
++    if gpu_info.get("returncode")!=0: raise RuntimeError("Cannot inspect target GPU: "+str(gpu_info))
++    if gpu_info["stdout"] and "No running processes found" not in gpu_info["stdout"]:
++        raise RuntimeError("Target GPU already has compute processes; finish them before diagnostics: "+gpu_info["stdout"])
++    out=new_output(a.out or Path("results/residual_diag")/(datetime.now().strftime("run_%Y%m%d_%H%M%S")+f"_{os.getpid()}"))
++    atomic_json(out/"plan.json",plan)
++    state={"status":"preparing","output":str(out),"experiments":["real_skip_diagnosis","offline_oracle"],"gpu":a.gpu}
++    atomic_json(out/"status.json",state)
++    proc=None
++    trace=out/"traces";trace.mkdir()
++    def interrupted(signum,frame): raise KeyboardInterrupt
++    signal.signal(signal.SIGINT,interrupted);signal.signal(signal.SIGTERM,interrupted)
++    try:
++        # Run the source-bridge checks against the user's actual unchanged v1 package.
++        with (out/"cpu_preflight.log").open("w",encoding="utf-8") as testlog:
++            subprocess.run([sys.executable,"-m","unittest","discover","-s",
++                            str(Path(__file__).parent/"tests"),"-v"],
++                           stdout=testlog,stderr=subprocess.STDOUT,check=True)
++        from .runtime import build
++        runtime=out/"runtime_parent_capture"
++        runtime_manifest=build(runtime)
++        atomic_json(trace/"capture_config.json",{"layer_ordinals":layers,"decode_calls":a.decode_calls,
++                    "min_context":a.min_context,"max_traces":a.max_traces,"max_bytes":int(a.max_gib*1024**3)})
++        server=out/"server";server.mkdir()
++        dispatch=server/"dispatch"
++        name="ardiag-parent-"+uuid.uuid4().hex[:8]
++        launch_args=SimpleNamespace(method="kvarn44",model=model,port=a.port,max_model_len=s["max_model_len"],
++            max_seqs=1,batch_tokens=s["batch_tokens"],gpu_util=s["gpu_util"],server_seed=s["server_seed"],kv_bytes=None,eager=True)
++        cli=launch_command(launch_args,name)
++        command=[sys.executable,"-m","kvbench_residual.bootstrap","--runtime",str(runtime),"--policy","parent","--trace-dir",str(dispatch),"--",*cli[3:]]
++        env=os.environ.copy();env.pop("PYTHONHOME",None)
++        env.update(CUDA_VISIBLE_DEVICES=a.gpu,PYTHONNOUSERSITE="1",PYTHONPATH=str(runtime),
++            AR_RUNTIME_ROOT=str(runtime),AR_TRACE_DIR=str(dispatch),AR_POLICY="parent",AR_DIAG_TRACE_ROOT=str(trace),
++            KVARN_FUSED_DECODE="1",HF_HUB_OFFLINE="1",TRANSFORMERS_OFFLINE="1",
++            TRITON_CACHE_DIR=str(server/"cache/triton"),TORCHINDUCTOR_CACHE_DIR=str(server/"cache/torchinductor"),VLLM_CACHE_ROOT=str(server/"cache/vllm"))
++        config={"kv_dtype":"kvarn_k4v4_g128","block_size":128,"model_name":name,"max_model_len":s["max_model_len"]}
++        launch_record={"command":command,"config":config,"python":sys.executable,"tokenizer":tokenizer_identity(model),
++                       "packages":package_versions(["vllm","torch","triton","numpy","transformers"]),
++                       "runtime_manifest_sha256":sha_file(runtime/"runtime.json"),
++                       "gpu":run_text(["nvidia-smi","-i",a.gpu,"--query-gpu=name,uuid,driver_version,memory.total","--format=csv,noheader,nounits"]),
++                       "environment":{k:env.get(k) for k in ("KVARN_SINK_TOKENS","KVARN_SINKHORN_ITERS","KVARN_POOL_SLOTS","KVARN_FAST_FLUSH","KVARN_SPLIT_K","KVARN_NUM_KV_SPLITS","NVIDIA_TF32_OVERRIDE","TRITON_F32_DEFAULT","VLLM_WORKER_MULTIPROC_METHOD")}}
++        atomic_json(server/"launch.json",launch_record)
++        with (server/"server.log").open("w",encoding="utf-8") as log:
++            proc=subprocess.Popen(command,cwd=runtime,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
++            launch_record["pid"]=proc.pid
++            base=f"http://127.0.0.1:{a.port}"
++            launch_record["native"]=ready(proc,base,config,a.startup_timeout)
++            atomic_json(server/"launch.json",launch_record)
++            # Eager mode may not execute decode during startup; verify dispatch AFTER an unarmed warmup.
++            warm=request_one(base,name,samples[0],s,8,server/"warmup.json.gz")
++            atomic_json(server/"warmup.json",warm)
++            from kvbench_residual.trace import summarize
++            receipts=summarize(dispatch,"parent",runtime_manifest["executed_source_sha256"],.02)
++            if not receipts["source_verified"] or not receipts["fused_launch_observed"] or not list(trace.glob("hook_*.json")):
++                raise RuntimeError("Eager warmup did not confirm the expected native decode/capture hook")
++            atomic_json(server/"dispatch_verified.json",receipts)
++            state["status"]="capturing";atomic_json(out/"status.json",state)
++            requests=[]
++            for j,row in enumerate(samples):
++                arm={"epoch":uuid.uuid4().hex,"dataset":row["dataset"],"case_id":row["case_id"],
++                     "prompt_sha256":digest(row["prompt"]),"input_tokens":row["input_tokens"],"sample_index":j,
++                     "protocol":"diagnostic_C1_eager_parent","source_manifest_sha256":plan["data_manifest_sha256"]}
++                atomic_json(trace/"arm.json",arm)
++                try:
++                    result=request_one(base,name,row,s,a.diagnostic_max_tokens,server/f"sample_{j:03d}.json.gz")
++                finally:
++                    (trace/"arm.json").unlink(missing_ok=True)
++                result["capture_epoch"]=arm["epoch"]
++                requests.append(result)
++                atomic_json(out/"diagnostic_requests.json",requests)
++                errors=list(trace.glob("capture_error_*.json"))
++                if errors: raise RuntimeError("Capture worker reported errors: "+str(errors))
++                print(f"captured request {j+1}/{len(samples)}: {row['dataset']} {row['case_id']}",flush=True)
++        # Model server is fully stopped BEFORE any GPU replay or offline analysis.
++        stop_owned_group(proc);proc=None
++        records=[json.loads(x.read_text()) for x in trace_paths(trace)]
++        coverage=[]
++        for request in requests:
++            seen={(m["cache_ordinal"],m["decode_call_index"]) for m in records if m["request"]["epoch"]==request["capture_epoch"]}
++            for layer in layers:
++                for step in a.decode_calls:
++                    coverage.append({"dataset":request["dataset"],"case_id":request["case_id"],"cache_ordinal":layer,
++                                     "decode_call_index":step,"captured":(layer,step) in seen,
++                                     "completion_tokens":request["completion_tokens"],"finish_reason":request["finish_reason"],
++                                     "note":"Missing later steps may be natural EOS; no forced continuation" if (layer,step) not in seen else ""})
++        write_csv(out/"capture_coverage.csv",coverage)
++        state.update(status="captured",actual_traces=len(records),planned_traces=planned,
++                     missing_capture_points=sum(not x["captured"] for x in coverage))
++        atomic_json(out/"status.json",state)
++        if a.capture_only:
++            print(str(out),flush=True);return
++        # Run as children to guarantee isolated CUDA contexts and fail-fast exit propagation.
++        analysis_env=os.environ.copy();analysis_env["CUDA_VISIBLE_DEVICES"]=a.gpu
++        analysis_env["PYTHONNOUSERSITE"]="1"
++        for key in ("AR_DIAG_TRACE_ROOT","AR_RUNTIME_ROOT","AR_TRACE_DIR","AR_POLICY"):
++            analysis_env.pop(key,None)
++        stages=[("experiment1",[sys.executable,"-m","kvbench_residual_diag.diagnose","--traces",str(trace),"--out",str(out/"experiment1"),"--epsilons",*[str(x) for x in a.epsilons]]),
++                ("experiment2",[sys.executable,"-m","kvbench_residual_diag.oracle","--traces",str(trace),"--out",str(out/"experiment2"),"--trace-limit",str(a.oracle_trace_limit),"--modes",*a.oracle_modes])]
++        for label,cmd in stages:
++            state["status"]=label;atomic_json(out/"status.json",state)
++            with (out/(label+".log")).open("w",encoding="utf-8") as log:
++                subprocess.run(cmd,env=analysis_env,stdout=log,stderr=subprocess.STDOUT,check=True)
++        state["status"]="completed";atomic_json(out/"status.json",state)
++        print("Diagnostics completed: "+str(out),flush=True)
++    except BaseException as exc:
++        state.update(status="failed",error=repr(exc),traceback=traceback.format_exc())
++        atomic_json(out/"status.json",state)
++        raise
++    finally:
++        (trace/"arm.json").unlink(missing_ok=True)
++        if proc is not None:
++            stop_owned_group(proc)
++
++
++if __name__=="__main__": main()
+diff --git a/kvbench_residual_diag/run_two_experiments.sh b/kvbench_residual_diag/run_two_experiments.sh
+new file mode 100755
+index 0000000..03c5b73
+--- /dev/null
++++ b/kvbench_residual_diag/run_two_experiments.sh
+@@ -0,0 +1,43 @@
++#!/usr/bin/env bash
++set -euo pipefail
++ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
++cd "$ROOT"
++SUITE="results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json"
++args=("$@")
++for ((i=0;i<${#args[@]};i++)); do
++  if [[ ${args[i]} == --upstream-suite ]]; then
++    if (( i+1>=${#args[@]} )); then echo '--upstream-suite needs a path' >&2; exit 2; fi
++    SUITE=${args[i+1]}
++  elif [[ ${args[i]} == --upstream-suite=* ]]; then
++    SUITE=${args[i]#*=}
++  fi
++done
++BASE=${CONDA_BASE:-/home/wanglin/miniconda3}
++if [[ ! -f "$BASE/etc/profile.d/conda.sh" ]]; then
++  echo 'Set CONDA_BASE to the existing Miniconda root; nothing is installed automatically.' >&2
++  exit 2
++fi
++# Bootstrap only reads the known local suite. No network/model/GPU access.
++BOOT_PY="$BASE/bin/python"
++mapfile -t SETUP < <("$BOOT_PY" - "$SUITE" <<'PY'
++import json,sys
++s=json.load(open(sys.argv[1],encoding='utf-8'))['settings']
++print(s['server_env'])
++print(s['kit'])
++PY
++)
++if [[ ${#SETUP[@]} -ne 2 ]]; then echo 'Unable to read server environment and KIT from suite' >&2; exit 2; fi
++set +u
++source "$BASE/etc/profile.d/conda.sh"
++conda activate "${SETUP[0]}"
++if [[ ! -f "${SETUP[1]}/env.sh" ]]; then echo 'The original KIT/env.sh is missing; refusing guessed CUDA settings' >&2; exit 2; fi
++export KIT="${SETUP[1]}"
++source "$KIT/env.sh"
++set -u
++export PYTHONNOUSERSITE=1
++export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
++# Keep BLAS thread counts explicit so offline greedy diagnostics do not oversubscribe CPUs.
++export OPENBLAS_NUM_THREADS=${AR_DIAG_BLAS_THREADS:-4}
++export OMP_NUM_THREADS=${AR_DIAG_BLAS_THREADS:-4}
++export MKL_NUM_THREADS=${AR_DIAG_BLAS_THREADS:-4}
++exec python -m kvbench_residual_diag.run "$@"
+diff --git a/kvbench_residual_diag/runtime.py b/kvbench_residual_diag/runtime.py
+new file mode 100644
+index 0000000..608d911
+--- /dev/null
++++ b/kvbench_residual_diag/runtime.py
+@@ -0,0 +1,33 @@
++"""Append a capture observer only to a newly created, pinned Parent runtime."""
++from __future__ import annotations
++from pathlib import Path
++import shutil
++from .common import atomic_json,sha_file
++
++
++def build(out):
++    from kvbench_residual.runtime import build_runtime,verify_runtime,TARGET
++    out=Path(out).resolve()
++    manifest=build_runtime(out,"parent",epsilon=.02)
++    source=Path(__file__).resolve().parent
++    shutil.copytree(source,out/"kvbench_residual_diag",ignore=shutil.ignore_patterns("__pycache__","*.pyc"))
++    kernel=out/"vllm"/TARGET
++    text=kernel.read_text(encoding="utf-8")
++    footer=("\n# EAGER-ONLY real activation capture, not performance measurement.\n"
++            "from kvbench_residual_diag.capture import install as _ar_diag_install\n"
++            "_ar_diag_install(globals(), __file__)\n")
++    compile(text+footer,str(kernel),"exec")
++    kernel.write_text(text+footer,encoding="utf-8")
++    executed=sha_file(kernel)
++    manifest["executed_files_sha256"][str(TARGET)]=executed
++    manifest["executed_source_sha256"]=executed
++    manifest["files_sha256"]={str(p.relative_to(out)):sha_file(p) for p in sorted(out.rglob("*"))
++                              if p.is_file() and not p.is_symlink() and p != out/"runtime.json"}
++    manifest["diagnostic_capture"]={"schema":"kvbench.residual.capture_runtime.v1", "eager_required":True,
++                                    "parent_arithmetic_unchanged":True,"production_timing_valid":False,
++                                    "diagnostic_package_hashes":{str(p.relative_to(out)):sha_file(p)
++                                                               for p in sorted((out/"kvbench_residual_diag").rglob("*.py"))}}
++    manifest["traffic_note"]="Real input snapshots only. D2H synchronized. No production timing or DRAM claim."
++    atomic_json(out/"runtime.json",manifest)
++    verify_runtime(out,"parent",full=True,epsilon=.02)
++    return manifest
+diff --git a/kvbench_residual_diag/tests/__init__.py b/kvbench_residual_diag/tests/__init__.py
+new file mode 100644
+index 0000000..bbcc3b5
+--- /dev/null
++++ b/kvbench_residual_diag/tests/__init__.py
+@@ -0,0 +1 @@
++"""CPU tests; mock activations are never saved as research results."""
+diff --git a/kvbench_residual_diag/tests/test_capture.py b/kvbench_residual_diag/tests/test_capture.py
+new file mode 100644
+index 0000000..9927d26
+--- /dev/null
++++ b/kvbench_residual_diag/tests/test_capture.py
+@@ -0,0 +1,170 @@
++"""Mock tensor/API tests for capture plumbing; these are NOT GPU executions."""
++from dataclasses import dataclass
++import json
++from pathlib import Path
++import tempfile
++from types import ModuleType,SimpleNamespace
++from unittest.mock import patch
++import unittest
++import numpy as np
++from kvbench_residual_diag.capture import Capture,ObservedLaunch
++from kvbench_residual_diag.common import atomic_json,load_trace
++
++
++class Tensor:
++    def __init__(self,a):self.a=np.asarray(a);self.device='mock-cpu'
++    @property
++    def shape(self):return self.a.shape
++    @property
++    def ndim(self):return self.a.ndim
++    @property
++    def dtype(self):return self.a.dtype
++    def data_ptr(self):return self.a.ctypes.data
++    def __getitem__(self,i):return Tensor(self.a[i])
++    def item(self):return self.a.item()
++    def index_select(self,axis,indices):return Tensor(np.take(self.a,np.asarray(indices),axis=axis))
++    def detach(self):return self
++    def cpu(self):return self
++    def numpy(self):return self.a
++    def reshape(self,*shape):return Tensor(self.a.reshape(*shape))
++
++
++@dataclass(frozen=True)
++class Layout:
++    group:int=128
++    value_bits:int=4
++    head_dim:int=128
++    key_bits:int=4
++    @property
++    def offsets(self):
++        return dict(K_PACKED_OFFSET=0,K_S_COL_OFFSET=8192,K_ZP_OFFSET=8448,K_S_ROW_OFFSET=8704,
++                    V_PACKED_OFFSET=8960,V_S_COL_OFFSET=17152,V_S_ROW_OFFSET=17408,V_ZP_OFFSET=17664)
++    @property
++    def tile_bytes(self):return 17920
++
++@dataclass
++class Case:
++    name:str
++    seq_lens:tuple
++    layout:Layout
++    window:int=0
++    hq:int=32
++    hk:int=8
++
++
++def mock_modules():
++    torch=ModuleType('torch')
++    torch.float16=np.dtype('float16');torch.uint8=np.dtype('uint8');torch.long=np.dtype('int64')
++    torch.as_tensor=lambda x,**kw:np.asarray(x,dtype=kw.get('dtype'))
++    torch.cuda=SimpleNamespace(is_current_stream_capturing=lambda:False)
++    pkg=ModuleType('kvbench_residual');pkg.__path__=[]
++    fixtures=ModuleType('kvbench_residual.fixtures');fixtures.Layout=Layout;fixtures.Case=Case
++    return {'torch':torch,'kvbench_residual':pkg,'kvbench_residual.fixtures':fixtures}
++
++
++def fixture(root):
++    root=Path(root)
++    source=root/'source.py';source.write_text('# mock source only\n')
++    atomic_json(root/'capture_config.json',dict(layer_ordinals=[0],decode_calls=[0,15],min_context=1,max_traces=10,max_bytes=10*1024*1024))
++    atomic_json(root/'arm.json',dict(epoch='test-only',dataset='test',case_id='test'))
++    cache=np.arange(10*8*17920,dtype=np.uint8).reshape(10,8,17920)
++    slots=np.full(10,-1,np.int32);slots[7]=1;slots[5]=2
++    bt=np.full((1,256),-1,np.int32);bt[0,:3]=[7,2,5]
++    args=(Tensor(np.ones((1,32,128),np.float16)),None,Tensor(bt),Tensor(np.array([300],np.int32)),Tensor(slots),Tensor(cache),
++          Tensor(np.ones((3,128,8,128),np.float16)),Tensor(np.ones((3,128,8,128),np.float16)*2),
++          Tensor(np.ones((32,128),np.float16)),1/np.sqrt(128))
++    kw=dict(D=128,GROUP=128,K_BITS=4,V_BITS=4,SLIDING_WINDOW=0,VQ_INDIRECT=False,**Layout().offsets)
++    inner=SimpleNamespace(best_config=SimpleNamespace(kwargs={'BLOCK_N':32},num_warps=4,num_stages=1,maxnreg=None))
++    cap=Capture(root,source)
++    return cap,args,kw,inner
++
++
++class CaptureTests(unittest.TestCase):
++    def test_active_pages_compacted_and_pool_preserved(self):
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,inner=fixture(d)
++            native_before=args[5].a.copy()
++            item=cap.choose(args,kw,inner,'single');cap.save(item,args[8])
++            path=next(Path(d).glob('trace_*.json'))
++            data,meta=load_trace(path)
++            self.assertEqual(data['cache'].shape,(3,8,17920))
++            self.assertEqual(data['block_table'][0,:3].tolist(),[2,0,1])
++            self.assertEqual(data['block_to_slot'].tolist(),[-1,1,0])
++            self.assertEqual(data['pool_k'].shape,(2,128,8,128))
++            np.testing.assert_array_equal(data['cache'][0],native_before[2])
++            self.assertFalse(data['cache'][1:].any())
++            np.testing.assert_array_equal(args[5].a,native_before)
++            self.assertEqual(meta['active_pages'],3)
++    def test_split_snapshot_waits_for_stage2(self):
++        class Kernel:
++            best_config=SimpleNamespace(kwargs={'BLOCK_N':32},num_warps=4,num_stages=1,maxnreg=None)
++            def __getitem__(self,grid): return lambda *args,**kwargs: None
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,_=fixture(d)
++            mid=Tensor(np.zeros((32,4,128),np.float32))
++            mid_lse=Tensor(np.zeros((32,4),np.float32))
++            split_args=(*args[:8],mid,mid_lse,args[9])
++            kw['NUM_KV_SPLITS']=4
++            stage1=ObservedLaunch(Kernel(),'_kvarn_fused_decode_stage1',cap)
++            stage2=ObservedLaunch(Kernel(),'_kvarn_fused_decode_stage2',cap)
++            stage1[(1,8,4)](*split_args,**kw)
++            self.assertIsNotNone(cap.pending)
++            self.assertEqual(list(Path(d).glob('trace_*.json')),[])
++            stage2[(32,)](mid,mid_lse,args[8])
++            self.assertIsNone(cap.pending)
++            path=next(Path(d).glob('trace_*.json'))
++            data,meta=load_trace(path)
++            self.assertEqual(meta['mode'],'split');self.assertEqual(meta['splits'],4)
++            np.testing.assert_array_equal(data['reference_gpu_rot'],np.ones((1,32,128),np.float16))
++    def test_real_driver_flattened_query_roundtrip(self):
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,inner=fixture(d)
++            q=np.arange(32*128,dtype=np.float16).reshape(32,128)/128
++            args=(Tensor(q),*args[1:])
++            cap.save(cap.choose(args,kw,inner,'single'),args[8])
++            data,meta=load_trace(next(Path(d).glob('trace_*.json')))
++            self.assertEqual(meta['original_query_shape'],[32,128])
++            np.testing.assert_array_equal(data['query'],q.reshape(1,32,128))
++    def test_checksum_mutation_detected(self):
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,inner=fixture(d);cap.save(cap.choose(args,kw,inner,'single'),args[8])
++            path=next(Path(d).glob('trace_*.json'));meta=json.loads(path.read_text())
++            af=Path(d)/meta['arrays_file'];af.write_bytes(b'bad')
++            with self.assertRaises(ValueError):load_trace(path)
++    def test_unarmed_warmup_not_captured(self):
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,inner=fixture(d);(Path(d)/'arm.json').unlink()
++            self.assertIsNone(cap.choose(args,kw,inner,'single'))
++    def test_indirect_verify_refused(self):
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,inner=fixture(d);kw['VQ_INDIRECT']=True
++            with self.assertRaises(RuntimeError):cap.choose(args,kw,inner,'single')
++    def test_unknown_autotune_geometry_refused(self):
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,inner=fixture(d);inner.best_config=None
++            with self.assertRaises(RuntimeError):cap.choose(args,kw,inner,'single')
++    def test_capture_graph_refused(self):
++        modules=mock_modules();modules['torch'].cuda.is_current_stream_capturing=lambda:True
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',modules):
++            cap,args,kw,inner=fixture(d)
++            with self.assertRaises(RuntimeError):cap.choose(args,kw,inner,'single')
++    def test_byte_cap_enforced_before_snapshot(self):
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,inner=fixture(d);cap.config['max_bytes']=32
++            item=cap.choose(args,kw,inner,'single')
++            with self.assertRaises(RuntimeError):cap.save(item,args[8])
++            self.assertEqual(list(Path(d).glob('trace_*.npz')),[])
++    def test_epoch_resets_decode_call_index(self):
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,inner=fixture(d)
++            self.assertEqual(cap.choose(args,kw,inner,'single')['step'],0)
++            self.assertIsNone(cap.choose(args,kw,inner,'single'))
++            atomic_json(Path(d)/'arm.json',dict(epoch='second',dataset='test',case_id='test2'))
++            self.assertEqual(cap.choose(args,kw,inner,'single')['step'],0)
++    def test_changed_dtype_refused(self):
++        with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
++            cap,args,kw,inner=fixture(d)
++            args=(Tensor(np.ones((1,32,128),np.float32)),*args[1:])
++            with self.assertRaises(RuntimeError):cap.choose(args,kw,inner,'single')
++
++if __name__=='__main__':unittest.main()
+diff --git a/kvbench_residual_diag/tests/test_math.py b/kvbench_residual_diag/tests/test_math.py
+new file mode 100644
+index 0000000..ebf33b0
+--- /dev/null
++++ b/kvbench_residual_diag/tests/test_math.py
+@@ -0,0 +1,152 @@
++from __future__ import annotations
++import itertools
++import unittest
++import numpy as np
++from kvbench_residual_diag.math_ops import (Group,evaluate,objective,action_setup,select_order,
++    apply_budget,v_lower_bound,exact_small,mass_upper,bound_policy,lse)
++from kvbench_residual_diag.common import output_metrics
++
++
++def make_group(seed=1,n=4,h=3,d=5,pool=True):
++    rng=np.random.default_rng(seed)
++    raw=[];chunks=[]
++    for i in range(n):
++        sa=rng.normal(size=(h,4))
++        sf=sa+rng.normal(0,.12,size=(h,4))
++        va=rng.normal(size=(4,d))
++        vf=va+rng.normal(0,.08,size=(4,d))
++        quant=not(pool and i==0)
++        if not quant: sa=sf.copy();va=vf.copy()
++        raw.append((sa,sf,va,vf))
++        B=float(np.linalg.norm(vf,axis=1).max())+1
++        eta=float(np.linalg.norm(vf-va,axis=1).max())+.000001 if quant else 0
++        chunks.append({"quantized":quant,"k_bytes":32 if quant else 0,"v_bytes":32 if quant else 0,
++            "native_code_bytes":128 if quant else 0,"tokens":4,"block":i,"chunk":0,"kv_head":0,
++            "seq_blocks":n,"fraction":1/n,"lse_a":lse(sa),"lse_f":lse(sf),
++            "epsilon_k":np.max(abs(sa-sf),axis=1)+1e-7,"actual_k_logit_error":np.max(abs(sa-sf),axis=1),
++            "v_bound":B,"eta_v":eta,"v_ratio":eta/B})
++    origin=np.stack([np.maximum(x[0].max(axis=1),x[1].max(axis=1)) for x in raw]).max(axis=0)
++    z=np.empty((n,2,h));u=np.empty((n,2,2,h,d))
++    for i,(sa,sf,va,vf) in enumerate(raw):
++        for k,s in enumerate((sa,sf)):
++            e=np.exp(s-origin[:,None]);z[i,k]=e.sum(axis=1)
++            u[i,k,0]=e@va;u[i,k,1]=e@vf
++    ref=u[:,1,1].sum(axis=0)/z[:,1].sum(axis=0)[:,None]
++    return Group(z,u,chunks,max(c['v_bound'] for c in chunks),ref,origin),raw
++
++
++class MathTests(unittest.TestCase):
++    def test_sufficient_statistics_match_dense(self):
++        g,raw=make_group()
++        for kb in itertools.product((0,1),repeat=g.n):
++            vb=tuple(reversed(kb))
++            score=np.concatenate([raw[i][kb[i]] for i in range(g.n)],axis=1)
++            values=np.concatenate([raw[i][2+vb[i]] for i in range(g.n)],axis=0)
++            probs=np.exp(score-score.max(axis=1,keepdims=True));probs/=probs.sum(axis=1,keepdims=True)
++            np.testing.assert_allclose(evaluate(g,kb,vb),probs@values,rtol=1e-13,atol=1e-13)
++    def test_full_read_exact(self):
++        g,_=make_group()
++        np.testing.assert_array_equal(evaluate(g,np.ones(g.n),np.ones(g.n)),g.full)
++    def test_v_linear_decomposition(self):
++        g,_=make_group()
++        k,v,_=action_setup(g,'v')
++        base=evaluate(g,k,v)
++        delta=(g.u[:,1,1]-g.u[:,1,0])/g.z[:,1].sum(axis=0)[None,:,None]
++        np.testing.assert_allclose(g.full-base,delta.sum(axis=0),atol=1e-14)
++    def test_gqa_mask_shape_rejected(self):
++        g,_=make_group()
++        with self.assertRaises(ValueError): evaluate(g,np.ones((g.n,3)),np.ones(g.n))
++    def test_zero_output_relative_is_na(self):
++        x=output_metrics(np.ones((3,4)),np.zeros((3,4)))
++        self.assertIsNone(x['relative_l2_max_head']);self.assertIsNone(x['relative_l2_fro'])
++        self.assertEqual(x['relative_undefined_heads'],3)
++    def test_lower_bound_valid_against_exact(self):
++        for seed in range(7):
++            g,_=make_group(seed,n=5)
++            for budget in range(0,129,16):
++                ex=exact_small(g,'v',budget,8)
++                self.assertLessEqual(v_lower_bound(g,budget),ex[0]+1e-12)
++    def test_lower_bound_zero_for_full_read(self):
++        g,_=make_group()
++        self.assertEqual(v_lower_bound(g,int(g.costs[:,1].sum())),0)
++    def test_exact_solver_refuses_large(self):
++        g,_=make_group(n=6)
++        self.assertIsNone(exact_small(g,'kv',64,max_actions=4))
++    def test_budget_never_overspent(self):
++        g,_=make_group(n=6)
++        for mode in ('k','v','kv'):
++            for kind in ('attention','random','greedy'):
++                order=select_order(g,mode,kind)
++                for budget in range(0,330,21):
++                    k,v,spent=apply_budget(g,mode,order,budget)
++                    self.assertLessEqual(spent,budget)
++                    _,_,actions=action_setup(g,mode)
++                    actual=sum(g.costs[i,s]*(k[i] if s==0 else v[i]) for i,s in actions)
++                    self.assertEqual(spent,actual)
++    def test_best_prefix_monotone(self):
++        g,_=make_group(seed=14,n=6)
++        for mode in ('k','v','kv'):
++            order=select_order(g,mode,'greedy');last=float('inf')
++            for budget in range(0,321,16):
++                k,v,_=apply_budget(g,mode,order,budget)
++                now=objective(evaluate(g,k,v),g.full)
++                self.assertLessEqual(now,last+1e-13);last=now
++    def test_full_budget_reaches_full_fidelity(self):
++        g,_=make_group(n=5)
++        for mode in ('k','v','kv'):
++            for kind in ('attention','greedy','random'):
++                order=select_order(g,mode,kind)
++                k,v,_=apply_budget(g,mode,order,10000)
++                self.assertLess(objective(evaluate(g,k,v),g.full),1e-13)
++    def test_exact_no_worse_than_greedy(self):
++        g,_=make_group(n=5)
++        for mode in ('k','v','kv'):
++            order=select_order(g,mode,'greedy')
++            for budget in (0,32,64,128):
++                k,v,_=apply_budget(g,mode,order,budget)
++                self.assertLessEqual(exact_small(g,mode,budget,12)[0],objective(evaluate(g,k,v),g.full)+1e-13)
++    def test_order_unique_and_reproducible(self):
++        g,_=make_group(n=6)
++        for mode in ('k','v','kv'):
++            for kind in ('attention','greedy','random'):
++                x=select_order(g,mode,kind,34);y=select_order(g,mode,kind,34)
++                self.assertEqual(x,y);self.assertEqual(len(x),len(set(x)))
++                self.assertEqual(set(x),set(action_setup(g,mode)[2]))
++    def test_pool_always_full(self):
++        g,_=make_group()
++        for mode in ('k','v','kv'):
++            k,v,_=action_setup(g,mode)
++            self.assertTrue(k[0]);self.assertTrue(v[0])
++    def test_mass_prefix_empty_is_one(self):
++        m,_=mass_upper(np.array([3.,-1.]),np.array([.1,.2]),np.array([-np.inf,-np.inf]))
++        np.testing.assert_allclose(m,[1.,1.])
++    def test_larger_prefix_tightens_mass(self):
++        a,_=mass_upper(np.array([2.]),np.array([.1]),np.array([-5.]))
++        b,_=mass_upper(np.array([2.]),np.array([.1]),np.array([3.]))
++        self.assertLessEqual(b[0],a[0])
++    def test_bound_zero_reads_full(self):
++        g,_=make_group()
++        for mode in ('bound_k','bound_v','bound_kv'):
++            b=bound_policy(g,mode,0,1)
++            self.assertTrue(b['read_k'].all());self.assertTrue(b['read_v'].all())
++    def test_bound_budget_real_arithmetic(self):
++        g,_=make_group(n=5)
++        for p in ('bound_k','bound_v','bound_kv'):
++            for e in (.01,.1,1.,10.):
++                for sp in (1,2,4):
++                    b=bound_policy(g,p,e,sp)
++                    error=np.linalg.norm(b['output']-g.full,axis=1).max()
++                    self.assertLessEqual(error,e*g.vref+1e-12)
++    def test_anchor_and_v_only_code_limits(self):
++        g,_=make_group()
++        a=bound_policy(g,'anchor',.02,1)
++        self.assertAlmostEqual(a['logical_code_reduction_fraction'],.5)
++        k,v,_=action_setup(g,'v')
++        costs=g.costs
++        full=int(costs.sum())
++        read=int((costs[:,0]*k+costs[:,1]*v).sum())
++        self.assertAlmostEqual(1-(full+read)/(2*full),.25)
++    def test_nonfinite_output_rejected(self):
++        with self.assertRaises(ValueError): output_metrics(np.array([[np.nan]]),np.array([[1.]]))
++
++if __name__=='__main__': unittest.main()
+diff --git a/kvbench_residual_diag/tests/test_source_bridge.py b/kvbench_residual_diag/tests/test_source_bridge.py
+new file mode 100644
+index 0000000..839d927
+--- /dev/null
++++ b/kvbench_residual_diag/tests/test_source_bridge.py
+@@ -0,0 +1,38 @@
++"""Run in the user's repository to check the unchanged v1 CPU oracle API.
++
++Skipped if kvbench_residual is absent. It is never replaced by a fabricated
++implementation in order to claim compatibility with the user's source tree.
++"""
++import importlib.util
++import unittest
++import numpy as np
++from kvbench_residual_diag.math_ops import build_group,bound_policy
++
++HAS_SOURCE=importlib.util.find_spec('kvbench_residual') is not None
++
++@unittest.skipUnless(HAS_SOURCE,'Existing kvbench_residual package is required for source-bridge tests')
++class SourceBridgeTests(unittest.TestCase):
++    def test_existing_v1_cpu_oracle(self):
++        from kvbench_residual.fixtures import Case,Layout,build_case,selective_attention
++        for length in (129,385,1024):
++            data=build_case(Case('source_bridge',(length,),Layout()))
++            for bn in (16,32,64):
++                groups=[build_group(data,h,bn) for h in range(8)]
++                for sp in (1,4):
++                    for policy in ('parent','repacked_full','anchor','bound_k','bound_v','bound_kv'):
++                        ref=selective_attention(data,policy,.02,bn,sp)
++                        ours=[bound_policy(g,policy,.02,sp) for g in groups]
++                        output=np.concatenate([x['output'] for x in ours],axis=0)[None,:,:]
++                        np.testing.assert_allclose(output,ref['output'],rtol=1e-10,atol=1e-11)
++                        for key in ('quantized_chunks','key_skipped_chunks','value_skipped_chunks'):
++                            self.assertEqual(sum(x[key] for x in ours),ref['counts'][key])
++    def test_existing_sliding_window(self):
++        from kvbench_residual.fixtures import Case,Layout,build_case,selective_attention
++        data=build_case(Case('sliding',(721,),Layout(),window=333))
++        groups=[build_group(data,h,32) for h in range(8)]
++        for policy in ('anchor','bound_kv'):
++            ref=selective_attention(data,policy,.1,32,4)
++            ours=[bound_policy(g,policy,.1,4) for g in groups]
++            np.testing.assert_allclose(np.concatenate([r['output'] for r in ours],axis=0)[None,:,:],ref['output'],rtol=1e-10,atol=1e-11)
++
++if __name__=='__main__':unittest.main()
+diff --git a/kvbench_residual_diag/tests/test_workflow.py b/kvbench_residual_diag/tests/test_workflow.py
+new file mode 100644
+index 0000000..4547637
+--- /dev/null
++++ b/kvbench_residual_diag/tests/test_workflow.py
+@@ -0,0 +1,44 @@
++from __future__ import annotations
++import json
++from pathlib import Path
++import tempfile
++import unittest
++from kvbench_residual_diag.common import atomic_json,new_output,trace_paths,sha_file
++from kvbench_residual_diag.run import choose_samples
++
++
++class WorkflowTests(unittest.TestCase):
++    def test_existing_directory_refused(self):
++        with tempfile.TemporaryDirectory() as d:
++            with self.assertRaises(ValueError):new_output(d)
++    def test_atomic_finite_json(self):
++        with tempfile.TemporaryDirectory() as d:
++            p=Path(d)/'x.json';atomic_json(p,{'ok':True})
++            self.assertEqual(json.loads(p.read_text()),{'ok':True})
++            with self.assertRaises(ValueError):atomic_json(p,{'x':float('nan')})
++            self.assertEqual(json.loads(p.read_text()),{'ok':True})
++    def test_trace_empty_is_error(self):
++        with tempfile.TemporaryDirectory() as d:
++            with self.assertRaises(ValueError):trace_paths(d)
++    def test_trace_selection_spreads_range(self):
++        with tempfile.TemporaryDirectory() as d:
++            for i in range(20): (Path(d)/f'trace_{i:02d}.json').write_text('{}')
++            chosen=trace_paths(d,3)
++            self.assertEqual(chosen[0].name,'trace_00.json')
++            self.assertEqual(chosen[-1].name,'trace_19.json')
++            self.assertEqual(len(chosen),3)
++    def test_prompt_selection_not_mutated(self):
++        rows=[{'dataset':'a','case_id':str(i),'input_tokens':1000+i*100,'prompt':str(i),'max_tokens':None} for i in range(10)]
++        chosen=choose_samples({'a':rows},['a'],3,1000,96,32768)
++        self.assertEqual(len(chosen),3);self.assertTrue(all(r['max_tokens'] is None for r in rows))
++        self.assertEqual(len(set(r['case_id'] for r in chosen)),3)
++    def test_insufficient_data_refused(self):
++        with self.assertRaises(ValueError): choose_samples({'a':[]},['a'],2,1024,96,32768)
++    def test_unknown_task_refused(self):
++        with self.assertRaises(ValueError): choose_samples({},['not_a_task'],1,1024,96,32768)
++    def test_hash_changes_with_content(self):
++        with tempfile.TemporaryDirectory() as d:
++            p=Path(d)/'x';p.write_text('abc');s=sha_file(p);p.write_text('xyz')
++            self.assertNotEqual(s,sha_file(p))
++
++if __name__=='__main__':unittest.main()

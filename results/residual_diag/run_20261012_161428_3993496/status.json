@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "output": "/home/wanglin/kvbench-3090-cu126/results/residual_diag/run_20261012_161428_3993496",
+  "experiments": [
+    "real_skip_diagnosis",
+    "offline_oracle"
+  ],
+  "gpu": "0",
+  "actual_traces": 72,
+  "planned_traces": 72,
+  "missing_capture_points": 0
+}

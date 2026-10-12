@@ -1,0 +1,71 @@
+{
+  "schema": "kvbench.residual.real_diagnostics_plan.v1",
+  "upstream_suite": "/home/wanglin/kvbench-3090-cu126/results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json",
+  "upstream_sha256": "1c6166fd278f21d28d26ab92385adba7c421648b2efa8a95bf6ab855f51ea1b3",
+  "data_manifest_sha256": "609a9bcf70f1bf7156f0e9370b09d1ae32309023e38f883f8d9f2713d1e2c522",
+  "model": "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+  "architecture": {
+    "model_type": "qwen3",
+    "heads": 32,
+    "kv_heads": 8,
+    "head_dim": 128,
+    "num_hidden_layers": 36,
+    "config_sha256": "8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a"
+  },
+  "tasks": [
+    "qasper",
+    "hotpotqa",
+    "passage_retrieval_en"
+  ],
+  "samples": [
+    {
+      "dataset": "qasper",
+      "case_id": "qasper/b96a5e2e8d4b32aff5401e97c66942bf33f6c3c62a43609d",
+      "input_tokens": 3907
+    },
+    {
+      "dataset": "qasper",
+      "case_id": "qasper/db4afd55783aaf6d069c5228152492cf0804e9cf310cb238",
+      "input_tokens": 5645
+    },
+    {
+      "dataset": "hotpotqa",
+      "case_id": "hotpotqa/60ec93a22fbcb65eeadd9f1d2b3c8e4ed44d3a2c4285b168",
+      "input_tokens": 12433
+    },
+    {
+      "dataset": "hotpotqa",
+      "case_id": "hotpotqa/7bb5645d62fc946b46910757e007f59e87f52bbf8535da58",
+      "input_tokens": 16322
+    },
+    {
+      "dataset": "passage_retrieval_en",
+      "case_id": "passage_retrieval_en/ae0aae9a66f6bbe58796720b3ad135dc4de3a0f63f51fc0c",
+      "input_tokens": 12356
+    },
+    {
+      "dataset": "passage_retrieval_en",
+      "case_id": "passage_retrieval_en/2024cb6239c0be12fae84bbbbcca6bb976a704c0bddb305b",
+      "input_tokens": 13473
+    }
+  ],
+  "layer_cache_ordinals": [
+    0,
+    12,
+    24,
+    35
+  ],
+  "decode_call_indices": [
+    0,
+    15,
+    63
+  ],
+  "planned_upper_bound_traces": 72,
+  "diagnostic_max_tokens": 96,
+  "batch": 1,
+  "eager": true,
+  "port": 18080,
+  "gpu": "0",
+  "generation_note": "Same sampling/thinking as upstream, but C1 eager and limited diagnostic prefixes. No task score, TPOT or natural full-length conclusion.",
+  "oracle_note": "Default uses at most 12 evenly spaced traces and KV heads 0,3,7; see coverage.csv. Offline greedy is not a global optimum."
+}
