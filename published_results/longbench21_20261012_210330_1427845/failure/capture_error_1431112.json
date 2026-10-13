@@ -1,0 +1,4 @@
+{
+  "error": "RuntimeError('Speculative/indirect verify cannot be labelled as direct decode')",
+  "kernel": "_kvarn_fused_decode_stage1"
+}

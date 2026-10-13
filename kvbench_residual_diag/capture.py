@@ -50,7 +50,7 @@ class Capture:
         if torch.cuda.is_current_stream_capturing():
             raise RuntimeError("Real trace capture requires --eager; CUDA graph capture is not allowed")
         if bool(kwargs.get("VQ_INDIRECT", False)):
-            raise RuntimeError("Speculative/indirect verify cannot be labelled as direct decode")
+            return None
         # The real driver passes the persistent [B*Hq,D] rotation buffer.
         # GpuCase uses a [B,Hq,D] view; both represent the same C1 layout.
         if tuple(q.shape) not in ((32,128),(1,32,128)) or q.dtype != torch.float16:

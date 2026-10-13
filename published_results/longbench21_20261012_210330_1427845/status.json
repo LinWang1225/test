@@ -1,0 +1,15 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "failed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/longbench21_20261012_210330_1427845",
+  "planned_cases": 4750,
+  "gpu_capture_executed": true,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "current_case": "000437_dc850998ff5b",
+  "completed_cases": 437,
+  "error": "RuntimeError('Diagnostic request failed native protocol checks: {\\'case_id\\': \\'multifieldqa_en/135b82aecda3c83cfd73d1447e8f92a8a44de50ffdb09444\\', \\'error\\': \"ValueError: Server stream error: {\\'message\\': \\'EngineCore encountered an issue. See stack trace (above) for the root cause.\\', \\'type\\': \\'InternalServerError\\', \\'param\\': None, \\'code\\': 500}\", \\'response_complete\\': False, \\'prompt_token_match\\': None}')",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/run.py\", line 272, in main\n    result=request_one(base_url,name,row,s,a.diagnostic_max_tokens,attempt/'response.json.gz')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_residual_diag/run.py\", line 65, in request_one\n    raise RuntimeError(\"Diagnostic request failed native protocol checks: \"+str({k:result.get(k) for k in (\"case_id\",\"error\",\"response_complete\",\"prompt_token_match\")}))\nRuntimeError: Diagnostic request failed native protocol checks: {'case_id': 'multifieldqa_en/135b82aecda3c83cfd73d1447e8f92a8a44de50ffdb09444', 'error': \"ValueError: Server stream error: {'message': 'EngineCore encountered an issue. See stack trace (above) for the root cause.', 'type': 'InternalServerError', 'param': None, 'code': 500}\", 'response_complete': False, 'prompt_token_match': None}\n"
+}

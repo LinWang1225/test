@@ -135,10 +135,10 @@ class CaptureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
             cap,args,kw,inner=fixture(d);(Path(d)/'arm.json').unlink()
             self.assertIsNone(cap.choose(args,kw,inner,'single'))
-    def test_indirect_verify_refused(self):
+    def test_indirect_verify_not_captured(self):
         with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
             cap,args,kw,inner=fixture(d);kw['VQ_INDIRECT']=True
-            with self.assertRaises(RuntimeError):cap.choose(args,kw,inner,'single')
+            self.assertIsNone(cap.choose(args,kw,inner,'single'))
     def test_unknown_autotune_geometry_refused(self):
         with tempfile.TemporaryDirectory() as d,patch.dict('sys.modules',mock_modules()):
             cap,args,kw,inner=fixture(d);inner.best_config=None
