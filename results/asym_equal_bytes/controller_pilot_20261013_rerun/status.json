@@ -1,0 +1,15 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "failed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/controller_pilot_20261013_rerun",
+  "planned_cases": 3,
+  "gpu_capture_executed": true,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "current_case": "000000_cb549455648c",
+  "completed_cases": 0,
+  "error": "KeyboardInterrupt()",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/run.py\", line 287, in main\n    analyze_paths(paths,attempt/'analysis',a.totals,a.shares,a.methods,a.mask_seeds,a.block_n,\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/analyze.py\", line 119, in analyze_paths\n    rows, masks, nchunks = group_rows(\n                           ^^^^^^^^^^^\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/analyze.py\", line 67, in group_rows\n    result = run_controller(group.chunks, config)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/controller.py\", line 144, in run_controller\n    after = estimate_error(chunks, trial_k, trial_v, config.safety_margin)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/controller.py\", line 89, in estimate_error\n    key_bound, value_bound = _chunk_bounds(chunk)\n                             ^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/controller.py\", line 68, in _chunk_bounds\n    key = float(np.max(np.asarray(chunk.get(\"epsilon_k\", 0.0), dtype=np.float64)))\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/miniconda3/envs/kvarn-serve/lib/python3.12/site-packages/numpy/_core/fromnumeric.py\", line 3164, in max\n    return _wrapreduction(a, np.maximum, 'max', axis, None, out,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/miniconda3/envs/kvarn-serve/lib/python3.12/site-packages/numpy/_core/fromnumeric.py\", line 86, in _wrapreduction\n    return ufunc.reduce(obj, axis, dtype, out, **passkwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/run.py\", line 182, in interrupted\n    def interrupted(signum,frame):raise KeyboardInterrupt\n                                  ^^^^^^^^^^^^^^^^^^^^^^^\nKeyboardInterrupt\n"
+}

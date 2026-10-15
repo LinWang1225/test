@@ -1,0 +1,123 @@
+{
+  "schema": "kvbench.asym.inputs.v1",
+  "cases": 60,
+  "source_cases": 1500,
+  "all_source_records_selected": false,
+  "case_limit": 0,
+  "cases_per_task": 10,
+  "cases_sha256": "1ac0612aff1a651593b64b05678029f4ab238d26cf7880c7c9d1d1988bedc63a",
+  "entries": [
+    {
+      "dataset": "narrativeqa",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "0fb8d08ba5cdad4b74244224b0dc2e8b41ee6b850d954a13eb2d282621ce2f71",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "qasper",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "29aa07d2a63f36f4fb8e8cd200a3428ee3126d750bde6af1c8f9bc41c2366854",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "gov_report",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "d28112beb3a9b41d80aa390837fa1a31c9e3da84a5262009c97585cc49f597c4",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "trec",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "20a88e14f7442f58a39082cdd7396f1093ea8162da0a4ea7ead7d6757514c8f4",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "passage_retrieval_en",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "0f34d2955bfc9bd21ccaa3f4c5aa4e41263aaf83d3fb6002ff7118c134f1eabd",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "lcc",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 500,
+      "source_sha256": "a35809a88d899f61c116690b12f9e96d443238852cedc1a9fe48d85bff6f7aa1",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    }
+  ],
+  "clipping_policy": "head-tail",
+  "coverage": [
+    {
+      "dataset": "narrativeqa",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 10,
+      "clipped_count": 2,
+      "excluded_count": 190,
+      "exclusion_reason": "explicit_cases_per_task_limit"
+    },
+    {
+      "dataset": "qasper",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 10,
+      "clipped_count": 0,
+      "excluded_count": 190,
+      "exclusion_reason": "explicit_cases_per_task_limit"
+    },
+    {
+      "dataset": "gov_report",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 10,
+      "clipped_count": 0,
+      "excluded_count": 190,
+      "exclusion_reason": "explicit_cases_per_task_limit"
+    },
+    {
+      "dataset": "trec",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 10,
+      "clipped_count": 0,
+      "excluded_count": 190,
+      "exclusion_reason": "explicit_cases_per_task_limit"
+    },
+    {
+      "dataset": "passage_retrieval_en",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 10,
+      "clipped_count": 0,
+      "excluded_count": 190,
+      "exclusion_reason": "explicit_cases_per_task_limit"
+    },
+    {
+      "dataset": "lcc",
+      "family": "longbench_all",
+      "source_count": 500,
+      "selected_count": 10,
+      "clipped_count": 0,
+      "excluded_count": 490,
+      "exclusion_reason": "explicit_cases_per_task_limit"
+    }
+  ],
+  "note": "All-record diagnostic prefix evaluation. Not official task scores or unchanged full-context evaluation."
+}

@@ -1,0 +1,7 @@
+﻿dataset,family,source_count,selected_count,clipped_count,excluded_count,exclusion_reason
+narrativeqa,longbench_all,200,10,2,190,explicit_cases_per_task_limit
+qasper,longbench_all,200,10,0,190,explicit_cases_per_task_limit
+gov_report,longbench_all,200,10,0,190,explicit_cases_per_task_limit
+trec,longbench_all,200,10,0,190,explicit_cases_per_task_limit
+passage_retrieval_en,longbench_all,200,10,0,190,explicit_cases_per_task_limit
+lcc,longbench_all,500,10,0,490,explicit_cases_per_task_limit

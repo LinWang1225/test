@@ -1,0 +1,14 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "completed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/controller_pilot_20261013_schemafix",
+  "planned_cases": 3,
+  "gpu_capture_executed": true,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "current_case": "000002_0f50af0f499f",
+  "completed_cases": 3,
+  "all_source_records_selected": false
+}

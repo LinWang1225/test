@@ -1,0 +1,18 @@
+{
+  "schema": "kvbench.asym.report.v1",
+  "committed_cases": 3,
+  "planned_cases": 3,
+  "all_planned_cases_completed": true,
+  "all_source_records_selected": false,
+  "total_captured_traces": 12,
+  "missing_capture_points": 0,
+  "controller_cases": 9,
+  "files": {
+    "paired_vs_symmetric.csv": "f9ed6805be3eb286e77a663872337fdb20e772ffd562b8130ebd7e6fa9100899",
+    "controller_case_level.csv": "9e57b1c1a634ec086d30c06ef474a53c0a4f39f7bdcb91150498d3ad85556c01",
+    "aggregate.csv": "23442e298d0c1b39edb56a6a8ca222d39afcbfd297d1e852957419c9a9575bcc",
+    "case_coverage.csv": "121e2857663ee047d25382a8f3a081c8650acf8a074243b730818d47afd80ccf",
+    "case_level.csv": "bfa252c5f46a6d0bf433ea90c0f6763bebfca66f6fde0d3c0947a61a606da20b",
+    "controller_aggregate.csv": "2201877c214d2c6ec2c9f8e1062263bde642f59450e2446a776d7b4eb28bd96a"
+  }
+}

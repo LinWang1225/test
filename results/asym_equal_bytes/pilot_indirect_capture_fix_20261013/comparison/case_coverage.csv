@@ -1,0 +1,2 @@
+﻿dataset,case_id,case_key,family,traces,missing_capture_points,expected_capture_points,completion_tokens,finish_reason,was_truncated,informative_groups
+narrativeqa,narrativeqa/341d214a2c377691bf20e5a30b8f7979696bd19141ad9c9f,000000_cb549455648c,longbench_all,12,0,12,96,length,False,96

@@ -1,0 +1,301 @@
+{
+  "schema": "kvbench.asym.plan.v1",
+  "config": {
+    "datasets": [
+      "longbench_all"
+    ],
+    "overflow": "head-tail",
+    "case_limit": 3,
+    "layers": [
+      0,
+      35
+    ],
+    "decode_calls": [
+      0,
+      15
+    ],
+    "diagnostic_max_tokens": 32,
+    "block_n": 32,
+    "controller_tolerances": [
+      0.01,
+      0.02,
+      0.05
+    ],
+    "controller_margin": 1.25,
+    "controller_max_steps": null,
+    "totals": [
+      "1.0",
+      "1.1"
+    ],
+    "shares": [
+      "0",
+      ".25",
+      ".5",
+      ".75",
+      "1"
+    ],
+    "methods": [
+      "anchor_mass",
+      "staged_mass",
+      "random"
+    ],
+    "mask_seeds": [
+      42,
+      43,
+      44
+    ],
+    "gpu": "0",
+    "port": 18081,
+    "startup_timeout": 1800,
+    "scratch_gib": 4,
+    "keep_traces": false,
+    "bootstrap": 1000,
+    "upstream_sha256": "1c6166fd278f21d28d26ab92385adba7c421648b2efa8a95bf6ab855f51ea1b3",
+    "model": "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+    "model_config_sha256": "8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a",
+    "entries": [
+      {
+        "dataset": "narrativeqa",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "0fb8d08ba5cdad4b74244224b0dc2e8b41ee6b850d954a13eb2d282621ce2f71",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "qasper",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "29aa07d2a63f36f4fb8e8cd200a3428ee3126d750bde6af1c8f9bc41c2366854",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "multifieldqa_en",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 150,
+        "source_sha256": "0aac182fd317dcf6d74f8e1e0f3e61029407435346c2e0b3ff9fb45ae49c5c3f",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "multifieldqa_zh",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "e5b4fd1a437c53c1c9e4e31eda7a259110b06d14be79c3ec455008c11fb9fab5",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "hotpotqa",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "a0005ab2a1bc2ac3a70352dccbf96cccc4e0aac6bb677f6a55180fa51b92ef6f",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "2wikimqa",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "dda279cf93a99e1e5bfa3291fb199fd55978d10a1feb31822953cf77a1742e37",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "musique",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "4ac69b91281c4ec6b21316cb7282e83fb6b4dda04fc68480bb8d8ed1e19ff7bd",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "dureader",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "09d1054f8b2610ffd3f5f0b7710e8c77a58c3afeb90c3da60ffda5ad7e94eedf",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "gov_report",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "d28112beb3a9b41d80aa390837fa1a31c9e3da84a5262009c97585cc49f597c4",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "qmsum",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "e992f5157679b0c1ca281d0da19d1a8b3496117630ae639c9683ed3dab029113",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "multi_news",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "f8817c00af317c2d7f81128f334bcfe5780c6c2a515d5c96811aa0ddf8b5ee6b",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "vcsum",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "d7412361c418794607c801067c7542254ed5220e1f3ec174dfddc6710ded0e50",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "trec",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "20a88e14f7442f58a39082cdd7396f1093ea8162da0a4ea7ead7d6757514c8f4",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "triviaqa",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "ed2529de2e10b12c00f49981870c23c7c51667069cdd8d0740e1423ff337d7fa",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "samsum",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "d435a4c7a05d2006872da8dd0c44c0a48648baa1ce4f62a4084d07aa7883f0cc",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "lsht",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "b57834ed102ce3a6dbc501f4005016b1fe883371ba48b381c1d1f698291a4bdd",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "passage_count",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "0455a8f1e8e99d63a86bdc6bdb8b943b22509e3102bbef65ce6794045e03bbcd",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "passage_retrieval_en",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "0f34d2955bfc9bd21ccaa3f4c5aa4e41263aaf83d3fb6002ff7118c134f1eabd",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "passage_retrieval_zh",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 200,
+        "source_sha256": "d71c1f71f9fee4c2108f822e9c58ac3cef94db47902c40ddfe168ecb5aab3cc0",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "lcc",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 500,
+        "source_sha256": "a35809a88d899f61c116690b12f9e96d443238852cedc1a9fe48d85bff6f7aa1",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      },
+      {
+        "dataset": "repobench-p",
+        "family": "longbench_all",
+        "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+        "count": 500,
+        "source_sha256": "919a4439e2a84ebb25bacc39ac3b3269a7641af6e02ae205ed78d8c53dfe3568",
+        "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+        "matches_known_official_zip": true
+      }
+    ],
+    "dependency_hashes": {
+      "kvbench_residual_diag.common": "fd0638631351597212569a76ac7cf2d6396ad35bb99db45833f210ed4b583d4c",
+      "kvbench_residual_diag.math_ops": "485e9d1358866ecdc612fe87be2a7918f3b5a2329fce89cd2cb35d84a1d0fbc6",
+      "kvbench_residual_diag.capture": "7281dc7caf2b0afbd93f05aa41cc55921c90a83d39014ad82a354bf3c8c1f70e",
+      "kvbench_residual_diag.run": "9e1d76b55e3e210ad0dc5cd481c4b062821d2ebec85fd17f3413bc583cec8027"
+    },
+    "implementation_hashes": {
+      "__init__.py": "d5bb457a2bd3380cd016e5e227c523d1dc9c3fbd906286938374d29448878350",
+      "analyze.py": "6c94b34b157401c6baa86bbd1e473bc88b8b77054973065fc3abaf9536d13531",
+      "capture.py": "7fb615cabe1dcad45ee49c85bed5b58819d81eecd1eeb919cf206b8514cca18c",
+      "common.py": "15c689f806bdf5d57808f68ed74bc404af419e008ea2b98861849bea8afa4584",
+      "controller.py": "5daea285f0f33fa43545751d9ca405cc6dd94bc9a564d4ee2f048a2e401f0382",
+      "dependency_pins.py": "03841796eb132d67bf2b7c8473205bde850678c4f71efd91a8853e7a63686cb4",
+      "inputs.py": "85ef8508a61ed2579795d3379d35377c5111edf3c884a25d3bf5abce8d4ecb47",
+      "longbench_prompts.json": "ce054476d9b5f70278b4d13e169d9a9ff4481ff3eb6dcbf2aec304995a810841",
+      "report.py": "f70d4beb210a496d2bab2196b4923cd100e7aa95035a9577a30863bb55c11f45",
+      "run.py": "840999f94a04709216012284a00c1f1876dd7fb7eb7141cf0c8369f1e1d16b0e",
+      "run_equal_bytes.sh": "588198e446c56da2ce5b56a0753a2e81c0c5113c0d0c107b29a87b98f1eb7d1a",
+      "runtime.py": "23e5a707bd9d5eef903138254a6356a7deb834fe49249ae3965a167179a51c38",
+      "select.py": "9406a6e952ab1bdbd01312b431ed80f1a9885b43d56bea67481e1387ac5cb0ff",
+      "tests/__init__.py": "6caee95f172f0dce2c0ce1969c302430f301ef9b6b0b4b62d07e9e60d85464e5",
+      "tests/helpers.py": "8bcd00761cf1042cc32c7b533de0f20db029701b5f5446c25b9a732c389d8582",
+      "tests/test_controller.py": "8964fae09cc668fe58fe4f033c95f9c73f11aadc686ca60d120a6b57fe7e039f",
+      "tests/test_inputs.py": "22a54347616d9370d780ec6f1c9db23f203f13920168118ab94b28dd534c9907",
+      "tests/test_mock_pipeline.py": "2d51041c754b274f17a8b0d3bbf271beb21fc74357f1a3a36fd11fa2015f9687",
+      "tests/test_report.py": "6597d0b520422a582cfa4acbfed53f16266d635881e06796897754801c2291cf",
+      "tests/test_select.py": "2344cb5115aa81e3751475b08ca18228f973f6785d34d07135d32bee870522f2",
+      "tests/test_workflow.py": "5161b3b64e447a831f7767d6f9238e0609ed643829fbecb756032c8675d5e0e8"
+    },
+    "tokenizer": {
+      "model_path": "/home/wanglin/kvbench-3090-cu126/cache/huggingface/hub/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c",
+      "files_sha256": {
+        "config.json": "8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a",
+        "generation_config.json": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2",
+        "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+        "model.safetensors.index.json": "6dc0981b8829fead746441f68f38f24c5ca4a3a66351f652c26c6df0efc43ab2",
+        "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+        "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      },
+      "fingerprint": "02cffcadcc4799ea337d2fd06be350e827599a679b49641f463cc1e6a9b2c60e"
+    }
+  },
+  "source_cases": 4750,
+  "selected_cases": 3,
+  "source_tasks": 21,
+  "planned_max_traces": 12,
+  "all_kv_heads": 8,
+  "tokenized": false,
+  "overflow": "head-tail",
+  "raw_storage_upper_bound_gib": 1.910888671875,
+  "protocol": "C1 eager native Parent, sampled decode positions, fixed diagnostic prefix, no forced EOS override",
+  "scope": "All-record sensitivity study, NOT an official full-generation quality/performance leaderboard",
+  "equal_flow": "Exact selected logical KV code payload; not DRAM or total implementation traffic"
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "completed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/pilot_indirect_capture_fix_20261013",
+  "planned_cases": 1,
+  "gpu_capture_executed": true,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "current_case": "000000_cb549455648c",
+  "completed_cases": 1,
+  "all_source_records_selected": false
+}

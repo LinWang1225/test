@@ -1,0 +1,15 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "failed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/controller_pilot_20261013_optimized",
+  "planned_cases": 3,
+  "gpu_capture_executed": true,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "current_case": "000000_cb549455648c",
+  "completed_cases": 0,
+  "error": "ValueError(\"dict contains fields not in fieldnames: 'controller_margin', 'rho_q', 'controller_steps', 'controller_tolerance', 'controller_estimated_error', 'controller_stop_reason', 'residual_read_bytes', 'total_residual_bytes'\")",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/run.py\", line 287, in main\n    analyze_paths(paths,attempt/'analysis',a.totals,a.shares,a.methods,a.mask_seeds,a.block_n,\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/analyze.py\", line 124, in analyze_paths\n    writer.writerows(rows); rows_count += len(rows)\n    ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/miniconda3/envs/kvarn-serve/lib/python3.12/csv.py\", line 167, in writerows\n    return self.writer.writerows(map(self._dict_to_list, rowdicts))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/miniconda3/envs/kvarn-serve/lib/python3.12/csv.py\", line 159, in _dict_to_list\n    raise ValueError(\"dict contains fields not in fieldnames: \"\nValueError: dict contains fields not in fieldnames: 'controller_margin', 'rho_q', 'controller_steps', 'controller_tolerance', 'controller_estimated_error', 'controller_stop_reason', 'residual_read_bytes', 'total_residual_bytes'\n"
+}

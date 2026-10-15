@@ -1,0 +1,13 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "failed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/controller_pilot_20261013",
+  "planned_cases": 3,
+  "gpu_capture_executed": false,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "error": "RuntimeError('Port occupied; no existing process is stopped')",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/run.py\", line 218, in main\n    if sock.connect_ex(('127.0.0.1',a.port))==0:raise RuntimeError('Port occupied; no existing process is stopped')\n                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Port occupied; no existing process is stopped\n"
+}

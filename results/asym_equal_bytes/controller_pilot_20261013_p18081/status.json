@@ -1,0 +1,13 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "failed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/controller_pilot_20261013_p18081",
+  "planned_cases": 3,
+  "gpu_capture_executed": false,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "error": "RuntimeError('GPU already has compute processes; this experiment does not stop them: 2020678, VLLM::EngineCore')",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/run.py\", line 222, in main\n    raise RuntimeError('GPU already has compute processes; this experiment does not stop them: '+gpu['stdout'])\nRuntimeError: GPU already has compute processes; this experiment does not stop them: 2020678, VLLM::EngineCore\n"
+}

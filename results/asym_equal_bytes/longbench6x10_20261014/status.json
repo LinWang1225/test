@@ -1,0 +1,14 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "completed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/longbench6x10_20261014",
+  "planned_cases": 60,
+  "gpu_capture_executed": true,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "current_case": "000059_d636c47e4ad2",
+  "completed_cases": 60,
+  "all_source_records_selected": false
+}

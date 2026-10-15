@@ -1,0 +1,15 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "failed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/longbench21_full_20261013",
+  "planned_cases": 4750,
+  "gpu_capture_executed": true,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "current_case": "000086_efe6776f7612",
+  "completed_cases": 86,
+  "error": "KeyboardInterrupt()",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/run.py\", line 287, in main\n    analyze_paths(paths,attempt/'analysis',a.totals,a.shares,a.methods,a.mask_seeds,a.block_n,\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/analyze.py\", line 124, in analyze_paths\n    rows, masks, nchunks = group_rows(\n                           ^^^^^^^^^^^\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/analyze.py\", line 72, in group_rows\n    result = run_controller(group.chunks, config)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/controller.py\", line 153, in run_controller\n    trial_k, trial_v = read_k.copy(), read_v.copy()\n                       ^^^^^^^^^^^^^\n  File \"/home/wanglin/kvbench-3090-cu126/kvbench_asym/run.py\", line 182, in interrupted\n    def interrupted(signum,frame):raise KeyboardInterrupt\n                                  ^^^^^^^^^^^^^^^^^^^^^^^\nKeyboardInterrupt\n"
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "kvbench.asym.run.v1",
+  "status": "completed",
+  "out": "/home/wanglin/kvbench-3090-cu126/results/asym_equal_bytes/controller_calibration_20261013",
+  "planned_cases": 105,
+  "gpu_capture_executed": true,
+  "selectors_in_generation": false,
+  "measured_dram_bytes": null,
+  "task_scores": null,
+  "tpot": null,
+  "current_case": "000104_ece936c3dfb6",
+  "completed_cases": 105,
+  "all_source_records_selected": false
+}

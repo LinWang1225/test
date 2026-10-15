@@ -1,0 +1,392 @@
+{
+  "schema": "kvbench.asym.inputs.v1",
+  "cases": 1,
+  "source_cases": 4750,
+  "all_source_records_selected": false,
+  "case_limit": 1,
+  "cases_sha256": "1cdba5ee668e2ec8dc3b8d68f75f8ae49213e19b489ca9cffb95d0cc6ed636c9",
+  "entries": [
+    {
+      "dataset": "narrativeqa",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "0fb8d08ba5cdad4b74244224b0dc2e8b41ee6b850d954a13eb2d282621ce2f71",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "qasper",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "29aa07d2a63f36f4fb8e8cd200a3428ee3126d750bde6af1c8f9bc41c2366854",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "multifieldqa_en",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 150,
+      "source_sha256": "0aac182fd317dcf6d74f8e1e0f3e61029407435346c2e0b3ff9fb45ae49c5c3f",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "multifieldqa_zh",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "e5b4fd1a437c53c1c9e4e31eda7a259110b06d14be79c3ec455008c11fb9fab5",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "hotpotqa",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "a0005ab2a1bc2ac3a70352dccbf96cccc4e0aac6bb677f6a55180fa51b92ef6f",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "2wikimqa",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "dda279cf93a99e1e5bfa3291fb199fd55978d10a1feb31822953cf77a1742e37",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "musique",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "4ac69b91281c4ec6b21316cb7282e83fb6b4dda04fc68480bb8d8ed1e19ff7bd",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "dureader",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "09d1054f8b2610ffd3f5f0b7710e8c77a58c3afeb90c3da60ffda5ad7e94eedf",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "gov_report",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "d28112beb3a9b41d80aa390837fa1a31c9e3da84a5262009c97585cc49f597c4",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "qmsum",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "e992f5157679b0c1ca281d0da19d1a8b3496117630ae639c9683ed3dab029113",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "multi_news",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "f8817c00af317c2d7f81128f334bcfe5780c6c2a515d5c96811aa0ddf8b5ee6b",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "vcsum",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "d7412361c418794607c801067c7542254ed5220e1f3ec174dfddc6710ded0e50",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "trec",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "20a88e14f7442f58a39082cdd7396f1093ea8162da0a4ea7ead7d6757514c8f4",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "triviaqa",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "ed2529de2e10b12c00f49981870c23c7c51667069cdd8d0740e1423ff337d7fa",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "samsum",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "d435a4c7a05d2006872da8dd0c44c0a48648baa1ce4f62a4084d07aa7883f0cc",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "lsht",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "b57834ed102ce3a6dbc501f4005016b1fe883371ba48b381c1d1f698291a4bdd",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "passage_count",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "0455a8f1e8e99d63a86bdc6bdb8b943b22509e3102bbef65ce6794045e03bbcd",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "passage_retrieval_en",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "0f34d2955bfc9bd21ccaa3f4c5aa4e41263aaf83d3fb6002ff7118c134f1eabd",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "passage_retrieval_zh",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 200,
+      "source_sha256": "d71c1f71f9fee4c2108f822e9c58ac3cef94db47902c40ddfe168ecb5aab3cc0",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "lcc",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 500,
+      "source_sha256": "a35809a88d899f61c116690b12f9e96d443238852cedc1a9fe48d85bff6f7aa1",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    },
+    {
+      "dataset": "repobench-p",
+      "family": "longbench_all",
+      "source": "/home/wanglin/kvbench-3090-cu126/data_sources/longbench_5e628be/data.zip",
+      "count": 500,
+      "source_sha256": "919a4439e2a84ebb25bacc39ac3b3269a7641af6e02ae205ed78d8c53dfe3568",
+      "zip_sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "matches_known_official_zip": true
+    }
+  ],
+  "clipping_policy": "head-tail",
+  "coverage": [
+    {
+      "dataset": "narrativeqa",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 1,
+      "clipped_count": 0,
+      "excluded_count": 199,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "qasper",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "multifieldqa_en",
+      "family": "longbench_all",
+      "source_count": 150,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 150,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "multifieldqa_zh",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "hotpotqa",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "2wikimqa",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "musique",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "dureader",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "gov_report",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "qmsum",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "multi_news",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "vcsum",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "trec",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "triviaqa",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "samsum",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "lsht",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "passage_count",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "passage_retrieval_en",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "passage_retrieval_zh",
+      "family": "longbench_all",
+      "source_count": 200,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 200,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "lcc",
+      "family": "longbench_all",
+      "source_count": 500,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 500,
+      "exclusion_reason": "explicit_global_case_limit"
+    },
+    {
+      "dataset": "repobench-p",
+      "family": "longbench_all",
+      "source_count": 500,
+      "selected_count": 0,
+      "clipped_count": 0,
+      "excluded_count": 500,
+      "exclusion_reason": "explicit_global_case_limit"
+    }
+  ],
+  "note": "All-record diagnostic prefix evaluation. Not official task scores or unchanged full-context evaluation."
+}
