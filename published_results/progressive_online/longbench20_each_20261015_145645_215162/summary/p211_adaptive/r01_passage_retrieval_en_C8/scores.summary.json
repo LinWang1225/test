@@ -1,0 +1,78 @@
+{
+  "expected_tasks": 20,
+  "observed_tasks": 20,
+  "scored_tasks": 20,
+  "missing_tasks": 0,
+  "invalid_response_tasks": 0,
+  "unscored_tasks": 0,
+  "missing_case_ids": [],
+  "invalid_case_ids": [],
+  "evaluation_complete": true,
+  "task_score_0_100": 100.0,
+  "partial_available_score_0_100": 100.0,
+  "all_expected_zero_filled_score_0_100": 100.0,
+  "score_name": "retrieval",
+  "score_is_binary_accuracy": false,
+  "aggregation": "mean of per-case max over references",
+  "official_word_length_bins": {
+    "0-4k": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null
+    },
+    "4-8k": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null
+    },
+    "8k+": {
+      "expected": 20,
+      "scored": 20,
+      "score_0_100": 100.0
+    }
+  },
+  "bin_unit": "original LongBench English words, not local tokenizer tokens",
+  "local_input_token_bins": {
+    "0-4096": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    },
+    "4096-8192": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    },
+    "8192-16384": {
+      "expected": 20,
+      "scored": 20,
+      "score_0_100": 100.0,
+      "mean_effective_input_tokens": 13123.8,
+      "truncated_tasks": 0
+    },
+    "16384-24576": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    },
+    "24576+": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    }
+  },
+  "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+  "id": "r01_passage_retrieval_en_C8",
+  "dataset": "passage_retrieval_en",
+  "repeat": 1,
+  "concurrency": 8,
+  "response_file_sha256": "8f40e3ce337a9a2535a8749a23a695f159c8016c7197cc2128b678dab9fe2eae"
+}

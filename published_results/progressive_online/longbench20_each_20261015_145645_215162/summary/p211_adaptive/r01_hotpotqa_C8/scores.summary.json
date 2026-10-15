@@ -1,0 +1,78 @@
+{
+  "expected_tasks": 20,
+  "observed_tasks": 20,
+  "scored_tasks": 20,
+  "missing_tasks": 0,
+  "invalid_response_tasks": 0,
+  "unscored_tasks": 0,
+  "missing_case_ids": [],
+  "invalid_case_ids": [],
+  "evaluation_complete": true,
+  "task_score_0_100": 83.17972350230414,
+  "partial_available_score_0_100": 83.17972350230414,
+  "all_expected_zero_filled_score_0_100": 83.17972350230414,
+  "score_name": "qa_f1",
+  "score_is_binary_accuracy": false,
+  "aggregation": "mean of per-case max over references",
+  "official_word_length_bins": {
+    "0-4k": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null
+    },
+    "4-8k": {
+      "expected": 3,
+      "scored": 3,
+      "score_0_100": 100.0
+    },
+    "8k+": {
+      "expected": 17,
+      "scored": 17,
+      "score_0_100": 80.21143941447546
+    }
+  },
+  "bin_unit": "original LongBench English words, not local tokenizer tokens",
+  "local_input_token_bins": {
+    "0-4096": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    },
+    "4096-8192": {
+      "expected": 1,
+      "scored": 1,
+      "score_0_100": 100.0,
+      "mean_effective_input_tokens": 7346.0,
+      "truncated_tasks": 0
+    },
+    "8192-16384": {
+      "expected": 11,
+      "scored": 11,
+      "score_0_100": 83.05404273146209,
+      "mean_effective_input_tokens": 13912.727272727272,
+      "truncated_tasks": 0
+    },
+    "16384-24576": {
+      "expected": 8,
+      "scored": 8,
+      "score_0_100": 81.25,
+      "mean_effective_input_tokens": 16834.5,
+      "truncated_tasks": 0
+    },
+    "24576+": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    }
+  },
+  "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+  "id": "r01_hotpotqa_C8",
+  "dataset": "hotpotqa",
+  "repeat": 1,
+  "concurrency": 8,
+  "response_file_sha256": "9de982e9dfd159d5b15883c54a87ccf6d767ae391c359b5e84e2f8934dd74cb9"
+}

@@ -1,0 +1,78 @@
+{
+  "expected_tasks": 20,
+  "observed_tasks": 20,
+  "scored_tasks": 20,
+  "missing_tasks": 0,
+  "invalid_response_tasks": 0,
+  "unscored_tasks": 0,
+  "missing_case_ids": [],
+  "invalid_case_ids": [],
+  "evaluation_complete": true,
+  "task_score_0_100": 53.30723310073817,
+  "partial_available_score_0_100": 53.30723310073817,
+  "all_expected_zero_filled_score_0_100": 53.30723310073817,
+  "score_name": "qa_f1",
+  "score_is_binary_accuracy": false,
+  "aggregation": "mean of per-case max over references",
+  "official_word_length_bins": {
+    "0-4k": {
+      "expected": 11,
+      "scored": 11,
+      "score_0_100": 62.793681597509355
+    },
+    "4-8k": {
+      "expected": 7,
+      "scored": 7,
+      "score_0_100": 48.23975934079383
+    },
+    "8k+": {
+      "expected": 2,
+      "scored": 2,
+      "score_0_100": 18.867924528301888
+    }
+  },
+  "bin_unit": "original LongBench English words, not local tokenizer tokens",
+  "local_input_token_bins": {
+    "0-4096": {
+      "expected": 6,
+      "scored": 6,
+      "score_0_100": 62.10587657956079,
+      "mean_effective_input_tokens": 2674.3333333333335,
+      "truncated_tasks": 0
+    },
+    "4096-8192": {
+      "expected": 7,
+      "scored": 7,
+      "score_0_100": 57.9735051915503,
+      "mean_effective_input_tokens": 5718.571428571428,
+      "truncated_tasks": 0
+    },
+    "8192-16384": {
+      "expected": 7,
+      "scored": 7,
+      "score_0_100": 41.099266599506656,
+      "mean_effective_input_tokens": 10939.57142857143,
+      "truncated_tasks": 0
+    },
+    "16384-24576": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    },
+    "24576+": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    }
+  },
+  "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+  "id": "r01_multifieldqa_en_C8",
+  "dataset": "multifieldqa_en",
+  "repeat": 1,
+  "concurrency": 8,
+  "response_file_sha256": "7b6ab636d17e65674da69f668d05512efc51f35395ef53816536d8001dcfe0c2"
+}

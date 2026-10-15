@@ -1,0 +1,92 @@
+{
+  "expected_tasks": 20,
+  "recorded_tasks": 20,
+  "valid_responses": 20,
+  "measurement_complete": true,
+  "http_failed": 0,
+  "incomplete_streams": 0,
+  "missing_native_usage": 0,
+  "prompt_token_mismatches": 0,
+  "generation_budget_violations": 0,
+  "unexpected_length_before_budget_count": 0,
+  "generation_budget_consistent": true,
+  "length_capped": 0,
+  "length_limit_terminations": 0,
+  "empty_final_answers": 0,
+  "request_window_s": 188.1858417633921,
+  "valid_requests_per_s": 0.10627792087114714,
+  "output_tokens_per_s": 43.49955301256052,
+  "prompt_tokens": {
+    "n": 20,
+    "mean": 14753.1,
+    "p50": 15912.0,
+    "p95": 17124.0,
+    "p99": 17127.0,
+    "max": 17127.0
+  },
+  "completion_tokens": {
+    "n": 20,
+    "mean": 409.3,
+    "p50": 296.0,
+    "p95": 869.0,
+    "p99": 871.0,
+    "max": 871.0
+  },
+  "ttft_s": {
+    "n": 20,
+    "mean": 19.019793218374254,
+    "p50": 8.425938351079822,
+    "p95": 51.46597986854613,
+    "p99": 57.14831638894975,
+    "max": 57.14831638894975
+  },
+  "tpot_s": {
+    "n": 20,
+    "mean": 0.12112198851645792,
+    "p50": 0.11755426275806549,
+    "p95": 0.16546144333457755,
+    "p99": 0.18577573873858522,
+    "max": 0.18577573873858522
+  },
+  "e2e_s": {
+    "n": 20,
+    "mean": 70.25095590846612,
+    "p50": 53.990055007860065,
+    "p95": 166.65120560117066,
+    "p99": 167.16981947049499,
+    "max": 167.16981947049499
+  },
+  "timing_definition": "TTFT=first nonempty content/reasoning chunk; TPOT=(E2E-TTFT)/(native completion_tokens-1); request-equal mean",
+  "timing_scope": "HTTP client service latency; includes scheduling/network, not a pure GPU kernel timer",
+  "quality": "Score separately with kvbench_longcontext.scoring; caps remain included",
+  "id": "r01_hotpotqa_C8",
+  "dataset": "hotpotqa",
+  "repeat": 1,
+  "concurrency": 8,
+  "method": "p211_adaptive",
+  "generation_budget_policy": "remaining-context",
+  "request_max_tokens": null,
+  "remaining_context_tokens_local": {
+    "n": 200,
+    "mean": 19313.545,
+    "p50": 17700.0,
+    "p95": 27382.0,
+    "p99": 29386.0,
+    "max": 30862.0
+  },
+  "remaining_context_tokens_native": {
+    "n": 20,
+    "mean": 18014.9,
+    "p50": 16848.0,
+    "p95": 23642.0,
+    "p99": 25422.0,
+    "max": 25422.0
+  },
+  "native_max_model_len": 32768,
+  "native_kv_capacity_tokens": 276224,
+  "request_timeout": 0.0,
+  "unmeasured_long_warmup_requests": 2,
+  "unmeasured_long_warmup_output_cap": 32,
+  "warmup_note": "same frozen long prompts and point concurrency; APC off; a 32-token warmup is not proof of full steady state",
+  "preemptions_delta": 0.0
+}

@@ -1,0 +1,9 @@
+{
+  "status": "completed",
+  "arms": {
+    "parent": "completed",
+    "p211_full": "completed",
+    "p211_adaptive": "completed"
+  },
+  "completed_arms": 3
+}

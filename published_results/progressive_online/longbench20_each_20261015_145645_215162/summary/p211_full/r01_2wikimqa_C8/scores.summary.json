@@ -1,0 +1,78 @@
+{
+  "expected_tasks": 20,
+  "observed_tasks": 20,
+  "scored_tasks": 20,
+  "missing_tasks": 0,
+  "invalid_response_tasks": 0,
+  "unscored_tasks": 0,
+  "missing_case_ids": [],
+  "invalid_case_ids": [],
+  "evaluation_complete": true,
+  "task_score_0_100": 86.91666666666666,
+  "partial_available_score_0_100": 86.91666666666666,
+  "all_expected_zero_filled_score_0_100": 86.91666666666666,
+  "score_name": "qa_f1",
+  "score_is_binary_accuracy": false,
+  "aggregation": "mean of per-case max over references",
+  "official_word_length_bins": {
+    "0-4k": {
+      "expected": 10,
+      "scored": 10,
+      "score_0_100": 90.0
+    },
+    "4-8k": {
+      "expected": 7,
+      "scored": 7,
+      "score_0_100": 86.42857142857143
+    },
+    "8k+": {
+      "expected": 3,
+      "scored": 3,
+      "score_0_100": 77.77777777777777
+    }
+  },
+  "bin_unit": "original LongBench English words, not local tokenizer tokens",
+  "local_input_token_bins": {
+    "0-4096": {
+      "expected": 4,
+      "scored": 4,
+      "score_0_100": 100.0,
+      "mean_effective_input_tokens": 1861.75,
+      "truncated_tasks": 0
+    },
+    "4096-8192": {
+      "expected": 11,
+      "scored": 11,
+      "score_0_100": 84.0909090909091,
+      "mean_effective_input_tokens": 6134.545454545455,
+      "truncated_tasks": 0
+    },
+    "8192-16384": {
+      "expected": 5,
+      "scored": 5,
+      "score_0_100": 82.66666666666666,
+      "mean_effective_input_tokens": 11290.4,
+      "truncated_tasks": 0
+    },
+    "16384-24576": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    },
+    "24576+": {
+      "expected": 0,
+      "scored": 0,
+      "score_0_100": null,
+      "mean_effective_input_tokens": null,
+      "truncated_tasks": 0
+    }
+  },
+  "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+  "id": "r01_2wikimqa_C8",
+  "dataset": "2wikimqa",
+  "repeat": 1,
+  "concurrency": 8,
+  "response_file_sha256": "b9a4bee232a40db900b6ce48e44e119b9f6278162eea1c56531bbb9921d380cf"
+}
