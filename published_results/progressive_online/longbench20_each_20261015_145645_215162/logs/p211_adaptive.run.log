@@ -1,0 +1,6 @@
+{"point": "r01_qasper_C8", "measurement_complete": true, "request_window_s": 111.61820178292692, "length_capped": 0}
+{"point": "r01_multifieldqa_en_C8", "measurement_complete": true, "request_window_s": 132.43977159820497, "length_capped": 0}
+{"point": "r01_hotpotqa_C8", "measurement_complete": true, "request_window_s": 188.1858417633921, "length_capped": 0}
+{"point": "r01_2wikimqa_C8", "measurement_complete": true, "request_window_s": 106.00520604103804, "length_capped": 0}
+{"point": "r01_gov_report_C8", "measurement_complete": true, "request_window_s": 223.9687378294766, "length_capped": 0}
+{"point": "r01_passage_retrieval_en_C8", "measurement_complete": true, "request_window_s": 173.76901574246585, "length_capped": 0}

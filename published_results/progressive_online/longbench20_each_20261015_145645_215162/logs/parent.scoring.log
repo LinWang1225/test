@@ -1,0 +1,470 @@
+[
+  {
+    "expected_tasks": 20,
+    "observed_tasks": 20,
+    "scored_tasks": 20,
+    "missing_tasks": 0,
+    "invalid_response_tasks": 0,
+    "unscored_tasks": 0,
+    "missing_case_ids": [],
+    "invalid_case_ids": [],
+    "evaluation_complete": true,
+    "task_score_0_100": 34.54722415395579,
+    "partial_available_score_0_100": 34.54722415395579,
+    "all_expected_zero_filled_score_0_100": 34.54722415395579,
+    "score_name": "qa_f1",
+    "score_is_binary_accuracy": false,
+    "aggregation": "mean of per-case max over references",
+    "official_word_length_bins": {
+      "0-4k": {
+        "expected": 15,
+        "scored": 15,
+        "score_0_100": 32.69149337995021
+      },
+      "4-8k": {
+        "expected": 5,
+        "scored": 5,
+        "score_0_100": 40.11441647597255
+      },
+      "8k+": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null
+      }
+    },
+    "bin_unit": "original LongBench English words, not local tokenizer tokens",
+    "local_input_token_bins": {
+      "0-4096": {
+        "expected": 10,
+        "scored": 10,
+        "score_0_100": 29.037240069925314,
+        "mean_effective_input_tokens": 3011.8,
+        "truncated_tasks": 0
+      },
+      "4096-8192": {
+        "expected": 9,
+        "scored": 9,
+        "score_0_100": 33.39689804220697,
+        "mean_effective_input_tokens": 5988.888888888889,
+        "truncated_tasks": 0
+      },
+      "8192-16384": {
+        "expected": 1,
+        "scored": 1,
+        "score_0_100": 100.0,
+        "mean_effective_input_tokens": 9353.0,
+        "truncated_tasks": 0
+      },
+      "16384-24576": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      },
+      "24576+": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      }
+    },
+    "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+    "id": "r01_qasper_C8",
+    "dataset": "qasper",
+    "repeat": 1,
+    "concurrency": 8,
+    "response_file_sha256": "e412bcc5ffb2851b3917fc96ef132ca1752caa5e3eaa267436f73a047254103a"
+  },
+  {
+    "expected_tasks": 20,
+    "observed_tasks": 20,
+    "scored_tasks": 20,
+    "missing_tasks": 0,
+    "invalid_response_tasks": 0,
+    "unscored_tasks": 0,
+    "missing_case_ids": [],
+    "invalid_case_ids": [],
+    "evaluation_complete": true,
+    "task_score_0_100": 53.30723310073817,
+    "partial_available_score_0_100": 53.30723310073817,
+    "all_expected_zero_filled_score_0_100": 53.30723310073817,
+    "score_name": "qa_f1",
+    "score_is_binary_accuracy": false,
+    "aggregation": "mean of per-case max over references",
+    "official_word_length_bins": {
+      "0-4k": {
+        "expected": 11,
+        "scored": 11,
+        "score_0_100": 62.793681597509355
+      },
+      "4-8k": {
+        "expected": 7,
+        "scored": 7,
+        "score_0_100": 48.23975934079383
+      },
+      "8k+": {
+        "expected": 2,
+        "scored": 2,
+        "score_0_100": 18.867924528301888
+      }
+    },
+    "bin_unit": "original LongBench English words, not local tokenizer tokens",
+    "local_input_token_bins": {
+      "0-4096": {
+        "expected": 6,
+        "scored": 6,
+        "score_0_100": 62.10587657956079,
+        "mean_effective_input_tokens": 2674.3333333333335,
+        "truncated_tasks": 0
+      },
+      "4096-8192": {
+        "expected": 7,
+        "scored": 7,
+        "score_0_100": 57.9735051915503,
+        "mean_effective_input_tokens": 5718.571428571428,
+        "truncated_tasks": 0
+      },
+      "8192-16384": {
+        "expected": 7,
+        "scored": 7,
+        "score_0_100": 41.099266599506656,
+        "mean_effective_input_tokens": 10939.57142857143,
+        "truncated_tasks": 0
+      },
+      "16384-24576": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      },
+      "24576+": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      }
+    },
+    "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+    "id": "r01_multifieldqa_en_C8",
+    "dataset": "multifieldqa_en",
+    "repeat": 1,
+    "concurrency": 8,
+    "response_file_sha256": "7b6ab636d17e65674da69f668d05512efc51f35395ef53816536d8001dcfe0c2"
+  },
+  {
+    "expected_tasks": 20,
+    "observed_tasks": 20,
+    "scored_tasks": 20,
+    "missing_tasks": 0,
+    "invalid_response_tasks": 0,
+    "unscored_tasks": 0,
+    "missing_case_ids": [],
+    "invalid_case_ids": [],
+    "evaluation_complete": true,
+    "task_score_0_100": 83.16017316017316,
+    "partial_available_score_0_100": 83.16017316017316,
+    "all_expected_zero_filled_score_0_100": 83.16017316017316,
+    "score_name": "qa_f1",
+    "score_is_binary_accuracy": false,
+    "aggregation": "mean of per-case max over references",
+    "official_word_length_bins": {
+      "0-4k": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null
+      },
+      "4-8k": {
+        "expected": 3,
+        "scored": 3,
+        "score_0_100": 100.0
+      },
+      "8k+": {
+        "expected": 17,
+        "scored": 17,
+        "score_0_100": 80.18843901196841
+      }
+    },
+    "bin_unit": "original LongBench English words, not local tokenizer tokens",
+    "local_input_token_bins": {
+      "0-4096": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      },
+      "4096-8192": {
+        "expected": 1,
+        "scored": 1,
+        "score_0_100": 100.0,
+        "mean_effective_input_tokens": 7346.0,
+        "truncated_tasks": 0
+      },
+      "8192-16384": {
+        "expected": 11,
+        "scored": 11,
+        "score_0_100": 83.01849665486029,
+        "mean_effective_input_tokens": 13912.727272727272,
+        "truncated_tasks": 0
+      },
+      "16384-24576": {
+        "expected": 8,
+        "scored": 8,
+        "score_0_100": 81.25,
+        "mean_effective_input_tokens": 16834.5,
+        "truncated_tasks": 0
+      },
+      "24576+": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      }
+    },
+    "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+    "id": "r01_hotpotqa_C8",
+    "dataset": "hotpotqa",
+    "repeat": 1,
+    "concurrency": 8,
+    "response_file_sha256": "db3ca68c3a12d7a722bf133605c760316db0126958f45708a4edc0014e9700c6"
+  },
+  {
+    "expected_tasks": 20,
+    "observed_tasks": 20,
+    "scored_tasks": 20,
+    "missing_tasks": 0,
+    "invalid_response_tasks": 0,
+    "unscored_tasks": 0,
+    "missing_case_ids": [],
+    "invalid_case_ids": [],
+    "evaluation_complete": true,
+    "task_score_0_100": 88.58333333333333,
+    "partial_available_score_0_100": 88.58333333333333,
+    "all_expected_zero_filled_score_0_100": 88.58333333333333,
+    "score_name": "qa_f1",
+    "score_is_binary_accuracy": false,
+    "aggregation": "mean of per-case max over references",
+    "official_word_length_bins": {
+      "0-4k": {
+        "expected": 10,
+        "scored": 10,
+        "score_0_100": 90.0
+      },
+      "4-8k": {
+        "expected": 7,
+        "scored": 7,
+        "score_0_100": 86.42857142857143
+      },
+      "8k+": {
+        "expected": 3,
+        "scored": 3,
+        "score_0_100": 88.88888888888887
+      }
+    },
+    "bin_unit": "original LongBench English words, not local tokenizer tokens",
+    "local_input_token_bins": {
+      "0-4096": {
+        "expected": 4,
+        "scored": 4,
+        "score_0_100": 100.0,
+        "mean_effective_input_tokens": 1861.75,
+        "truncated_tasks": 0
+      },
+      "4096-8192": {
+        "expected": 11,
+        "scored": 11,
+        "score_0_100": 84.0909090909091,
+        "mean_effective_input_tokens": 6134.545454545455,
+        "truncated_tasks": 0
+      },
+      "8192-16384": {
+        "expected": 5,
+        "scored": 5,
+        "score_0_100": 89.33333333333334,
+        "mean_effective_input_tokens": 11290.4,
+        "truncated_tasks": 0
+      },
+      "16384-24576": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      },
+      "24576+": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      }
+    },
+    "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+    "id": "r01_2wikimqa_C8",
+    "dataset": "2wikimqa",
+    "repeat": 1,
+    "concurrency": 8,
+    "response_file_sha256": "fd449d8b081a4d73d150fe4dc28754840a1a3cc0589ad4a6e963b31c685bac3f"
+  },
+  {
+    "expected_tasks": 20,
+    "observed_tasks": 20,
+    "scored_tasks": 20,
+    "missing_tasks": 0,
+    "invalid_response_tasks": 0,
+    "unscored_tasks": 0,
+    "missing_case_ids": [],
+    "invalid_case_ids": [],
+    "evaluation_complete": true,
+    "task_score_0_100": 28.97725066099636,
+    "partial_available_score_0_100": 28.97725066099636,
+    "all_expected_zero_filled_score_0_100": 28.97725066099636,
+    "score_name": "rouge_l",
+    "score_is_binary_accuracy": false,
+    "aggregation": "mean of per-case max over references",
+    "official_word_length_bins": {
+      "0-4k": {
+        "expected": 6,
+        "scored": 6,
+        "score_0_100": 27.826609146365897
+      },
+      "4-8k": {
+        "expected": 7,
+        "scored": 7,
+        "score_0_100": 29.638888763870312
+      },
+      "8k+": {
+        "expected": 7,
+        "scored": 7,
+        "score_0_100": 29.30187671351995
+      }
+    },
+    "bin_unit": "original LongBench English words, not local tokenizer tokens",
+    "local_input_token_bins": {
+      "0-4096": {
+        "expected": 3,
+        "scored": 3,
+        "score_0_100": 26.390104012058273,
+        "mean_effective_input_tokens": 3065.6666666666665,
+        "truncated_tasks": 0
+      },
+      "4096-8192": {
+        "expected": 10,
+        "scored": 10,
+        "score_0_100": 29.526156418911274,
+        "mean_effective_input_tokens": 6232.0,
+        "truncated_tasks": 0
+      },
+      "8192-16384": {
+        "expected": 6,
+        "scored": 6,
+        "score_0_100": 30.293813945858645,
+        "mean_effective_input_tokens": 12741.166666666666,
+        "truncated_tasks": 0
+      },
+      "16384-24576": {
+        "expected": 1,
+        "scored": 1,
+        "score_0_100": 23.350253319487756,
+        "mean_effective_input_tokens": 19259.0,
+        "truncated_tasks": 0
+      },
+      "24576+": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      }
+    },
+    "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+    "id": "r01_gov_report_C8",
+    "dataset": "gov_report",
+    "repeat": 1,
+    "concurrency": 8,
+    "response_file_sha256": "73b536bd7c70cadaa53d21be6b2f0a2029ecf2bc4f47211868f1946425d9d77b"
+  },
+  {
+    "expected_tasks": 20,
+    "observed_tasks": 20,
+    "scored_tasks": 20,
+    "missing_tasks": 0,
+    "invalid_response_tasks": 0,
+    "unscored_tasks": 0,
+    "missing_case_ids": [],
+    "invalid_case_ids": [],
+    "evaluation_complete": true,
+    "task_score_0_100": 100.0,
+    "partial_available_score_0_100": 100.0,
+    "all_expected_zero_filled_score_0_100": 100.0,
+    "score_name": "retrieval",
+    "score_is_binary_accuracy": false,
+    "aggregation": "mean of per-case max over references",
+    "official_word_length_bins": {
+      "0-4k": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null
+      },
+      "4-8k": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null
+      },
+      "8k+": {
+        "expected": 20,
+        "scored": 20,
+        "score_0_100": 100.0
+      }
+    },
+    "bin_unit": "original LongBench English words, not local tokenizer tokens",
+    "local_input_token_bins": {
+      "0-4096": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      },
+      "4096-8192": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      },
+      "8192-16384": {
+        "expected": 20,
+        "scored": 20,
+        "score_0_100": 100.0,
+        "mean_effective_input_tokens": 13123.8,
+        "truncated_tasks": 0
+      },
+      "16384-24576": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      },
+      "24576+": {
+        "expected": 0,
+        "scored": 0,
+        "score_0_100": null,
+        "mean_effective_input_tokens": null,
+        "truncated_tasks": 0
+      }
+    },
+    "local_bin_definition": "lower inclusive, upper exclusive; effective prompt tokens including the actual chat template",
+    "id": "r01_passage_retrieval_en_C8",
+    "dataset": "passage_retrieval_en",
+    "repeat": 1,
+    "concurrency": 8,
+    "response_file_sha256": "b22eb8946cfc3a8b855b2d8ac53f834161b948c8d72492fd6fd3939840395c6e"
+  }
+]
