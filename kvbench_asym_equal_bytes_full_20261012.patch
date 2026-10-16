@@ -1,0 +1,2470 @@
+diff --git a/kvbench_asym/.gitignore b/kvbench_asym/.gitignore
+new file mode 100644
+index 0000000..43ae0e2
+--- /dev/null
++++ b/kvbench_asym/.gitignore
+@@ -0,0 +1,2 @@
++__pycache__/
++*.py[cod]
+diff --git a/kvbench_asym/LICENSE.LongBench b/kvbench_asym/LICENSE.LongBench
+new file mode 100644
+index 0000000..d339461
+--- /dev/null
++++ b/kvbench_asym/LICENSE.LongBench
+@@ -0,0 +1,21 @@
++MIT License
++
++Copyright (c) 2023 THU-KEG & Zhipu AI
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+diff --git a/kvbench_asym/README.zh-CN.md b/kvbench_asym/README.zh-CN.md
+new file mode 100644
+index 0000000..b3b3a72
+--- /dev/null
++++ b/kvbench_asym/README.zh-CN.md
+@@ -0,0 +1,324 @@
++# 等逻辑读取量的 K/V 非对称全样本实验 v1
++
++## 1. 目的与边界
++
++本补丁回答：在**同一个真实 Query/KV、同一组可控 chunk、完全相同的量化码读取字节数**下，把 Residual 预算偏向 K、平均分配、偏向 V，哪种注意力输出误差更小？
++
++这是全样本**机制/敏感性实验**。每题只运行一次原生 KVarN K4V4 Parent，采集指定位置的真实 Q/KV；然后在 CPU float64 上比较所有读取掩码。选择器没有注入模型生成。
++
++因此：
++
++- 有真实模型激活，不使用随机 KV 代替全量数据。
++- 默认 LongBench v1 **21 个子任务的全部记录**，不是旧批次六任务的 1,147 个合格样本。
++- 可增加已有冻结的 MATH-500 全部 500 题、HumanEval 全部 164 题。
++- 不产生非对称策略的任务准确率、HumanEval pass@1、TPOT 或吞吐。
++- 等的是**选中量化码的逻辑载荷**，不是实测 DRAM 事务，也不是包含排序、QK 重算、临时张量后的总内存流量。
++- 使用 Parent 轨迹作同输入反事实，不代表各策略自由生成后的轨迹分布。
++- 仅支持已验证接口范围：Qwen3-4B、32 Query heads / 8 KV heads、head_dim=128、K4V4/G128。
++
++补丁只新增 `kvbench_asym/`，不覆盖 `kvbench_residual/`、`kvbench_residual_diag/` 或旧结果。
++
++## 2. 前置条件
++
++以仓库提交 `5702570bb3c182bc9168c5d8434f7f95bcc7da6d` 为核对基线。
++
++需要已有的两个包：
++
++```text
++kvbench_residual/
++kvbench_residual_diag/
++```
++
++运行脚本读取已有成功的 LongContext V3 suite：
++
++```text
++results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json
++```
++
++从中复用本地模型路径、server_env、KIT、上下文窗口、采样和 GPU 服务参数。不重新下载模型/数据，不安装新 CUDA/vLLM，不停止其他服务。
++
++源码哈希不匹配时明确失败；不要删除 pin 检查来强行运行。新包不会应用之前的源码补丁，也不会把未安装依赖静默替换成近似版本。
++
++## 3. 应用与检查
++
++```bash
++cd /home/wanglin/kvbench-3090-cu126
++PATCH="$PWD/kvbench_asym_equal_bytes_full_20261012.patch"
++git apply --check "$PATCH"
++git apply "$PATCH"
++
++bash kvbench_asym/run_equal_bytes.sh --plan
++```
++
++`--plan`读取源数据数量/哈希和模型配置，不加载模型权重、不创建结果目录、不启动 GPU。实际题数以计划和 `inputs/coverage.csv` 为准。
++
++Shell 使用现有 `/home/wanglin/miniconda3`；路径不同时可设置 `CONDA_BASE`。它自动激活 suite 指定的服务环境并 source 原 `KIT/env.sh`。BLAS 线程默认 4，可在启动前用 `AR_ASYM_BLAS_THREADS` 显式设置。
++
++### 首次建议做贯通检查
++
++```bash
++bash kvbench_asym/run_equal_bytes.sh \
++  --out results/asym_equal_bytes/pilot01 \
++  --case-limit 3 \
++  --layers 0 35 \
++  --decode-calls 0 15 \
++  --diagnostic-max-tokens 32
++```
++
++`--case-limit`是**所有任务合并后的总上限**，不是每任务抽 3 题。它只用于贯通检查，可能只涉及最先的任务；正式实验省略此参数，默认 0，表示全部记录。
++
++## 4. 正式扩大到 LongBench v1 全部 21 子任务
++
++```bash
++cd /home/wanglin/kvbench-3090-cu126
++OUT="$PWD/results/asym_equal_bytes/longbench21_$(date +%Y%m%d_%H%M%S)_$$"
++mkdir -p "$(dirname "$OUT")"
++
++nohup bash kvbench_asym/run_equal_bytes.sh \
++  --datasets longbench_all \
++  --out "$OUT" \
++  >"${OUT}.driver.log" 2>&1 &
++
++printf 'PID=%s\n结果=%s\n日志=%s\n' "$!" "$OUT" "${OUT}.driver.log"
++```
++
++不需要后台运行时直接执行同一个 `bash ...` 命令即可。
++
++查看：
++
++```bash
++tail -f "${OUT}.driver.log"
++cat "$OUT/status.json"
++```
++
++原始源路径默认使用 V3 suite 的 `settings.source`。这必须是完整 LongBench v1 `data.zip`，或者含 21 个原始 JSONL 的目录。需要改路径时加：
++
++```bash
++--longbench-source /绝对路径/data.zip
++```
++
++缺少任意一个子任务（包括 lcc、repobench-p）都会失败，**不会退回六任务并声称全量**。仅显式选择 `--datasets longbench_frozen` 才复用旧冻结清单的全部任务/全部记录；它与 LongBench-21 的覆盖范围分别标注，不可混称。
++
++### “全量”和超长输入的明确约定
++
++默认 `--overflow head-tail`：处理全部原始记录；超过 `max_model_len - diagnostic_max_tokens` 的输入进行首尾保留/中间移除，并记录原始长度、有效长度、截断标记和提示词哈希。
++
++**全量记录不等于所有原文未经截断。** 这与旧六任务“不裁剪、排除超窗输入”的协议不同。该实验不是官方 LongBench 成绩复现；中文、few-shot、代码任务也不因指标不支持被删掉，因为这里只测 attention 误差。
++
++要求不改变任意输入时使用 `--overflow error`。发现超窗会在准备阶段报错，不会暗中排除该题或冒称全部完成。扩大上下文窗口还需模型和服务真正支持，不能只改输入长度计数。
++
++默认所有样本都进入生成，**不设置最短输入阈值**。没有可控量化历史的 trace 会保留覆盖信息，但不作为“零误差、方法成功”的样本混入非对称比较。
++
++## 5. MATH-500 与 HumanEval
++
++推荐另开批次，为短提示词保留更长的真实生成前缀：
++
++```bash
++bash kvbench_asym/run_equal_bytes.sh \
++  --datasets math_500 humaneval \
++  --diagnostic-max-tokens 1024 \
++  --decode-calls 0 63 255 511 \
++  --out results/asym_equal_bytes/math_humaneval01
++```
++
++默认读取 `data/real_v5/manifest.json` 和两份 JSONL，核对哈希与 500/164 的完整数量。更换文件夹使用 `--real-data /绝对路径/real_v5`。
++
++只使用已冻结的用户 messages，不把 reference、solution、测试程序拼接到输入。**不执行模型生成的 Python 代码**，不需要 Docker/unshare 评分环境，也不声称获得 HumanEval pass@1。
++
++1024 是本次诊断的输出上限，不强制生成 1024 tokens；自然 EOS 之前没有达到的采集位置明确记为缺失。不会为了让短题拥有 KV 历史而添加无关前缀或强制续写。
++
++可以在同一批次覆盖三者：
++
++```bash
++bash kvbench_asym/run_equal_bytes.sh \
++  --datasets longbench_all math_500 humaneval \
++  --diagnostic-max-tokens 1024 \
++  --decode-calls 0 63 255 511 \
++  --out results/asym_equal_bytes/all_datasets01
++```
++
++注意该命令也把 LongBench 的生成预留改为 1024，可能使更多长输入被 head-tail 裁剪。分批运行更便于控制协议和阅读结果。不要在同一 GPU 上并行启动这两个模型服务。
++
++## 6. 默认实验矩阵
++
++| 配置项 | 默认值 |
++|---|---|
++| 数据 | LongBench v1 21 子任务，全部原始记录 |
++| 本地模型 | V3 suite 指定的 Qwen3-4B |
++| 生成轨迹 | 原生 KVarN K4V4 Parent，C1、eager、APC 关闭 |
++| 采样/thinking | 复用 suite；生成前缀 cap 默认为 96 |
++| 缓存层位 | 根据本地层数选 4 个 cache ordinal；36 层时 0/12/24/35 |
++| decode 调用 | 0/15/63；第一个生成 token 来自 prefill，decode 0 产生第二个 token |
++| KV heads | 全部 8 个；每组处理共享的 4 个真实 Query heads |
++| 分析 chunk | 32 tokens；可显式选择 16/32/64 |
++| 总残差预算 | rho_K+rho_V = 1.0、1.1 |
++| K 分配优先级 | 0 / 0.25 / 0.5 / 0.75 / 1 |
++| 选择策略 | anchor_mass、staged_mass、random |
++| random 掩码种子 | 42/43/44；不是三个独立生成种子 |
++| 控制组 | 全读、可控块 Anchor-only |
++| GPU/端口 | 0 / 18080 |
++
++`cache_ordinal`是原有观察钩子按照首次出现的缓存张量分配的序号，不冒称已经验证其等于模型层名称。记录中保留该限制。
++
++`--layers`可传全部层序号，但默认“全样本”不是“所有层所有生成 token 全采集”。存储上界和每题抓取点数随采集矩阵变化，`--plan`会打印。
++
++## 7. 严格等逻辑字节如何实现
++
++对于 K4V4、2+2 表示，每个完整 chunk 的 K Residual 和 V Residual 各有：
++
++```text
++packet_bytes = BLOCK_N * head_dim / 4
++```
++
++默认 32×128/4 = 1024 bytes。只把完整且 K/V 单次读取字节相同的 quantized chunks 作为可控候选。部分边界 chunk 的 K/V 全读；FP16 sink/tail 始终全读。它们没有被删除，成本对所有配对策略一致。
++
++设候选完整 chunks 数 N，总预算参数 t = rho_K+rho_V。整数动作预算：
++
++```text
++M = floor(t*N)
++K_min = max(0, M-N)
++K_max = min(M, N)
++K_count = round_half_up(K_min + share*(K_max-K_min))
++V_count = M-K_count
++```
++
++因此，不同 K priority 的 K/V 残差合计始终是 **M 个 packet**。对称预算的 M 为奇数时，K/V 可能相差一个 packet，保留实际值，绝不伪造“完全相同的小数比例”。
++
++N 足够且整除时，t=1.1 对应：
++
++| K priority | K 残差读率 | V 残差读率 | K/V 码合计平均读取 |
++|---:|---:|---:|---:|
++| 0 | 10% | 100% | 6.2 bit / 原 8 bit |
++| 0.25 | 32.5% | 77.5% | 6.2 bit / 原 8 bit |
++| 0.5 | 55% | 55% | 6.2 bit / 原 8 bit |
++| 0.75 | 77.5% | 32.5% | 6.2 bit / 原 8 bit |
++| 1 | 100% | 10% | 6.2 bit / 原 8 bit |
++
++这里的 bit 指“一对 K/V 标量的合计码位”，不是每个标量都是 6.2 bit。
++
++分析器和汇总器都会再次检查配对字节相等；不相等直接失败。scale/pool 的固定逻辑成本单列。没有引入真实非对称 GPU kernel，因此这不是 GPU DRAM 流量相等的证明。
++
++## 8. 选择器的信息边界
++
++- `anchor_mass`：用当前 Query 与所有 K Anchor 得到的块 attention mass 排序，GQA 取真实 query heads 的最大块质量，K/V 各选固定数量。
++- `staged_mass`：先同样选 K；再用已选择的完整 K 与其他 K Anchor 形成注意力，排序选择 V。未被选择的 K Residual 不用于 V 排序。
++- `random`：固定随机排序，仍严格读取预算规定的块数。
++
++没有 `best-prefix`、没有 `oracle_stop`，没有用完整参考输出决定“再读一个是否更好”。完整输出仅在掩码确定后用于误差评估。
++
++离线分析为计算输出误差会读取原始完整快照；这里验证的是**选择规则的信息约束与载荷预算**。它不是一个已经通过性能验证的在线 top-k 实现。全局排序/第二阶段的缓存访问开销尚未计入。
++
++## 9. 大样本磁盘与续跑
++
++默认对每题执行：
++
++```text
++arm 钩子 → 原生 Parent 生成/抓取 → 关闭 arm
++→ CPU 分析全部 trace 和 8 个 KV heads
++→ 保存指标、掩码、验证、文件哈希
++→ 提交该题 done.json
++→ 清理本次该题新采集的原始 .npz
++```
++
++**默认删除的是成功分析后的新快照，不是旧实验文件。** 一旦默认清理，就不能用这些快照重新更换选择器分析；只能阅读保存的指标/掩码，或者重新采集。
++
++需要保留原始 Query/KV 时，从第一次运行起加 `--keep-traces`，并准备足够磁盘空间；计划会给出保守未压缩上界。该参数也是续跑身份的一部分。
++
++每题快照默认硬上限 `--scratch-gib 4`。增加层/位置导致上界超限时停止，必须显式提高。失败的未提交 attempt 保留，恢复时创建新的 attempt，不暗中删除失败证据。
++
++续跑使用原来的参数和**同一个输出目录**：
++
++```bash
++bash kvbench_asym/run_equal_bytes.sh \
++  --datasets longbench_all \
++  --out "$OUT" \
++  --resume
++```
++
++已经提交的题会核验结果哈希后跳过，不重复生成。未提交的题重新执行。数据、模型/tokenizer 元数据、配置、依赖和新包代码哈希发生变化则拒绝续跑。测试日志、说明文档不影响代码身份。
++
++准备阶段单独执行可加 `--prepare-only`；之后省略该选项并加 `--resume`。
++
++## 10. 结果与判读
++
++```text
++<OUT>/
++  plan.json
++  status.json
++  selftest.log
++  inputs/
++    manifest.json
++    cases.jsonl
++    coverage.csv
++  server_<本次启动ID>/server.log
++  cases/<题目ID>/
++    done.json
++    attempt_<ID>/
++      request.json
++      capture_coverage.csv
++      traces/trace_*.json
++      analysis/
++        rows.csv.gz
++        masks.npz
++        validation.json
++        trace_metadata.json
++        receipt.json
++  comparison/
++    case_level.csv
++    case_coverage.csv
++    aggregate.csv
++    paired_vs_symmetric.csv
++    report.json
++    readout.md
++```
++
++先看 `status.json`、`inputs/coverage.csv`，确认整个输入覆盖和截断情况；再看采集覆盖。自然 EOS 导致后期位置缺失不算服务故障，但必须体现覆盖偏差；按输出 token 数应该出现的点缺失则直接失败。
++
++`validation.json`要求完整量化 float64 输出与采集的真实 GPU 输出相符，门槛为 relative Frobenius L2 ≤ 0.02 且最大元素绝对差 ≤ 0.02。此门槛只验证数据/计算路径，不是任务质量非劣阈值，更不是严格浮点认证。
++
++`paired_vs_symmetric.csv`中：
++
++- `mean_error_difference < 0`：比同载荷对称分配误差更低。
++- `bootstrap_ci95_high < 0`：该探索性、请求级重采样区间位于零以下。
++- 区间跨零：当前数据/统计尚不足以支持稳定优胜。
++
++先在每道题内平均已采集的层/head/位置，再按题等权汇总；不把几千个 head 当成几千道独立题。多个 profile 的区间未作多重比较校正，不自动宣布论文显著性。
++
++`p95_case_mean_error`是“逐题平均误差”的 P95，不是全体 head 原始误差的 P95；`mean_case_p95_error`是逐题内部 P95 的平均。逐组明细保留在各题压缩 CSV。
++
++无可控量化历史的组不进入非对称优劣比较，仍保存控制和覆盖信息。该情况下应解释为“没有测试到可选择的量化历史”，不是“所有策略都达到完美保真”。
++
++中断后生成已提交部分的汇总：
++
++```bash
++# 在原服务环境、项目根目录执行
++python -m kvbench_asym.report --run "$OUT"
++```
++
++汇总报告会同时显示计划题数和完成题数，不将部分结果标为全量。
++
++## 11. 复用已经保存的旧 trace
++
++原始 `.npz` 仍存在时，可以先不跑新模型：
++
++```bash
++python -m kvbench_asym.analyze \
++  --traces /绝对路径/旧批次/traces \
++  --out /绝对路径/新的等载荷分析目录
++```
++
++不限制为 12 个 trace 或 3 个 KV heads；使用该目录全部 trace、全部 8 个 KV heads。这种单独分析不会自动生成全数据集请求级汇总；全量 runner 会生成。
++
++## 12. 测试和未验证项
++
++交付时实际运行 56 项 CPU/模拟接口测试，覆盖等字节整数预算、边界 chunk、GQA 共享、无参考输出泄漏、全 21 子任务覆盖、输入裁剪、真实数据数量/哈希、掩码回读、断点恢复、仅清理新快照、请求级统计和模拟完整流程。
++
++未执行：RTX 3090、真实 vLLM 启动、CUDA/Triton 编译、真实模型采集、GPU 非对称选择 kernel、DRAM 性能计数器和任务评分。模拟服务测试不是 GPU 实测。
++
++完整本地测试命令：
++
++```bash
++python -m unittest discover -s kvbench_asym/tests -v
++```
++
++第一次真实运行仍需要看实际服务日志和 `validation.json`；不能跳过源码哈希或数值检查。
+diff --git a/kvbench_asym/SHA256SUMS b/kvbench_asym/SHA256SUMS
+new file mode 100644
+index 0000000..cb442ec
+--- /dev/null
++++ b/kvbench_asym/SHA256SUMS
+@@ -0,0 +1,25 @@
++6feaded4e28ea86e001a6751b4e3d960e8b7c31b9616ff9936b79297086e809b  .gitignore
++bf7f05f274d65931bdf14f060b6855f1c359b8424eb74fd3091d25de89d700c3  LICENSE.LongBench
++60118cd191cd7efebd57edaf76b31e8dbf867885aba9ebef8a6893ba801e1cac  README.zh-CN.md
++98287d9a9773165eba02175aae3d4fbdcfc79d5c4e7f176d9a5479e5cc85f997  SOURCES.md
++1780df59b9b030a8bb872c118a4a63546df49e2a2e0b119541108be8a5315fe0  TECH_NOTES.zh-CN.md
++4cf70b5bdb59817bf12fdf0a35d5485a16f460b157e662bdb6f470d55beef2d7  TEST_RESULTS.txt
++d5bb457a2bd3380cd016e5e227c523d1dc9c3fbd906286938374d29448878350  __init__.py
++62861f343b7cfcf67402fc778436ceee686a31e6d3effeee8bc3205636cbf6f8  analyze.py
++7fb615cabe1dcad45ee49c85bed5b58819d81eecd1eeb919cf206b8514cca18c  capture.py
++15c689f806bdf5d57808f68ed74bc404af419e008ea2b98861849bea8afa4584  common.py
++786a4b29044efae64046015abfc836e57b5d94472c30f33155b32c865cd93b17  dependency_pins.py
++85ef8508a61ed2579795d3379d35377c5111edf3c884a25d3bf5abce8d4ecb47  inputs.py
++ce054476d9b5f70278b4d13e169d9a9ff4481ff3eb6dcbf2aec304995a810841  longbench_prompts.json
++4cdd63e2b65948f18c98164345dbb48eea599e25f3608b371aa1f3b60160dbe1  report.py
++5a605b44231f5773a5588c0d2ed7a66449d5acecbdfb9829617fea3b66f8c13b  run.py
++588198e446c56da2ce5b56a0753a2e81c0c5113c0d0c107b29a87b98f1eb7d1a  run_equal_bytes.sh
++23e5a707bd9d5eef903138254a6356a7deb834fe49249ae3965a167179a51c38  runtime.py
++9406a6e952ab1bdbd01312b431ed80f1a9885b43d56bea67481e1387ac5cb0ff  select.py
++6caee95f172f0dce2c0ce1969c302430f301ef9b6b0b4b62d07e9e60d85464e5  tests/__init__.py
++8bcd00761cf1042cc32c7b533de0f20db029701b5f5446c25b9a732c389d8582  tests/helpers.py
++22a54347616d9370d780ec6f1c9db23f203f13920168118ab94b28dd534c9907  tests/test_inputs.py
++2d51041c754b274f17a8b0d3bbf271beb21fc74357f1a3a36fd11fa2015f9687  tests/test_mock_pipeline.py
++f13304dec5eec650782c38fc8a1dcf2a65c521416984ce70e278d2a38acceae3  tests/test_report.py
++2344cb5115aa81e3751475b08ca18228f973f6785d34d07135d32bee870522f2  tests/test_select.py
++5161b3b64e447a831f7767d6f9238e0609ed643829fbecb756032c8675d5e0e8  tests/test_workflow.py
+diff --git a/kvbench_asym/SOURCES.md b/kvbench_asym/SOURCES.md
+new file mode 100644
+index 0000000..770faef
+--- /dev/null
++++ b/kvbench_asym/SOURCES.md
+@@ -0,0 +1,58 @@
++# Sources, compatibility and scope
++
++## Existing project code
++
++Repository baseline:
++https://github.com/LinWang1225/test/commit/5702570bb3c182bc9168c5d8434f7f95bcc7da6d
++
++This additive package imports the pre-existing `kvbench_residual` and
++`kvbench_residual_diag` modules. It does not redistribute or replace them.
++Four reused diagnostic files are SHA256-pinned in `dependency_pins.py`.
++The original runtime builder separately pins the six KVarN writer/readers at:
++https://github.com/huawei-csl/KVarN/tree/7586257f1c632e63187bfacbbe21ccb51540f7b3
++
++The existing mounted two-experiment package was checked against the repository
++blob identities for common.py, math_ops.py, capture.py, run.py, runtime.py,
++diagnose.py and oracle.py before developing this additive experiment.
++
++## LongBench prompts and source
++
++`longbench_prompts.json` reproduces the 21 original LongBench v1 prompt
++strings (JSON key ordering/whitespace normalized) from:
++https://github.com/THUDM/LongBench/blob/main/LongBench/config/dataset2prompt.json
++Git blob observed: 1c85f6bc0f0df4e42131aa49a867797ee7043ecf
++
++Upstream license retained as `LICENSE.LongBench`:
++https://github.com/THUDM/LongBench/blob/main/LICENSE
++
++Original data are NOT bundled or downloaded. The runner reads the user's
++existing local official data.zip/JSONL and records each source file hash.
++Known existing dataset zip SHA256:
++cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64
++Existing frozen dataset revision:
++5e628be450b7e67fb7ae6e201bd6d8f7056f7672 (zai-org/LongBench)
++A supplied different local source is explicitly identified by its bytes and
++not silently treated as matching that known archive.
++
++## Related method, not implemented as a baseline here
++
++Read What Matters: Query-Adaptive Quantization for KV Caches (ReadKV),
++arXiv:2610.11245v1, 2026-10-08.
++https://arxiv.org/abs/2610.11245
++https://arxiv.org/html/2610.11245v1
++
++ReadKV already separates retained/read budgets and uses asymmetric K/V
++allocation units; Appendix F.8 studies GPU reader constraints including equal
++K/V rates. This package does not implement or benchmark ReadKV and does not
++claim novelty merely from unequal K/V read rates.
++
++vLLM plugin system documentation (implementation packaging context):
++https://docs.vllm.ai/en/latest/design/plugin_system/
++
++## Measurement distinction
++
++The new package compares logical selected KV-code payload at fixed captured
++Query/KV. It measures float64 attention errors, not GPU selective kernel
++latency, total physical traffic, model task scores, or a globally optimal
++allocation. The existing service is changed only inside a new private Parent
++runtime by an eager diagnostic observation hook.
+diff --git a/kvbench_asym/TECH_NOTES.zh-CN.md b/kvbench_asym/TECH_NOTES.zh-CN.md
+new file mode 100644
+index 0000000..717d3d9
+--- /dev/null
++++ b/kvbench_asym/TECH_NOTES.zh-CN.md
+@@ -0,0 +1,91 @@
++# 当前 Anchor+Residual 的源码接入、页内布局与 ReadKV 定位
++
++## 1. “行为改变”和“编辑安装文件”是两个维度
++
++改变行为意味着：生成进程实际调用新的 writer、reader、反量化、attention 或选择内核。改变安装文件意味着：把这些实现写进原 site-packages/vllm 或原 KVarN checkout。前者是方法运行所需的实现变化；后者只是部署方式之一。
++
++三种部署路线：
++
++| 路线 | 实际执行代码改变 | 原安装目录改变 |
++|---|---|---|
++| 直接修改已安装文件/原分叉源码 | 是 | 是 |
++| 私有 runtime/overlay + bootstrap 导入 | 是，仅本次服务 | 否 |
++| 独立插件注册自定义 backend、内核 | 是，选用插件的服务 | 否 |
++
++本项目目前的 AR v1 是第二种：`kvbench_residual.runtime.build_runtime`复制私有 Python runtime，对固定哈希的 writer/readers 做变换；bootstrap/PYTHONPATH 使服务和子 worker 导入私有副本。原来的安装目录不被覆盖。已编译的底层库通过受检查的符号链接复用。
++
++原环境本身已经是 KVarN 的 vLLM 分叉；不是纯官方 pip vLLM 已经原生支持这一 INT4 表示。AR v1 也不是已经完成的标准第三方插件。
++
++独立插件可以注册新的 attention backend，由该 backend 调用包内的 writer 和 Triton 内核。它仍须保证所有缓存路径一致，也要适配 cache dtype 校验、缓存规格、分配和 worker 初始化；并非挂一个 Python 回调即可改变任意内存格式。若新功能超出既有扩展接口，可能还需小范围核心适配。Triton 内核可独立 JIT；使用新的 C++/CUDA extension 时需编译对应扩展，但不等于必须重编整个 vLLM。
++
++仅在原 attention 输出上后处理、或者已经读取全 KV 后再做 mask，并没有减少 KV 从显存的访问。
++
++## 2. page 与 block table
++
++这里的 page 是 vLLM 管理的逻辑 token block，不是操作系统的 4 KB 页。
++
++当前范围下，一个逻辑 block 包含 128 个 token。`block_table[request, logical_block]` 给出该逻辑 block 对应的物理 KV 缓存块编号；同一请求的逻辑块可以映射到非连续物理块。
++
++保持 page 大小不变，是指 token 数、每层每块的记录字节数、整体外部张量约定不变。保持 block table 不变，是指逻辑块到物理块编号的映射语义不变。保持生命周期不变，是指仍按原 KVarN/vLLM 的分配、写入、FP16 tail、量化 flush、复用读取、请求结束释放规则管理；Anchor/Residual 不引入两套独立的分配、驱逐或 offload。
++
++只修改页内表示，相当于同一个物理块里有相同大小的记录，但字段内部的 bit 打包顺序不同。地址映射不需要知道这些 bit 的语义，读取/写入内核需要知道。
++
++## 3. 当前 K4V4/G128/head_dim128 的真实记录
++
++以下是一个 `(物理block, KV head)` tile；外部张量为 `[num_blocks, num_kv_heads, tile_bytes] uint8`。
++
++| 字段 | 字节偏移（含端点） | 长度 |
++|---|---:|---:|
++| K high2 位平面 | 0–4095 | 4096 B |
++| K low2 位平面 | 4096–8191 | 4096 B |
++| K s_col | 8192–8447 | 256 B |
++| K zp | 8448–8703 | 256 B |
++| K s_row | 8704–8959 | 256 B |
++| V high2 位平面 | 8960–13055 | 4096 B |
++| V low2 位平面 | 13056–17151 | 4096 B |
++| V s_col | 17152–17407 | 256 B |
++| V s_row | 17408–17663 | 256 B |
++| V zp | 17664–17919 | 256 B |
++
++每 head tile 总计 17,920 B。8 个 KV heads 在一层的一个 block 合计 143,360 B（140 KiB）；不包含 FP16 pool、临时缓冲或其他运行时开销。
++
++原生 INT4 在 K/V 码字段内每 byte 放两个 4-bit code。AR 先取同一原始码 c 的高两位 h、低两位 l；每 byte 打包四个 2-bit 值，每个字段先连续放完 high2，再连续放完 low2。它不是把 high/low 在每一行里交错存放。
++
++```text
++c = 4*h + l
++Anchor 码 = 4*h + 1.5
++Residual 码 = l - 1.5
++```
++
++实际存储的是 h/l 的整数位平面，不是另存两份 FP16 Anchor/Residual 张量。
++
++对 K：`K = (c*s_col_K + zp_K)*s_row_K`。
++对 V：`V = (c*s_row_V + zp_V)*s_col_V`。
++
++只读 high2 时，使用 Anchor 码；读取 low2 后先恢复原整数 c，再执行原反量化表达式。理论上恢复同一完整量化表示，不额外做一次残差再量化。
++
++K/V high2 都始终参加 attention。未读取的 low2 仍保存在该页内，以后其他 Query 可以再读取。FP16 sink/tail 保持原有存储。
++
++所以该表示与 Parent 都是完整 K4V4：它改变的是每次读取量，不是把存储容量再压缩一半。可用 num_gpu_blocks 仍可能受临时张量、图捕获和运行时显存测量影响，应以服务记录为准。
++
++## 4. 三轮实验使用布局的方式不同
++
++| 实验 | 生成服务中的缓存 | 选择和补读位置 |
++|---|---|---|
++| AR v1 六组正式实验 | Parent 为原格式；其余策略为 high2/low2 新布局 | 非 Parent 的实际 GPU attention 内核 |
++| 上一轮真实 trace 诊断 | 原生 Parent | 采集后独立 GPU 重放；验证 fixture 可同时持有 native/planar 两份 |
++| 本次等载荷全样本实验 | 原生 Parent | CPU float64 反事实，保存固定预算掩码；不部署新非对称 GPU 内核 |
++
++验证/诊断里临时产生两种格式，不代表正式 AR v1 维护双份 shadow cache。新补丁的 mask 数学选择等载荷，也不代表 Parent 生成服务已经真的按这些掩码跳过 GPU load。
++
++## 5. 与 ReadKV 的关系
++
++ReadKV 已经讨论存储/读取预算解耦、渐进量化、GQA 和 K/V 不同分配方式。其编码为渐进 Gaussian Lloyd tree，K 以 channel 为精度分配单位，V 以 token 为单位；当前 AR 是既有 INT4 的两级 2+2 表示，以 chunk 补读。
++
++ReadKV 的 K/V split 作为 allocator 输入，理论分配最优性针对给定每阶段预算下的代理失真，不等于全模型任务最优。附录 F.8 讨论了 GPU reader 强制等 K/V 读率的质量代价。
++
++因此“发现非对称可能更好”是本项目的验证与决策依据，但不足以单独作为相对 ReadKV 的新贡献。更有意义的后续目标是：在原生低比特缓存、分页/GQA 服务约束下，用低开销的补读和融合内核，取得同一在线策略的质量、实际流量和端到端延迟收益。
++
++ReadKV GPU 结果与灵活质量 reader 的约束不同；也不应把其单层加速直接等同 vLLM 服务 TPOT。当前 AR 尚未超过 Parent，所以也不能宣称实践效果已胜过 ReadKV。
++
++参考来源见 `SOURCES.md`。本次补丁没有实现 ReadKV 基线。
+diff --git a/kvbench_asym/TEST_RESULTS.txt b/kvbench_asym/TEST_RESULTS.txt
+new file mode 100644
+index 0000000..9f1a292
+--- /dev/null
++++ b/kvbench_asym/TEST_RESULTS.txt
+@@ -0,0 +1,240 @@
++Actual delivery tests: CPU and simulated interfaces only.
++Python source compilation: PASS
++Shell syntax (bash -n): PASS
++No CUDA/Triton compilation, real vLLM service, model inference or GPU measurements executed.
++Command: python -m unittest discover -s kvbench_asym/tests -v
++
++test_all_21_tasks_and_all_rows (test_inputs.InputTests.test_all_21_tasks_and_all_rows) ... prepared narrativeqa: 2/2, clipped=0
++prepared qasper: 2/2, clipped=0
++prepared multifieldqa_en: 2/2, clipped=0
++prepared multifieldqa_zh: 2/2, clipped=0
++prepared hotpotqa: 2/2, clipped=0
++prepared 2wikimqa: 2/2, clipped=0
++prepared musique: 2/2, clipped=0
++prepared dureader: 2/2, clipped=0
++prepared gov_report: 2/2, clipped=0
++prepared qmsum: 2/2, clipped=0
++prepared multi_news: 2/2, clipped=0
++prepared vcsum: 2/2, clipped=0
++prepared trec: 2/2, clipped=0
++prepared triviaqa: 2/2, clipped=0
++prepared samsum: 2/2, clipped=0
++prepared lsht: 2/2, clipped=0
++prepared passage_count: 2/2, clipped=0
++prepared passage_retrieval_en: 2/2, clipped=0
++prepared passage_retrieval_zh: 2/2, clipped=0
++prepared lcc: 2/2, clipped=0
++prepared repobench-p: 2/2, clipped=0
++ok
++test_clipping_preserves_count (test_inputs.InputTests.test_clipping_preserves_count) ... ok
++test_duplicate_dataset_scope_refused (test_inputs.InputTests.test_duplicate_dataset_scope_refused) ... ok
++test_duplicate_member_refused (test_inputs.InputTests.test_duplicate_member_refused) ... ok
++test_invalid_record (test_inputs.InputTests.test_invalid_record) ... ok
++test_missing_task_does_not_fallback_to_six (test_inputs.InputTests.test_missing_task_does_not_fallback_to_six) ... ok
++test_no_clipping_for_short_prompt (test_inputs.InputTests.test_no_clipping_for_short_prompt) ... ok
++test_overflow_error_explicit (test_inputs.InputTests.test_overflow_error_explicit) ... ok
++test_pilot_limit_explicit (test_inputs.InputTests.test_pilot_limit_explicit) ... prepared narrativeqa: 2/2, clipped=0
++prepared qasper: 1/2, clipped=0
++prepared multifieldqa_en: 0/2, clipped=0
++prepared multifieldqa_zh: 0/2, clipped=0
++prepared hotpotqa: 0/2, clipped=0
++prepared 2wikimqa: 0/2, clipped=0
++prepared musique: 0/2, clipped=0
++prepared dureader: 0/2, clipped=0
++prepared gov_report: 0/2, clipped=0
++prepared qmsum: 0/2, clipped=0
++prepared multi_news: 0/2, clipped=0
++prepared vcsum: 0/2, clipped=0
++prepared trec: 0/2, clipped=0
++prepared triviaqa: 0/2, clipped=0
++prepared samsum: 0/2, clipped=0
++prepared lsht: 0/2, clipped=0
++prepared passage_count: 0/2, clipped=0
++prepared passage_retrieval_en: 0/2, clipped=0
++prepared passage_retrieval_zh: 0/2, clipped=0
++prepared lcc: 0/2, clipped=0
++prepared repobench-p: 0/2, clipped=0
++ok
++test_real_data_hash_and_full_count (test_inputs.InputTests.test_real_data_hash_and_full_count) ... ok
++test_template_coverage (test_inputs.InputTests.test_template_coverage) ... ok
++test_wrong_math_count_rejected (test_inputs.InputTests.test_wrong_math_count_rejected) ... ok
++test_zip_not_extracted (test_inputs.InputTests.test_zip_not_extracted) ... ok
++test_complete_and_resume_no_repeat (test_mock_pipeline.PipelineTests.test_complete_and_resume_no_repeat) ... prepared narrativeqa: 2/2, clipped=0
++prepared qasper: 1/2, clipped=0
++prepared multifieldqa_en: 0/2, clipped=0
++prepared multifieldqa_zh: 0/2, clipped=0
++prepared hotpotqa: 0/2, clipped=0
++prepared 2wikimqa: 0/2, clipped=0
++prepared musique: 0/2, clipped=0
++prepared dureader: 0/2, clipped=0
++prepared gov_report: 0/2, clipped=0
++prepared qmsum: 0/2, clipped=0
++prepared multi_news: 0/2, clipped=0
++prepared vcsum: 0/2, clipped=0
++prepared trec: 0/2, clipped=0
++prepared triviaqa: 0/2, clipped=0
++prepared samsum: 0/2, clipped=0
++prepared lsht: 0/2, clipped=0
++prepared passage_count: 0/2, clipped=0
++prepared passage_retrieval_en: 0/2, clipped=0
++prepared passage_retrieval_zh: 0/2, clipped=0
++prepared lcc: 0/2, clipped=0
++prepared repobench-p: 0/2, clipped=0
++[1/3] narrativeqa narrativeqa/0: traces=1, missing=0
++[2/3] narrativeqa narrativeqa/1: traces=1, missing=0
++[3/3] qasper qasper/0: traces=1, missing=0
++Completed: /tmp/tmpupcefjb2/run
++ok
++test_failed_request_resumes_only_uncommitted (test_mock_pipeline.PipelineTests.test_failed_request_resumes_only_uncommitted) ... /tmp/tmpupcefjb2/run
++prepared narrativeqa: 2/2, clipped=0
++prepared qasper: 1/2, clipped=0
++prepared multifieldqa_en: 0/2, clipped=0
++prepared multifieldqa_zh: 0/2, clipped=0
++prepared hotpotqa: 0/2, clipped=0
++prepared 2wikimqa: 0/2, clipped=0
++prepared musique: 0/2, clipped=0
++prepared dureader: 0/2, clipped=0
++prepared gov_report: 0/2, clipped=0
++prepared qmsum: 0/2, clipped=0
++prepared multi_news: 0/2, clipped=0
++prepared vcsum: 0/2, clipped=0
++prepared trec: 0/2, clipped=0
++prepared triviaqa: 0/2, clipped=0
++prepared samsum: 0/2, clipped=0
++prepared lsht: 0/2, clipped=0
++prepared passage_count: 0/2, clipped=0
++prepared passage_retrieval_en: 0/2, clipped=0
++prepared passage_retrieval_zh: 0/2, clipped=0
++prepared lcc: 0/2, clipped=0
++prepared repobench-p: 0/2, clipped=0
++[1/3] narrativeqa narrativeqa/0: traces=1, missing=0
++[2/3] narrativeqa narrativeqa/1: traces=1, missing=0
++[3/3] qasper qasper/0: traces=1, missing=0
++Completed: /tmp/tmpxalawmgu/run
++ok
++test_bootstrap_reproducible (test_report.ReportTests.test_bootstrap_reproducible) ... ok
++test_constant_difference_interval (test_report.ReportTests.test_constant_difference_interval) ... ok
++test_noninformative_not_zero_success (test_report.ReportTests.test_noninformative_not_zero_success) ... ok
++test_one_case_no_fake_confidence (test_report.ReportTests.test_one_case_no_fake_confidence) ... ok
++test_paired_rows (test_report.ReportTests.test_paired_rows) ... ok
++test_payload_mismatch_stops_report (test_report.ReportTests.test_payload_mismatch_stops_report) ... ok
++test_anchor_ranking_never_uses_full_key (test_select.SelectionTests.test_anchor_ranking_never_uses_full_key) ... ok
++test_byte_equality_with_partial_boundary (test_select.SelectionTests.test_byte_equality_with_partial_boundary) ... ok
++test_endpoints (test_select.SelectionTests.test_endpoints) ... ok
++test_equal_integer_total_for_all_shares (test_select.SelectionTests.test_equal_integer_total_for_all_shares) ... ok
++test_exact_counts_all_selectors (test_select.SelectionTests.test_exact_counts_all_selectors) ... ok
++test_exact_decimal_floor (test_select.SelectionTests.test_exact_decimal_floor) ... ok
++test_fixed_budget_spent_even_when_error_worsens (test_select.SelectionTests.test_fixed_budget_spent_even_when_error_worsens) ... ok
++test_full_control_zero_error (test_select.SelectionTests.test_full_control_zero_error) ... ok
++test_invalid_method (test_select.SelectionTests.test_invalid_method) ... ok
++test_invalid_quotas (test_select.SelectionTests.test_invalid_quotas) ... ok
++test_masks_do_not_depend_on_reference_output (test_select.SelectionTests.test_masks_do_not_depend_on_reference_output) ... ok
++test_masks_pack_roundtrip (test_select.SelectionTests.test_masks_pack_roundtrip) ... ok
++test_no_quant_history_ineligible (test_select.SelectionTests.test_no_quant_history_ineligible) ... ok
++test_no_unread_key_leak_into_value_ranking (test_select.SelectionTests.test_no_unread_key_leak_into_value_ranking) ... ok
++test_partial_chunk_full_read (test_select.SelectionTests.test_partial_chunk_full_read) ... ok
++test_protected_pool (test_select.SelectionTests.test_protected_pool) ... ok
++test_quota_overspend_rejected (test_select.SelectionTests.test_quota_overspend_rejected) ... ok
++test_random_reproducible (test_select.SelectionTests.test_random_reproducible) ... ok
++test_random_seeds_distinct (test_select.SelectionTests.test_random_seeds_distinct) ... ok
++test_v_only_code_saving (test_select.SelectionTests.test_v_only_code_saving) ... ok
++test_capture_no_arm (test_workflow.WorkflowTests.test_capture_no_arm) ... ok
++test_committed_result_hash_checked (test_workflow.WorkflowTests.test_committed_result_hash_checked) ... ok
++test_complete_capture (test_workflow.WorkflowTests.test_complete_capture) ... ok
++test_defaults_full_dataset (test_workflow.WorkflowTests.test_defaults_full_dataset) ... ok
++test_duplicate_capture_rejected (test_workflow.WorkflowTests.test_duplicate_capture_rejected) ... ok
++test_duplicate_profile_refused (test_workflow.WorkflowTests.test_duplicate_profile_refused) ... usage: python -m unittest [-h] [--upstream-suite UPSTREAM_SUITE]
++                          [--datasets {longbench_all,longbench_frozen,math_500,humaneval} [{longbench_all,longbench_frozen,math_500,humaneval} ...]]
++                          [--longbench-source LONGBENCH_SOURCE]
++                          [--real-data REAL_DATA] [--out OUT] [--resume]
++                          [--plan] [--prepare-only]
++                          [--overflow {head-tail,error}]
++                          [--case-limit CASE_LIMIT]
++                          [--layers LAYERS [LAYERS ...]]
++                          [--decode-calls DECODE_CALLS [DECODE_CALLS ...]]
++                          [--diagnostic-max-tokens DIAGNOSTIC_MAX_TOKENS]
++                          [--block-n {16,32,64}]
++                          [--totals TOTALS [TOTALS ...]]
++                          [--shares SHARES [SHARES ...]]
++                          [--methods {anchor_mass,staged_mass,random} [{anchor_mass,staged_mass,random} ...]]
++                          [--mask-seeds MASK_SEEDS [MASK_SEEDS ...]]
++                          [--gpu GPU] [--port PORT]
++                          [--startup-timeout STARTUP_TIMEOUT]
++                          [--scratch-gib SCRATCH_GIB] [--keep-traces]
++                          [--bootstrap BOOTSTRAP]
++python -m unittest: error: Distinct shares/totals and the symmetric share 0.5 are required
++ok
++test_early_eos_explicit (test_workflow.WorkflowTests.test_early_eos_explicit) ... ok
++test_late_call_without_room_refused (test_workflow.WorkflowTests.test_late_call_without_room_refused) ... usage: python -m unittest [-h] [--upstream-suite UPSTREAM_SUITE]
++                          [--datasets {longbench_all,longbench_frozen,math_500,humaneval} [{longbench_all,longbench_frozen,math_500,humaneval} ...]]
++                          [--longbench-source LONGBENCH_SOURCE]
++                          [--real-data REAL_DATA] [--out OUT] [--resume]
++                          [--plan] [--prepare-only]
++                          [--overflow {head-tail,error}]
++                          [--case-limit CASE_LIMIT]
++                          [--layers LAYERS [LAYERS ...]]
++                          [--decode-calls DECODE_CALLS [DECODE_CALLS ...]]
++                          [--diagnostic-max-tokens DIAGNOSTIC_MAX_TOKENS]
++                          [--block-n {16,32,64}]
++                          [--totals TOTALS [TOTALS ...]]
++                          [--shares SHARES [SHARES ...]]
++                          [--methods {anchor_mass,staged_mass,random} [{anchor_mass,staged_mass,random} ...]]
++                          [--mask-seeds MASK_SEEDS [MASK_SEEDS ...]]
++                          [--gpu GPU] [--port PORT]
++                          [--startup-timeout STARTUP_TIMEOUT]
++                          [--scratch-gib SCRATCH_GIB] [--keep-traces]
++                          [--bootstrap BOOTSTRAP]
++python -m unittest: error: Distinct decode calls must be in [0, diagnostic-max-tokens-2]
++ok
++test_missing_capture_is_not_natural_eos (test_workflow.WorkflowTests.test_missing_capture_is_not_natural_eos) ... ok
++test_no_symmetric_control_refused (test_workflow.WorkflowTests.test_no_symmetric_control_refused) ... usage: python -m unittest [-h] [--upstream-suite UPSTREAM_SUITE]
++                          [--datasets {longbench_all,longbench_frozen,math_500,humaneval} [{longbench_all,longbench_frozen,math_500,humaneval} ...]]
++                          [--longbench-source LONGBENCH_SOURCE]
++                          [--real-data REAL_DATA] [--out OUT] [--resume]
++                          [--plan] [--prepare-only]
++                          [--overflow {head-tail,error}]
++                          [--case-limit CASE_LIMIT]
++                          [--layers LAYERS [LAYERS ...]]
++                          [--decode-calls DECODE_CALLS [DECODE_CALLS ...]]
++                          [--diagnostic-max-tokens DIAGNOSTIC_MAX_TOKENS]
++                          [--block-n {16,32,64}]
++                          [--totals TOTALS [TOTALS ...]]
++                          [--shares SHARES [SHARES ...]]
++                          [--methods {anchor_mass,staged_mass,random} [{anchor_mass,staged_mass,random} ...]]
++                          [--mask-seeds MASK_SEEDS [MASK_SEEDS ...]]
++                          [--gpu GPU] [--port PORT]
++                          [--startup-timeout STARTUP_TIMEOUT]
++                          [--scratch-gib SCRATCH_GIB] [--keep-traces]
++                          [--bootstrap BOOTSTRAP]
++python -m unittest: error: Distinct shares/totals and the symmetric share 0.5 are required
++ok
++test_package_pins_match_supplied_archive (test_workflow.WorkflowTests.test_package_pins_match_supplied_archive) ... ok
++test_path_escape_refused (test_workflow.WorkflowTests.test_path_escape_refused) ... ok
++test_prune_only_new_named_arrays (test_workflow.WorkflowTests.test_prune_only_new_named_arrays) ... ok
++test_resume_requires_directory (test_workflow.WorkflowTests.test_resume_requires_directory) ... usage: python -m unittest [-h] [--upstream-suite UPSTREAM_SUITE]
++                          [--datasets {longbench_all,longbench_frozen,math_500,humaneval} [{longbench_all,longbench_frozen,math_500,humaneval} ...]]
++                          [--longbench-source LONGBENCH_SOURCE]
++                          [--real-data REAL_DATA] [--out OUT] [--resume]
++                          [--plan] [--prepare-only]
++                          [--overflow {head-tail,error}]
++                          [--case-limit CASE_LIMIT]
++                          [--layers LAYERS [LAYERS ...]]
++                          [--decode-calls DECODE_CALLS [DECODE_CALLS ...]]
++                          [--diagnostic-max-tokens DIAGNOSTIC_MAX_TOKENS]
++                          [--block-n {16,32,64}]
++                          [--totals TOTALS [TOTALS ...]]
++                          [--shares SHARES [SHARES ...]]
++                          [--methods {anchor_mass,staged_mass,random} [{anchor_mass,staged_mass,random} ...]]
++                          [--mask-seeds MASK_SEEDS [MASK_SEEDS ...]]
++                          [--gpu GPU] [--port PORT]
++                          [--startup-timeout STARTUP_TIMEOUT]
++                          [--scratch-gib SCRATCH_GIB] [--keep-traces]
++                          [--bootstrap BOOTSTRAP]
++python -m unittest: error: --resume requires the exact existing --out directory
++ok
++test_rolling_epoch_resets_caps (test_workflow.WorkflowTests.test_rolling_epoch_resets_caps) ... ok
++
++----------------------------------------------------------------------
++Ran 56 tests in 0.691s
++
++OK
+diff --git a/kvbench_asym/__init__.py b/kvbench_asym/__init__.py
+new file mode 100644
+index 0000000..8ba508c
+--- /dev/null
++++ b/kvbench_asym/__init__.py
+@@ -0,0 +1,2 @@
++"""Equal logical-payload K/V sensitivity experiments on real Parent traces."""
++__version__ = '1.0.0'
+diff --git a/kvbench_asym/analyze.py b/kvbench_asym/analyze.py
+new file mode 100644
+index 0000000..7e7b6eb
+--- /dev/null
++++ b/kvbench_asym/analyze.py
+@@ -0,0 +1,143 @@
++"""All supplied traces/heads, fixed-budget paired masks, no GPU speed claims."""
++from __future__ import annotations
++import argparse
++import csv
++import gzip
++from pathlib import Path
++import numpy as np
++from .common import atomic_json, sha_file
++from .select import from_group, quota, choose, accounting
++
++
++def variants(methods, seeds):
++    out = [(m, 0) for m in methods if m != 'random']
++    if 'random' in methods:
++        out += [('random', int(s)) for s in seeds]
++    if not out:
++        raise ValueError('At least one selection method is required')
++    return out
++
++
++def group_rows(group, block_n, totals, shares, methods, seeds, identity, fixed_aux=0):
++    from kvbench_residual_diag.math_ops import evaluate
++    from kvbench_residual_diag.common import output_metrics
++    view = from_group(group, block_n)
++    n = int(view.eligible.sum())
++    rows, masks = [], []
++    full_masks = np.ones(group.n, bool)
++    anchor_masks = ~view.eligible
++    specs = [('control_full', 2.0, .5, 'control', 0, full_masks, full_masks),
++             ('control_anchor', 0.0, .5, 'control', 0, anchor_masks, anchor_masks)]
++    for method, seed in variants(methods, seeds):
++        # Stable per-trace/head seed, independent of allocation and reference output.
++        effective_seed = (seed + int(identity.get('seed_offset', 0))) % (2**32)
++        for total in totals:
++            for share in shares:
++                nk, nv, m = quota(n, total, share)
++                k, v = choose(view, nk, nv, method, effective_seed)
++                specs.append(('paired', float(total), float(share), method, seed, k, v))
++    equal = {}
++    for index, (kind, total, share, method, seed, k, v) in enumerate(specs):
++        acc = accounting(view, k, v)
++        if kind == 'paired':
++            nk, nv, m = quota(n, total, share)
++            expected = 2*int(view.costs[view.quantized & ~view.eligible].sum())
++            # Above protected bytes include both high and low fields. Eligible
++            # anchors are always two packets per chunk, plus m residual packets.
++            expected += (2*n+m)*view.packet_bytes
++            if acc['logical_payload_read_bytes'] != expected:
++                raise AssertionError('Byte accounting does not match the exact quota')
++            key = (method, seed, total)
++            if key in equal and equal[key] != expected:
++                raise AssertionError('Asymmetric profiles do NOT have equal payload')
++            equal[key] = expected
++        out = evaluate(group, k, v)
++        metric = output_metrics(out, group.full, group.vref)
++        row = {k:v for k,v in identity.items() if k != 'seed_offset'}
++        row.update(kind=kind, total_residual_rate=total, k_priority=share,
++                   method=method, mask_seed=seed, mask_row=index, block_n=block_n,
++                   **acc, common_scale_and_pool_bytes=fixed_aux,
++                   logical_payload_plus_common_bytes=acc['logical_payload_read_bytes']+fixed_aux,
++                   equal_payload_checked=kind == 'paired', **metric)
++        rows.append(row); masks.append(np.stack((k, v)))
++    return rows, np.packbits(np.stack(masks), axis=-1), group.n
++
++
++def analyze_paths(paths, out, totals=('1.0','1.1'), shares=('0','.25','.5','.75','1'),
++                  methods=('anchor_mass','staged_mass','random'), seeds=(42,43,44),
++                  block_n=32, row_identity=None):
++    """CPU float64 counterfactuals. No selectors are injected into generation."""
++    from kvbench_residual_diag.common import load_trace, output_metrics
++    from kvbench_residual_diag.math_ops import build_group
++    from .common import digest
++    out = Path(out); out.mkdir(parents=True, exist_ok=False)
++    paths = list(paths); validations = []; mask_arrays = {}; rows_count = 0
++    writer = None; traces_metadata = []
++    with gzip.open(out/'rows.csv.gz', 'wt', encoding='utf-8', newline='') as f:
++        for ti, path in enumerate(paths):
++            data, meta = load_trace(path)
++            traces_metadata.append(meta)
++            fulls = []
++            for hk in range(8):
++                group = build_group(data, hk, block_n)
++                fulls.append(group.full)
++                qtokens = sum(c['tokens'] for c in group.chunks if c['quantized'])
++                ptokens = sum(c['tokens'] for c in group.chunks if not c['quantized'])
++                blocks = len({c['block'] for c in group.chunks})
++                aux = 6*128*blocks+6*qtokens+4*128*ptokens
++                identity = dict(dataset=meta['request']['dataset'], case_id=meta['request']['case_id'],
++                                trace=Path(path).name, trace_arrays_sha256=meta['arrays_sha256'],
++                                cache_ordinal=meta['cache_ordinal'], decode_call_index=meta['decode_call_index'],
++                                context_tokens=meta['context_tokens'], kv_head=hk,
++                                quantized_tokens=qtokens, fp16_pool_tokens=ptokens,
++                                captured_block_n=meta['block_n'], captured_splits=meta['splits'])
++                if row_identity:
++                    identity.update(row_identity)
++                identity['seed_offset'] = int(digest([identity['dataset'], identity['case_id'],
++                            identity['cache_ordinal'], identity['decode_call_index'], hk])[:8], 16)
++                rows, masks, nchunks = group_rows(group, block_n, totals, shares, methods, seeds, identity, aux)
++                if writer is None:
++                    writer = csv.DictWriter(f, fieldnames=list(rows[0])); writer.writeheader()
++                writer.writerows(rows); rows_count += len(rows)
++                mask_arrays[f't{ti:03d}_h{hk}_packed'] = masks
++                mask_arrays[f't{ti:03d}_h{hk}_nchunks'] = np.array(nchunks, np.int64)
++                # Retain chunk geometry and mask order for audit without raw Q/KV.
++                mask_arrays[f't{ti:03d}_h{hk}_geometry'] = np.asarray(
++                    [[c['block'],c['chunk'],c['tokens'],c['quantized'],c['k_bytes'],c['v_bytes']] for c in group.chunks],np.int64)
++            full = np.concatenate(fulls, axis=0)[None, :, :]
++            metrics = output_metrics(full, data['reference_gpu_rot'])
++            passed = (metrics['relative_l2_fro'] is not None and metrics['relative_l2_fro'] <= .02
++                      and metrics['max_abs_element'] <= .02)
++            validations.append(dict(trace=Path(path).name, passed=passed, **metrics))
++            atomic_json(out/'validation.json', validations)
++            if not passed:
++                raise RuntimeError('Full-quantized/live-GPU reference mismatch; do not interpret this case: '+str(metrics))
++            print(f'  analyzed trace {ti+1}/{len(paths)}: {Path(path).name}', flush=True)
++    atomic_json(out/'validation.json', validations)
++    np.savez_compressed(out/'masks.npz', **mask_arrays)
++    atomic_json(out/'trace_metadata.json', traces_metadata)
++    receipt = dict(schema='kvbench.asym.analysis.v1', status='completed', traces=len(paths), rows=rows_count,
++                   all_captured_heads_used=True, selectors_use_full_output=False, oracle_stop=False,
++                   gpu_selective_replay_executed=False, formal_task_score=None, tpot=None, measured_dram_bytes=None,
++                   scope='Parent-trajectory CPU counterfactual; exact selected logical payload, NOT physical DRAM or online throughput',
++                   file_hashes={p.name:sha_file(p) for p in out.iterdir() if p.is_file()})
++    atomic_json(out/'receipt.json', receipt)
++    return receipt
++
++
++def main(argv=None):
++    p = argparse.ArgumentParser(description=__doc__)
++    p.add_argument('--traces', type=Path, required=True)
++    p.add_argument('--out', type=Path, required=True)
++    p.add_argument('--totals', nargs='+', default=['1.0','1.1'])
++    p.add_argument('--shares', nargs='+', default=['0','.25','.5','.75','1'])
++    p.add_argument('--block-n', type=int, choices=(16,32,64), default=32)
++    a = p.parse_args(argv)
++    paths = sorted(a.traces.glob('trace_*.json'))
++    if not paths:
++        raise ValueError('No original trace JSON files; raw arrays must still exist')
++    analyze_paths(paths, a.out, a.totals, a.shares, block_n=a.block_n)
++
++
++if __name__ == '__main__':
++    main()
+diff --git a/kvbench_asym/capture.py b/kvbench_asym/capture.py
+new file mode 100644
+index 0000000..9745552
+--- /dev/null
++++ b/kvbench_asym/capture.py
+@@ -0,0 +1,40 @@
++"""Bounded per-request capture using the already reviewed native trace hook."""
++from __future__ import annotations
++import os
++from pathlib import Path
++from kvbench_residual_diag.capture import Capture, ObservedLaunch
++from .common import read_json
++
++
++class RollingCapture(Capture):
++    def __init__(self, root, source):
++        super().__init__(root, source)
++        self.control_root = self.root
++        self.run_root = self.control_root.parent
++
++    def arm(self):
++        path = self.control_root/'arm.json'
++        if not path.exists():
++            return None
++        arm = read_json(path)
++        if arm['epoch'] != self.epoch:
++            target = Path(arm['trace_dir']).resolve(strict=True)
++            if not target.is_relative_to(self.run_root/'cases') or target.name != 'traces':
++                raise RuntimeError('Trace target must be a newly prepared case trace directory')
++            self.epoch = arm['epoch']
++            self.layers, self.calls = {}, {}
++            self.pending = None
++            self.saved = self.bytes = 0  # caps are per request, not lifetime totals
++            self.root = target
++        return arm
++
++
++def install(namespace, source):
++    root = os.environ.get('AR_DIAG_TRACE_ROOT')
++    if not root or namespace.get('AR_POLICY_NAME') != 'parent':
++        raise RuntimeError('Equal-payload capture requires the isolated native Parent runtime')
++    capture = RollingCapture(root, source)
++    for name in ('_kvarn_fused_decode_kernel','_kvarn_fused_decode_stage1','_kvarn_fused_decode_stage2'):
++        if name not in namespace:
++            raise RuntimeError('Missing reviewed native kernel: '+name)
++        namespace[name] = ObservedLaunch(namespace[name], name, capture)
+diff --git a/kvbench_asym/common.py b/kvbench_asym/common.py
+new file mode 100644
+index 0000000..45bc576
+--- /dev/null
++++ b/kvbench_asym/common.py
+@@ -0,0 +1,82 @@
++"""Small standard-library helpers; no model or CUDA imports."""
++from __future__ import annotations
++import csv
++import hashlib
++import json
++import os
++from pathlib import Path
++
++DEFAULT_SUITE = 'results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json'
++
++
++def sha_file(path):
++    h = hashlib.sha256()
++    with Path(path).open('rb') as f:
++        for b in iter(lambda: f.read(1048576), b''):
++            h.update(b)
++    return h.hexdigest()
++
++
++def canonical(value):
++    return json.dumps(value, sort_keys=True, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
++
++
++def digest(value):
++    return hashlib.sha256(canonical(value).encode()).hexdigest()
++
++
++def read_json(path):
++    return json.loads(Path(path).read_text(encoding='utf-8-sig'))
++
++
++def atomic_json(path, value):
++    p = Path(path); p.parent.mkdir(parents=True, exist_ok=True)
++    t = p.with_name(p.name + f'.tmp.{os.getpid()}')
++    with t.open('w', encoding='utf-8') as f:
++        f.write(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + '\n')
++        f.flush(); os.fsync(f.fileno())
++    t.replace(p)
++
++
++def write_csv(path, rows, fields=None):
++    rows = list(rows)
++    keys = fields or list(dict.fromkeys(k for r in rows for k in r))
++    p = Path(path); p.parent.mkdir(parents=True, exist_ok=True)
++    t = p.with_name(p.name + '.tmp')
++    with t.open('w', encoding='utf-8-sig', newline='') as f:
++        w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
++    t.replace(p)
++
++
++def jsonl(path):
++    with Path(path).open(encoding='utf-8-sig') as f:
++        for line in f:
++            if line.strip():
++                yield json.loads(line)
++
++
++def load_upstream(path):
++    p = Path(path).expanduser().resolve(strict=True)
++    u = read_json(p)
++    if (u.get('schema') != 'kvbench.longcontext.full_suite.v1' or u.get('fatal_error')
++            or not u.get('methods') or any(m.get('state') != 'completed' for m in u['methods'])):
++        raise ValueError('Use a completed LongContext V3 suite.json, not a residual suite.')
++    s = u['settings']
++    for key in ('model', 'data', 'kit', 'server_env', 'max_model_len', 'batch_tokens', 'gpu_util', 'server_seed'):
++        if key not in s:
++            raise ValueError('Missing upstream setting: ' + key)
++    return p, u
++
++
++def implementation_hashes():
++    root = Path(__file__).resolve().parent
++    return {str(p.relative_to(root)): sha_file(p) for p in sorted(root.rglob('*'))
++            if p.is_file() and (p.suffix in ('.py', '.json', '.sh')) and '__pycache__' not in p.parts}
++
++
++def inside(root, value):
++    root = Path(root).resolve()
++    p = (root / value).resolve()
++    if not p.is_relative_to(root):
++        raise ValueError('Path escapes run directory')
++    return p
+diff --git a/kvbench_asym/dependency_pins.py b/kvbench_asym/dependency_pins.py
+new file mode 100644
+index 0000000..e6fbcae
+--- /dev/null
++++ b/kvbench_asym/dependency_pins.py
+@@ -0,0 +1,2 @@
++# Reviewed against LinWang1225/test commit 5702570b and the supplied v1 archive.
++PINS = {'kvbench_residual_diag.common': 'fd0638631351597212569a76ac7cf2d6396ad35bb99db45833f210ed4b583d4c', 'kvbench_residual_diag.math_ops': '485e9d1358866ecdc612fe87be2a7918f3b5a2329fce89cd2cb35d84a1d0fbc6', 'kvbench_residual_diag.capture': 'f3e41bff451fc2286e1626fe960dfc1a1fc5f4d96ed929619ddcca9db30cfb3d', 'kvbench_residual_diag.run': '9e1d76b55e3e210ad0dc5cd481c4b062821d2ebec85fd17f3413bc583cec8027'}
+diff --git a/kvbench_asym/inputs.py b/kvbench_asym/inputs.py
+new file mode 100644
+index 0000000..477fcb7
+--- /dev/null
++++ b/kvbench_asym/inputs.py
+@@ -0,0 +1,188 @@
++"""All-record inputs. No implicit sampling, dataset substitution, or network I/O."""
++from __future__ import annotations
++import hashlib
++import json
++from pathlib import Path
++import zipfile
++from .common import atomic_json, canonical, digest, jsonl, read_json, sha_file, write_csv
++
++LONG_TASKS = ('narrativeqa', 'qasper', 'multifieldqa_en', 'multifieldqa_zh',
++              'hotpotqa', '2wikimqa', 'musique', 'dureader', 'gov_report', 'qmsum',
++              'multi_news', 'vcsum', 'trec', 'triviaqa', 'samsum', 'lsht',
++              'passage_count', 'passage_retrieval_en', 'passage_retrieval_zh', 'lcc', 'repobench-p')
++RAW_COMPLETION = {'trec', 'triviaqa', 'samsum', 'lsht', 'lcc', 'repobench-p'}
++SOURCE_ZIP_SHA256 = 'cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64'
++
++
++def source_bytes(source, name):
++    p = Path(source)
++    if p.is_dir():
++        found = [q for q in (p/(name+'.jsonl'), p/'data'/(name+'.jsonl')) if q.is_file()]
++        if len(found) != 1:
++            raise ValueError(f'Need exactly one {name}.jsonl under {p}; do not replace LongBench-21 with six tasks.')
++        return found[0].read_bytes()
++    if not zipfile.is_zipfile(p):
++        raise ValueError('LongBench source must be the local data.zip or JSONL directory')
++    with zipfile.ZipFile(p) as z:
++        found = [q for q in z.namelist() if q in (name+'.jsonl', 'data/'+name+'.jsonl')]
++        if len(found) != 1:
++            raise ValueError('Missing/ambiguous LongBench dataset: ' + name)
++        return z.read(found[0])
++
++
++def parse_records(raw, dataset):
++    records = [json.loads(x) for x in raw.decode('utf-8-sig').splitlines() if x.strip()]
++    if not records or any(not isinstance(x, dict) for x in records):
++        raise ValueError('Empty or invalid dataset: ' + dataset)
++    return records
++
++
++def inventory(suite, datasets, long_source=None, real_data='data/real_v5'):
++    if len(datasets) != len(set(datasets)):
++        raise ValueError('Duplicate datasets')
++    allowed = {'longbench_all', 'longbench_frozen', 'math_500', 'humaneval'}
++    if set(datasets)-allowed or {'longbench_all', 'longbench_frozen'} <= set(datasets):
++        raise ValueError('Select longbench_all OR longbench_frozen, plus optional math_500/humaneval')
++    s = suite['settings']; result = []
++    if 'longbench_all' in datasets:
++        source = Path(long_source or s['source']).expanduser().resolve(strict=True)
++        zip_sha = sha_file(source) if source.is_file() else None
++        for name in LONG_TASKS:
++            raw = source_bytes(source, name)
++            records = parse_records(raw, name)
++            result.append(dict(dataset=name, family='longbench_all', source=str(source), count=len(records),
++                               source_sha256=hashlib.sha256(raw).hexdigest(), zip_sha256=zip_sha,
++                               matches_known_official_zip=zip_sha == SOURCE_ZIP_SHA256))
++    if 'longbench_frozen' in datasets:
++        folder = Path(s['data']).resolve(strict=True)
++        m = read_json(folder/'manifest.json')
++        for name, info in m['datasets'].items():
++            file = folder/info['file']
++            if file.parent.resolve() != folder or sha_file(file) != info['sha256']:
++                raise ValueError('Frozen LongBench hash/path mismatch')
++            rows = list(jsonl(file))
++            if len(rows) != info['selected_count'] or [r['case_id'] for r in rows] != info['selected_case_ids']:
++                raise ValueError('Frozen LongBench count/order mismatch')
++            result.append(dict(dataset=name, family='longbench_frozen', source=str(file), count=len(rows),
++                               source_sha256=sha_file(file), manifest_sha256=sha_file(folder/'manifest.json')))
++    for name in ('math_500', 'humaneval'):
++        if name not in datasets:
++            continue
++        folder = Path(real_data).expanduser().resolve(strict=True)
++        m = read_json(folder/'manifest.json')['datasets'][name]
++        file = folder/m['file']; expected_count = 500 if name == 'math_500' else 164
++        if file.parent.resolve() != folder or sha_file(file) != m['sha256']:
++            raise ValueError(name + ' frozen data hash/path mismatch')
++        rows = list(jsonl(file))
++        if len(rows) != expected_count or m['count'] != expected_count:
++            raise ValueError(f'{name}: expected all {expected_count} records, got {len(rows)}')
++        result.append(dict(dataset=name, family=name, source=str(file), count=len(rows),
++                           source_sha256=sha_file(file), manifest_sha256=sha_file(folder/'manifest.json')))
++    return result
++
++
++def iter_source(entry):
++    name = entry['dataset']
++    if entry['family'] != 'longbench_all' and sha_file(entry['source']) != entry['source_sha256']:
++        raise ValueError('Frozen source changed since planning: ' + name)
++    if entry['family'] == 'longbench_all':
++        raw = source_bytes(entry['source'], name)
++        if hashlib.sha256(raw).hexdigest() != entry['source_sha256']:
++            raise ValueError('Source changed since planning: ' + name)
++        prompts = read_json(Path(__file__).with_name('longbench_prompts.json'))
++        for i, r in enumerate(parse_records(raw, name)):
++            if not isinstance(r.get('context'), str) or not isinstance(r.get('input'), str):
++                raise ValueError(f'{name}/{i}: missing official context/input strings')
++            yield dict(dataset=name, family='longbench_all', source_index=i,
++                       case_id=name+'/'+str(r.get('_id', r.get('id', i))),
++                       prompt=prompts[name].format(context=r['context'], input=r['input']),
++                       request_kind='completion' if name in RAW_COMPLETION else 'chat',
++                       source_record_sha256=digest(r))
++    elif entry['family'] == 'longbench_frozen':
++        for i, r in enumerate(jsonl(entry['source'])):
++            yield dict(dataset=name, family=entry['family'], source_index=i, case_id=r['case_id'],
++                       prompt=r['prompt'], request_kind=r['request_kind'], source_record_sha256=digest(r),
++                       previous_input_tokens=r['input_tokens'])
++    else:
++        for i, r in enumerate(jsonl(entry['source'])):
++            messages = r['messages']
++            if len(messages) != 1 or messages[0].get('role') != 'user' or not isinstance(messages[0].get('content'), str):
++                raise ValueError('Expected the frozen single-user real_v5 prompt')
++            # Never use reference, original_record.solution or tests in the prompt.
++            yield dict(dataset=name, family=entry['family'], source_index=i, case_id=r['case_id'],
++                       prompt=messages[0]['content'], request_kind='chat', source_record_sha256=digest(r))
++
++
++def count_input(tokenizer, prompt, kind, thinking):
++    if kind == 'completion':
++        return len(tokenizer.encode(prompt, add_special_tokens=False))
++    return len(tokenizer.apply_chat_template([{'role':'user', 'content':prompt}], tokenize=True,
++                 add_generation_prompt=True, enable_thinking=thinking))
++
++
++def fit(tokenizer, prompt, kind, thinking, limit, overflow):
++    original = count_input(tokenizer, prompt, kind, thinking)
++    if original <= limit:
++        return prompt, original, original, False
++    if overflow == 'error':
++        raise ValueError(f'Prompt length {original} exceeds {limit}; use explicit --overflow head-tail or a larger supported context')
++    if overflow != 'head-tail':
++        raise ValueError('Only error/head-tail overflow policies are supported; no hidden row skipping')
++    ids = tokenizer.encode(prompt, add_special_tokens=False)
++    keep = min(len(ids)-1, limit)
++    while keep > 0:
++        left, right = (keep+1)//2, keep//2
++        candidate = tokenizer.decode(ids[:left], skip_special_tokens=False)
++        if right:
++            candidate += tokenizer.decode(ids[-right:], skip_special_tokens=False)
++        actual = count_input(tokenizer, candidate, kind, thinking)
++        if actual <= limit:
++            return candidate, original, actual, True
++        keep -= max(1, actual-limit)
++    raise ValueError('Even the chat template cannot fit the configured window')
++
++
++def prepare(out, entries, model, window, cap, thinking, overflow, case_limit=0, tokenizer=None):
++    """Write one frozen row for EVERY selected source record, preserving order."""
++    if tokenizer is None:
++        from transformers import AutoTokenizer
++        tokenizer = AutoTokenizer.from_pretrained(str(model), local_files_only=True, trust_remote_code=False)
++    out = Path(out); out.mkdir(parents=True, exist_ok=False)
++    seen = set(); counts = []; n = 0
++    with (out/'cases.jsonl').open('w', encoding='utf-8') as stream:
++        for entry in entries:
++            selected = clipped = 0
++            for row in iter_source(entry):
++                if case_limit and n >= case_limit:
++                    break
++                key = (row['dataset'], row['case_id'])
++                if key in seen:
++                    raise ValueError('Duplicate source case: ' + str(key))
++                seen.add(key)
++                prompt, orig, effective, was_clipped = fit(tokenizer, row['prompt'], row['request_kind'], thinking, window-cap, overflow)
++                if 'previous_input_tokens' in row and orig != row['previous_input_tokens']:
++                    raise ValueError('Frozen source tokenization differs from current tokenizer/settings')
++                row.update(prompt=prompt, original_input_tokens=orig, input_tokens=effective,
++                           was_truncated=was_clipped, truncation_policy=overflow,
++                           prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
++                           sample_index=n, max_model_len=window, max_tokens=cap,
++                           remaining_context_tokens=window-effective,
++                           generation_budget_policy='diagnostic-prefix', generation_budget_tokens=cap)
++                row['case_key'] = f'{n:06d}_'+digest([row['dataset'], row['case_id']])[:12]
++                stream.write(canonical(row)+'\n')
++                selected += 1; clipped += int(was_clipped); n += 1
++            counts.append(dict(dataset=entry['dataset'], family=entry['family'], source_count=entry['count'],
++                               selected_count=selected, clipped_count=clipped,
++                               excluded_count=entry['count']-selected,
++                               exclusion_reason='explicit_global_case_limit' if selected<entry['count'] else ''))
++            print(f"prepared {entry['dataset']}: {selected}/{entry['count']}, clipped={clipped}", flush=True)
++    if n == 0:
++        raise ValueError('No input cases')
++    write_csv(out/'coverage.csv', counts)
++    m = dict(schema='kvbench.asym.inputs.v1', cases=n, source_cases=sum(e['count'] for e in entries),
++             all_source_records_selected=n == sum(e['count'] for e in entries),
++             case_limit=case_limit, cases_sha256=sha_file(out/'cases.jsonl'), entries=entries,
++             clipping_policy=overflow, coverage=counts,
++             note='All-record diagnostic prefix evaluation. Not official task scores or unchanged full-context evaluation.')
++    atomic_json(out/'manifest.json', m)
++    return m
+diff --git a/kvbench_asym/longbench_prompts.json b/kvbench_asym/longbench_prompts.json
+new file mode 100644
+index 0000000..c1e0ad3
+--- /dev/null
++++ b/kvbench_asym/longbench_prompts.json
+@@ -0,0 +1,23 @@
++{
++  "narrativeqa": "You are given a story, which can be either a novel or a movie script, and a question. Answer the question asconcisely as you can, using a single phrase if possible. Do not provide any explanation.\n\nStory: {context}\n\nNow, answer the question based on the story asconcisely as you can, using a single phrase if possible. Do not provide any explanation.\n\nQuestion: {input}\n\nAnswer:",
++  "qasper": "You are given a scientific article and a question. Answer the question as concisely as you can, using a single phrase or sentence if possible. If the question cannot be answered based on the information in the article, write \"unanswerable\". If the question is a yes/no question, answer \"yes\", \"no\", or \"unanswerable\". Do not provide any explanation.\n\nArticle: {context}\n\n Answer the question based on the above article as concisely as you can, using a single phrase or sentence if possible. If the question cannot be answered based on the information in the article, write \"unanswerable\". If the question is a yes/no question, answer \"yes\", \"no\", or \"unanswerable\". Do not provide any explanation.\n\nQuestion: {input}\n\nAnswer:",
++  "multifieldqa_en": "Read the following text and answer briefly.\n\n{context}\n\nNow, answer the following question based on the above text, only give me the answer and do not output any other words.\n\nQuestion: {input}\nAnswer:",
++  "multifieldqa_zh": "阅读以下文字并用中文简短回答：\n\n{context}\n\n现在请基于上面的文章回答下面的问题，只告诉我答案，不要输出任何其他字词。\n\n问题：{input}\n回答：",
++  "dureader": "请基于给定的文章回答下述问题。\n\n文章：{context}\n\n请基于上述文章回答下面的问题。\n\n问题：{input}\n回答：",
++  "gov_report": "You are given a report by a government agency. Write a one-page summary of the report.\n\nReport:\n{context}\n\nNow, write a one-page summary of the report.\n\nSummary:",
++  "qmsum": "You are given a meeting transcript and a query containing a question or instruction. Answer the query in one or more sentences.\n\nTranscript:\n{context}\n\nNow, answer the query based on the above meeting transcript in one or more sentences.\n\nQuery: {input}\nAnswer:",
++  "multi_news": "You are given several news passages. Write a one-page summary of all news. \n\nNews:\n{context}\n\nNow, write a one-page summary of all the news.\n\nSummary:",
++  "vcsum": "下面有一段会议记录，请你阅读后，写一段总结，总结会议的内容。\n会议记录：\n{context}\n\n会议总结：",
++  "trec": "Please determine the type of the question below. Here are some examples of questions.\n\n{context}\n{input}",
++  "triviaqa": "Answer the question based on the given passage. Only give me the answer and do not output any other words. The following are some examples.\n\n{context}\n\n{input}",
++  "samsum": "Summarize the dialogue into a few short sentences. The following are some examples.\n\n{context}\n\n{input}",
++  "lsht": "请判断给定新闻的类别，下面是一些例子。\n\n{context}\n{input}",
++  "passage_count": "There are some paragraphs below sourced from Wikipedia. Some of them may be duplicates. Please carefully read these paragraphs and determine how many unique paragraphs there are after removing duplicates. In other words, how many non-repeating paragraphs are there in total?\n\n{context}\n\nPlease enter the final count of unique paragraphs after removing duplicates. The output format should only contain the number, such as 1, 2, 3, and so on.\n\nThe final answer is: ",
++  "passage_retrieval_en": "Here are 30 paragraphs from Wikipedia, along with an abstract. Please determine which paragraph the abstract is from.\n\n{context}\n\nThe following is an abstract.\n\n{input}\n\nPlease enter the number of the paragraph that the abstract is from. The answer format must be like \"Paragraph 1\", \"Paragraph 2\", etc.\n\nThe answer is: ",
++  "passage_retrieval_zh": "以下是若干段落文字，以及其中一个段落的摘要。请确定给定的摘要出自哪一段。\n\n{context}\n\n下面是一个摘要\n\n{input}\n\n请输入摘要所属段落的编号。答案格式必须是\"段落1\"，\"段落2\"等格式\n\n答案是：",
++  "lcc": "Please complete the code given below. \n{context}Next line of code:\n",
++  "repobench-p": "Please complete the code given below. \n{context}{input}Next line of code:\n",
++  "hotpotqa": "Answer the question based on the given passages. Only give me the answer and do not output any other words.\n\nThe following are given passages.\n{context}\n\nAnswer the question based on the given passages. Only give me the answer and do not output any other words.\n\nQuestion: {input}\nAnswer:",
++  "2wikimqa": "Answer the question based on the given passages. Only give me the answer and do not output any other words.\n\nThe following are given passages.\n{context}\n\nAnswer the question based on the given passages. Only give me the answer and do not output any other words.\n\nQuestion: {input}\nAnswer:",
++  "musique": "Answer the question based on the given passages. Only give me the answer and do not output any other words.\n\nThe following are given passages.\n{context}\n\nAnswer the question based on the given passages. Only give me the answer and do not output any other words.\n\nQuestion: {input}\nAnswer:"
++}
+diff --git a/kvbench_asym/report.py b/kvbench_asym/report.py
+new file mode 100644
+index 0000000..50d7b43
+--- /dev/null
++++ b/kvbench_asym/report.py
+@@ -0,0 +1,160 @@
++"""Request-clustered paired reports. Layers/heads are NOT independent samples."""
++from __future__ import annotations
++import argparse
++from collections import defaultdict
++import csv
++import gzip
++from pathlib import Path
++import numpy as np
++from .common import atomic_json, digest, inside, read_json, sha_file, write_csv
++
++
++def committed_cases(root, verify=True):
++    root = Path(root).resolve()
++    for p in sorted((root/'cases').glob('*/done.json')):
++        d = read_json(p)
++        if d.get('schema') != 'kvbench.asym.case.v1' or d.get('status') != 'completed':
++            raise ValueError('Invalid case receipt: '+str(p))
++        attempt = inside(root, d['attempt'])
++        if verify:
++            for rel, expected in d['file_hashes'].items():
++                q = inside(attempt, rel)
++                if not q.is_file() or sha_file(q) != expected:
++                    raise ValueError('Committed result changed: '+str(q))
++        yield d, attempt
++
++
++def number(row, key):
++    v = row.get(key)
++    return float(v) if v not in (None, '') else None
++
++
++def stat(values, q=None):
++    a = [x for x in values if x is not None and np.isfinite(x)]
++    if not a:
++        return None
++    return float(np.quantile(a,q)) if q is not None else float(np.mean(a))
++
++
++def paired_bootstrap(values, repeats, seed):
++    x = np.asarray(values,dtype=np.float64)
++    if len(x) < 2 or repeats < 1:
++        return None, None
++    rng = np.random.default_rng(seed)
++    means = []
++    for begin in range(0,repeats,64):
++        indices = rng.integers(0,len(x),(min(64,repeats-begin),len(x)))
++        means.extend(x[indices].mean(axis=1).tolist())
++    lo, hi = np.quantile(means,[.025,.975])
++    return float(lo),float(hi)
++
++
++def case_summary(rows):
++    by_profile = defaultdict(list)
++    pairs = defaultdict(list)
++    by_stratum = defaultdict(dict)
++    for r in rows:
++        if r['kind'] != 'paired':
++            continue
++        # No-quantized-history records remain in coverage, not as perfect zeros.
++        if r['eligible_for_equal_payload'] != 'True':
++            continue
++        key = (r['dataset'],r['method'],int(r['mask_seed']),float(r['total_residual_rate']),float(r['k_priority']))
++        by_profile[key].append(r)
++        sk = (r['trace'],int(r['kv_head']),r['method'],int(r['mask_seed']),float(r['total_residual_rate']))
++        by_stratum[sk][float(r['k_priority'])] = r
++    for sk, values in by_stratum.items():
++        base = values.get(.5)
++        if base is None:
++            raise ValueError('Missing symmetric paired control')
++        for share, row in values.items():
++            if int(row['logical_payload_read_bytes']) != int(base['logical_payload_read_bytes']):
++                raise ValueError('Unequal payload in claimed paired comparison')
++            a, b = number(row,'relative_l2_max_head'),number(base,'relative_l2_max_head')
++            if a is not None and b is not None:
++                key=(row['dataset'],row['method'],int(row['mask_seed']),float(row['total_residual_rate']),share)
++                pairs[key].append(a-b)
++    summaries=[]
++    for key, rs in by_profile.items():
++        ds, method, seed, total, share=key
++        summaries.append(dict(dataset=ds,method=method,mask_seed=seed,total_residual_rate=total,k_priority=share,
++            informative_groups=len(rs),defined_relative_groups=sum(number(r,'relative_l2_max_head') is not None for r in rs),
++            mean_relative_l2_max_head=stat([number(r,'relative_l2_max_head') for r in rs]),
++            p95_relative_l2_max_head=stat([number(r,'relative_l2_max_head') for r in rs],.95),
++            maximum_relative_l2_max_head=max([number(r,'relative_l2_max_head') for r in rs if number(r,'relative_l2_max_head') is not None],default=None),
++            mean_abs_l2_max=stat([number(r,'abs_l2_max') for r in rs]),
++            mean_payload_reduction=stat([number(r,'payload_reduction_fraction') for r in rs]),
++            mean_key_read_fraction=stat([number(r,'key_residual_read_fraction') for r in rs]),
++            mean_value_read_fraction=stat([number(r,'value_residual_read_fraction') for r in rs]),
++            paired_groups=len(pairs[key]),paired_mean_error_difference_vs_symmetric=stat(pairs[key])))
++    return summaries
++
++
++def report(root, bootstrap=1000):
++    root=Path(root).resolve(); reports=root/'comparison';reports.mkdir(exist_ok=True)
++    all_case=[];coverage=[]
++    for done, attempt in committed_cases(root):
++        path=attempt/'analysis/rows.csv.gz'
++        if done['traces']:
++            with gzip.open(path,'rt',encoding='utf-8',newline='') as f:
++                summaries=case_summary(csv.DictReader(f))
++        else:
++            summaries=[]
++        for s in summaries:
++            s.update(case_id=done['case_id'],case_key=done['case_key'],family=done['family'])
++        all_case.extend(summaries)
++        coverage.append({k:done[k] for k in ('dataset','case_id','case_key','family','traces','missing_capture_points',
++                                            'expected_capture_points','completion_tokens','finish_reason','was_truncated')})
++        coverage[-1]['informative_groups']=max((s['informative_groups'] for s in summaries if s['k_priority']==.5),default=0)
++    write_csv(reports/'case_level.csv',all_case)
++    write_csv(reports/'case_coverage.csv',coverage)
++    groups=defaultdict(list)
++    for s in all_case:
++        key=tuple(s[k] for k in ('family','dataset','method','mask_seed','total_residual_rate','k_priority'))
++        groups[key].append(s)
++    aggregates=[];paired=[]
++    for key,rs in groups.items():
++        family,ds,method,seed,total,share=key
++        common=dict(family=family,dataset=ds,method=method,mask_seed=seed,total_residual_rate=total,k_priority=share)
++        aggregates.append(dict(**common,cases=len(rs),informative_groups=sum(s['informative_groups'] for s in rs),
++            mean_case_mean_error=stat([s['mean_relative_l2_max_head'] for s in rs]),
++            p95_case_mean_error=stat([s['mean_relative_l2_max_head'] for s in rs],.95),
++            mean_case_p95_error=stat([s['p95_relative_l2_max_head'] for s in rs]),
++            mean_case_payload_reduction=stat([s['mean_payload_reduction'] for s in rs])))
++        diffs=[s['paired_mean_error_difference_vs_symmetric'] for s in rs if s['paired_mean_error_difference_vs_symmetric'] is not None]
++        lo,hi=paired_bootstrap(diffs,bootstrap,int(digest(key)[:8],16))
++        paired.append(dict(**common,paired_cases=len(diffs),mean_error_difference=stat(diffs),
++                           bootstrap_ci95_low=lo,bootstrap_ci95_high=hi,bootstrap_repeats=bootstrap,
++                           uncertainty_unit='request; correlated layers/heads averaged within request'))
++    write_csv(reports/'aggregate.csv',aggregates)
++    write_csv(reports/'paired_vs_symmetric.csv',paired)
++    m=read_json(root/'inputs/manifest.json') if (root/'inputs/manifest.json').exists() else {}
++    state=dict(schema='kvbench.asym.report.v1',committed_cases=len(coverage),planned_cases=m.get('cases'),
++               all_planned_cases_completed=len(coverage)==m.get('cases'),all_source_records_selected=m.get('all_source_records_selected'),
++               total_captured_traces=sum(r['traces'] for r in coverage),
++               missing_capture_points=sum(r['missing_capture_points'] for r in coverage),
++               files={p.name:sha_file(p) for p in reports.glob('*.csv')})
++    atomic_json(reports/'report.json',state)
++    lines=['# 等逻辑载荷 K/V 非对称对照','',
++           f"完成请求：{len(coverage)} / {m.get('cases','NA')}；真实 trace：{state['total_captured_traces']}。",'',
++           '先检查 inputs/coverage.csv 的全部子任务、原始题数和截断数；再检查 case_coverage.csv 的自然 EOS/缺失采集点。',
++           'case_level.csv 先在每道题内平均层/head/位置；aggregate.csv 再在任务内对题等权统计。',
++           'paired_vs_symmetric.csv：误差差值 < 0 表示比同流量对称分配更好。95% bootstrap 按请求重采样；是探索性区间，未作多重比较校正。',
++           'mask_seed 是随机读取掩码种子，不是三个独立的生成随机种子。',
++           '无可控量化历史的短 trace 不作为零误差成功样本进入非对称比较。',
++           'K priority=0 为 V 优先，0.5 为对称，1 为 K 优先；整数取整可能使对称组相差一个 packet。',
++           '所有配对组均校验相同逻辑码字节；这不等于 DRAM 事务相同，不含排序/中间张量流量，也不报告 TPOT。',
++           '这是 Parent 轨迹上的 float64 注意力反事实；没有把选择策略写入生成过程，不提供任务准确率。','']
++    (reports/'readout.md').write_text('\n'.join(lines),encoding='utf-8')
++    return state
++
++
++def main(argv=None):
++    p=argparse.ArgumentParser(description=__doc__)
++    p.add_argument('--run',type=Path,required=True);p.add_argument('--bootstrap',type=int,default=1000)
++    a=p.parse_args(argv)
++    if a.bootstrap<0: p.error('bootstrap cannot be negative')
++    print(report(a.run,a.bootstrap))
++
++
++if __name__=='__main__':main()
+diff --git a/kvbench_asym/run.py b/kvbench_asym/run.py
+new file mode 100644
+index 0000000..3552ed4
+--- /dev/null
++++ b/kvbench_asym/run.py
+@@ -0,0 +1,309 @@
++"""All-record equal-payload K/V study on isolated native-Parent decode traces.
++
++A request is generated once, then all asymmetric masks use that SAME Q/KV.
++Analysis is CPU-only while our GPU server is idle. Fresh temporary snapshots
++are pruned only after a committed case result, unless --keep-traces is set.
++"""
++from __future__ import annotations
++import argparse
++from datetime import datetime
++import json
++import os
++from pathlib import Path
++import shutil
++import signal
++import socket
++import subprocess
++import sys
++import traceback
++from types import SimpleNamespace
++import uuid
++from .common import (DEFAULT_SUITE, atomic_json, canonical, digest, implementation_hashes,
++                     inside, jsonl, load_upstream, read_json, sha_file, write_csv)
++from .inputs import inventory, prepare
++from .select import quota
++
++
++def parse(argv=None):
++    p=argparse.ArgumentParser(description=__doc__)
++    p.add_argument('--upstream-suite',type=Path,default=Path(DEFAULT_SUITE))
++    p.add_argument('--datasets',nargs='+',choices=('longbench_all','longbench_frozen','math_500','humaneval'),default=['longbench_all'])
++    p.add_argument('--longbench-source',type=Path)
++    p.add_argument('--real-data',type=Path,default=Path('data/real_v5'))
++    p.add_argument('--out',type=Path)
++    p.add_argument('--resume',action='store_true')
++    p.add_argument('--plan',action='store_true')
++    p.add_argument('--prepare-only',action='store_true')
++    p.add_argument('--overflow',choices=('head-tail','error'),default='head-tail')
++    p.add_argument('--case-limit',type=int,default=0,help='Explicit pilot limit across all datasets; 0 means ALL')
++    p.add_argument('--layers',nargs='+',type=int,help='Cache ordinals, default four across local architecture')
++    p.add_argument('--decode-calls',nargs='+',type=int,default=[0,15,63])
++    p.add_argument('--diagnostic-max-tokens',type=int,default=96)
++    p.add_argument('--block-n',type=int,choices=(16,32,64),default=32)
++    p.add_argument('--totals',nargs='+',default=['1.0','1.1'],help='rho_K+rho_V, each in [0,2]')
++    p.add_argument('--shares',nargs='+',default=['0','.25','.5','.75','1'],help='K priority within feasible range; include 0.5')
++    p.add_argument('--methods',nargs='+',choices=('anchor_mass','staged_mass','random'),default=['anchor_mass','staged_mass','random'])
++    p.add_argument('--mask-seeds',nargs='+',type=int,default=[42,43,44])
++    p.add_argument('--gpu',default='0');p.add_argument('--port',type=int,default=18080)
++    p.add_argument('--startup-timeout',type=int,default=1800)
++    p.add_argument('--scratch-gib',type=float,default=4,help='Hard per-request snapshot upper bound')
++    p.add_argument('--keep-traces',action='store_true',help='Retain new raw NPZ files (can use hundreds of GiB)')
++    p.add_argument('--bootstrap',type=int,default=1000)
++    a=p.parse_args(argv)
++    if a.case_limit<0 or a.bootstrap<0 or a.diagnostic_max_tokens<2 or a.startup_timeout<1:
++        p.error('Invalid limits')
++    import math
++    if not math.isfinite(a.scratch_gib) or a.scratch_gib<=0:
++        p.error('scratch-gib must be positive and finite')
++    if not a.gpu.isdigit() or not 1<=a.port<=65535:
++        p.error('Use a single numeric GPU and a valid port')
++    if len(set(a.decode_calls)) != len(a.decode_calls) or not a.decode_calls or any(x<0 or x>=a.diagnostic_max_tokens-1 for x in a.decode_calls):
++        p.error('Distinct decode calls must be in [0, diagnostic-max-tokens-2]')
++    if len(set(a.methods))!=len(a.methods) or len(set(a.mask_seeds))!=len(a.mask_seeds) or any(x<0 for x in a.mask_seeds):
++        p.error('Duplicate selectors/seeds or negative seed')
++    for total in a.totals:
++        for share in a.shares:quota(10,total,share)
++    if .5 not in [float(x) for x in a.shares] or len(set(map(float,a.shares)))!=len(a.shares) or len(set(map(float,a.totals)))!=len(a.totals):
++        p.error('Distinct shares/totals and the symmetric share 0.5 are required')
++    if a.resume and not a.out:
++        p.error('--resume requires the exact existing --out directory')
++    return a
++
++
++def case_valid(root, base):
++    p=base/'done.json'
++    if not p.exists():return False
++    d=read_json(p)
++    if d.get('status')!='completed' or d.get('schema')!='kvbench.asym.case.v1':
++        raise ValueError('Invalid case receipt: '+str(p))
++    at=inside(root,d['attempt'])
++    for rel,expected in d['file_hashes'].items():
++        q=inside(at,rel)
++        if not q.is_file() or sha_file(q)!=expected:
++            raise ValueError('Completed case artifact changed: '+str(q))
++    return True
++
++
++def prune_new_arrays(attempt):
++    """Only NPZ files named and hashed by THIS attempt's trace metadata."""
++    for p in sorted((attempt/'traces').glob('trace_*.json')):
++        m=read_json(p)
++        q=inside(p.parent,m['arrays_file'])
++        if q.parent!=p.parent or q.suffix!='.npz':
++            raise ValueError('Unsafe temporary array path')
++        if q.exists():
++            if sha_file(q)!=m['arrays_sha256']:
++                raise ValueError('Temporary snapshot changed before pruning')
++            q.unlink()
++    atomic_json(attempt/'temporary_arrays_pruned.json',dict(pruned=True,
++        note='Fresh snapshots removed after analysis commit; metadata/hashes/masks retained. Re-analysis requires --keep-traces.'))
++
++
++def validate_capture_coverage(records,row,result,layers,calls):
++    by_point={}
++    for m in records:
++        if m['request']['case_id']!=row['case_id'] or m['request']['dataset']!=row['dataset']:
++            raise ValueError('Trace belongs to a different request')
++        key=(m['cache_ordinal'],m['decode_call_index'])
++        if key in by_point:raise ValueError('Duplicate trace for one layer/decode position')
++        if key[0] not in layers or key[1] not in calls:
++            raise ValueError('Unplanned capture point')
++        by_point[key]=m
++    cov=[]
++    # completion token 0 comes from prefill; decode call k produces token k+1.
++    for layer in layers:
++        for step in calls:
++            observed=(layer,step) in by_point
++            should_exist=result['completion_tokens']>=step+2
++            if should_exist and not observed:
++                raise RuntimeError(f'Missing expected capture at cache ordinal {layer}, decode {step}; not a natural-EOS omission')
++            cov.append(dict(dataset=row['dataset'],case_id=row['case_id'],cache_ordinal=layer,
++                            decode_call_index=step,captured=observed,expected_given_output=should_exist,
++                            reason='' if observed else 'generation_ended_before_capture_point',
++                            completion_tokens=result['completion_tokens'],finish_reason=result['finish_reason']))
++    return cov
++
++
++def main(argv=None):
++    a=parse(argv)
++    suite_path,upstream=load_upstream(a.upstream_suite);s=upstream['settings']
++    model=Path(s['model']).resolve(strict=True)
++    cfg=read_json(model/'config.json')
++    if (cfg.get('model_type'),cfg.get('num_attention_heads'),cfg.get('num_key_value_heads'),cfg.get('head_dim',cfg.get('hidden_size',0)//32)) != ('qwen3',32,8,128):
++        raise ValueError('This source-pinned capture currently supports Qwen3-4B / K4V4 G128 only')
++    nlayers=cfg.get('num_hidden_layers')
++    if not isinstance(nlayers,int) or nlayers<1:raise ValueError('Invalid model layer count')
++    layers=a.layers if a.layers is not None else sorted(set((0,nlayers//3,2*nlayers//3,nlayers-1)))
++    if not layers or len(set(layers))!=len(layers) or any(x<0 or x>=nlayers for x in layers):
++        raise ValueError('Invalid cache ordinals')
++    if a.diagnostic_max_tokens>=s['max_model_len']:
++        raise ValueError('Diagnostic prefix leaves no prompt space')
++    entries=inventory(upstream,a.datasets,a.longbench_source,a.real_data)
++    from .runtime import check_dependencies
++    deps=check_dependencies()
++    config={k:v for k,v in vars(a).items() if k not in ('out','resume','plan','prepare_only','longbench_source','real_data','upstream_suite')}
++    config.update(layers=layers,upstream_sha256=sha_file(suite_path),model=str(model),
++                  model_config_sha256=sha_file(model/'config.json'),entries=entries,
++                  dependency_hashes=deps,implementation_hashes=implementation_hashes())
++    # Tokenizer state is part of resume identity; metadata files only, no weights loaded.
++    from kvbench_longcontext.common import tokenizer_identity
++    config['tokenizer']=tokenizer_identity(model)
++    total=sum(e['count'] for e in entries)
++    selected=min(total,a.case_limit) if a.case_limit else total
++    max_points=selected*len(layers)*len(a.decode_calls)
++    # Upper bound at deployment window, without assuming compression of snapshots.
++    per_trace=((s['max_model_len']+127)//128)*(8*17920+128*8*128*4)+65536
++    plan=dict(schema='kvbench.asym.plan.v1',config=config,source_cases=total,selected_cases=selected,
++              source_tasks=len(entries),planned_max_traces=max_points,all_kv_heads=8,
++              tokenized=False,overflow=a.overflow,raw_storage_upper_bound_gib=per_trace*max_points/1024**3,
++              protocol='C1 eager native Parent, sampled decode positions, fixed diagnostic prefix, no forced EOS override',
++              scope='All-record sensitivity study, NOT an official full-generation quality/performance leaderboard',
++              equal_flow='Exact selected logical KV code payload; not DRAM or total implementation traffic')
++    if a.plan:
++        print(json.dumps(plan,ensure_ascii=False,indent=2));return
++    out=(a.out or Path('results/asym_equal_bytes')/(datetime.now().strftime('full_%Y%m%d_%H%M%S')+f'_{os.getpid()}')).resolve()
++    if a.resume:
++        old=read_json(out/'plan.json')
++        if canonical(old['config'])!=canonical(config):
++            raise ValueError('Resume configuration/source/tokenizer/package hashes differ. Use the same arguments or a new output.')
++    else:
++        out.mkdir(parents=True,exist_ok=False);atomic_json(out/'plan.json',plan)
++    state=dict(schema='kvbench.asym.run.v1',status='preparing',out=str(out),planned_cases=selected,
++               gpu_capture_executed=False,selectors_in_generation=False,measured_dram_bytes=None,task_scores=None,tpot=None)
++    atomic_json(out/'status.json',state)
++    proc=None; control=out/'trace_control'
++    def interrupted(signum,frame):raise KeyboardInterrupt
++    signal.signal(signal.SIGINT,interrupted);signal.signal(signal.SIGTERM,interrupted)
++    try:
++        if (out/'inputs/manifest.json').exists():
++            data_manifest=read_json(out/'inputs/manifest.json')
++            if sha_file(out/'inputs/cases.jsonl')!=data_manifest['cases_sha256']:
++                raise ValueError('Frozen prepared inputs changed')
++        else:
++            if (out/'inputs').exists():
++                # A previous prepare crash is retained, never consumed as complete.
++                (out/'inputs').rename(out/('incomplete_inputs_'+uuid.uuid4().hex[:8]))
++            data_manifest=prepare(out/'inputs',entries,model,s['max_model_len'],a.diagnostic_max_tokens,
++                                  s.get('thinking',True),a.overflow,a.case_limit)
++        if data_manifest['cases']!=selected:raise ValueError('Prepared case count differs from plan')
++        if a.prepare_only:
++            state.update(status='prepared');atomic_json(out/'status.json',state);print(str(out));return
++        with (out/'selftest.log').open('w',encoding='utf-8') as log:
++            subprocess.run([sys.executable,'-m','unittest','discover','-s',str(Path(__file__).parent/'tests'),'-v'],
++                           stdout=log,stderr=subprocess.STDOUT,check=True)
++        pending=[]; completed=0
++        # Hold only indices/keys here, not all long prompt strings.
++        for row in jsonl(out/'inputs/cases.jsonl'):
++            base=out/'cases'/row['case_key']
++            if case_valid(out,base):
++                completed+=1
++                if not a.keep_traces:prune_new_arrays(inside(out,read_json(base/'done.json')['attempt']))
++            else:pending.append(row['case_key'])
++        from .report import report
++        if not pending:
++            report(out,a.bootstrap);state.update(status='completed',completed_cases=completed)
++            atomic_json(out/'status.json',state);print(str(out));return
++        from kvbench_longcontext.serve import launch_command,run_text
++        from kvbench_residual.serve import stop_owned_group
++        from kvbench_residual_diag.run import ready,request_one
++        with socket.socket() as sock:
++            sock.settimeout(1)
++            if sock.connect_ex(('127.0.0.1',a.port))==0:raise RuntimeError('Port occupied; no existing process is stopped')
++        gpu=run_text(['nvidia-smi','-i',a.gpu,'--query-compute-apps=pid,process_name','--format=csv,noheader,nounits'])
++        if gpu.get('returncode')!=0:raise RuntimeError('Cannot inspect target GPU: '+str(gpu))
++        if gpu['stdout'] and 'No running processes found' not in gpu['stdout']:
++            raise RuntimeError('GPU already has compute processes; this experiment does not stop them: '+gpu['stdout'])
++        invocation=uuid.uuid4().hex[:10]
++        control.mkdir(exist_ok=True);(control/'arm.json').unlink(missing_ok=True)
++        atomic_json(control/'capture_config.json',dict(layer_ordinals=layers,decode_calls=a.decode_calls,min_context=1,
++                     max_traces=len(layers)*len(a.decode_calls),max_bytes=int(a.scratch_gib*1024**3)))
++        from .runtime import build
++        runtime=out/('runtime_'+invocation)
++        runtime_manifest=build(runtime)
++        server=out/('server_'+invocation);server.mkdir();dispatch=server/'dispatch'
++        name='asym-parent-'+invocation
++        la=SimpleNamespace(method='kvarn44',model=model,port=a.port,max_model_len=s['max_model_len'],max_seqs=1,
++                           batch_tokens=s['batch_tokens'],gpu_util=s['gpu_util'],server_seed=s['server_seed'],kv_bytes=None,eager=True)
++        cli=launch_command(la,name)
++        cmd=[sys.executable,'-m','kvbench_residual.bootstrap','--runtime',str(runtime),'--policy','parent','--trace-dir',str(dispatch),'--',*cli[3:]]
++        env=os.environ.copy();env.pop('PYTHONHOME',None)
++        env.update(CUDA_VISIBLE_DEVICES=a.gpu,PYTHONNOUSERSITE='1',PYTHONPATH=str(runtime),AR_RUNTIME_ROOT=str(runtime),
++                   AR_TRACE_DIR=str(dispatch),AR_POLICY='parent',AR_DIAG_TRACE_ROOT=str(control),KVARN_FUSED_DECODE='1',
++                   HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',TRITON_CACHE_DIR=str(out/'jit_cache/triton'),
++                   TORCHINDUCTOR_CACHE_DIR=str(out/'jit_cache/torchinductor'),VLLM_CACHE_ROOT=str(out/'jit_cache/vllm'))
++        native=dict(kv_dtype='kvarn_k4v4_g128',block_size=128,model_name=name,max_model_len=s['max_model_len'])
++        launch=dict(command=cmd,config=native,runtime_manifest_sha256=sha_file(runtime/'runtime.json'),gpu=gpu,
++                    source_hashes=runtime_manifest['executed_files_sha256'],environment={k:env.get(k) for k in
++                    ('CUDA_VISIBLE_DEVICES','KVARN_SINK_TOKENS','KVARN_POOL_SLOTS','KVARN_FAST_FLUSH','KVARN_SPLIT_K','KVARN_NUM_KV_SPLITS')})
++        from .analyze import analyze_paths
++        pending_set=set(pending)
++        with (server/'server.log').open('w',encoding='utf-8') as log:
++            proc=subprocess.Popen(cmd,cwd=runtime,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
++            launch['pid']=proc.pid;atomic_json(server/'launch.json',launch)
++            base_url=f'http://127.0.0.1:{a.port}'
++            launch['native']=ready(proc,base_url,native,a.startup_timeout)
++            first=next(r for r in jsonl(out/'inputs/cases.jsonl') if r['case_key'] in pending_set)
++            warm=request_one(base_url,name,first,s,min(8,a.diagnostic_max_tokens),server/'warmup.json.gz')
++            atomic_json(server/'warmup.json',warm)
++            from kvbench_residual.trace import summarize
++            receipts=summarize(dispatch,'parent',runtime_manifest['executed_source_sha256'],.02)
++            if not receipts['source_verified'] or not receipts['fused_launch_observed'] or not list(control.glob('hook_*.json')):
++                raise RuntimeError('The isolated eager native Parent/capture hook was not verified')
++            launch['dispatch']=receipts;atomic_json(server/'launch.json',launch)
++            state['gpu_capture_executed']=True
++            for row in jsonl(out/'inputs/cases.jsonl'):
++                if row['case_key'] not in pending_set:continue
++                if proc.poll() is not None:raise RuntimeError('Owned model server exited')
++                base=out/'cases'/row['case_key'];base.mkdir(parents=True,exist_ok=True)
++                attempt=base/('attempt_'+uuid.uuid4().hex[:12]);attempt.mkdir();trace=attempt/'traces';trace.mkdir()
++                atomic_json(attempt/'input.json',row)
++                estimate=((row['input_tokens']+a.diagnostic_max_tokens+127)//128)*(8*17920+128*8*128*4)+65536
++                estimate*=len(layers)*len(a.decode_calls)
++                if estimate>int(a.scratch_gib*1024**3):raise RuntimeError('Per-request snapshot bound exceeds --scratch-gib')
++                if shutil.disk_usage(out).free<estimate+256*1024**2:
++                    raise RuntimeError('Insufficient disk for the next complete case; free space and --resume')
++                state.update(status='capturing',current_case=row['case_key'],completed_cases=completed)
++                atomic_json(out/'status.json',state)
++                arm=dict(epoch=uuid.uuid4().hex,dataset=row['dataset'],case_id=row['case_id'],
++                         input_tokens=row['input_tokens'],prompt_sha256=digest(row['prompt']),sample_index=row['sample_index'],
++                         trace_dir=str(trace),protocol='equal_payload_C1_eager_parent',source_manifest_sha256=sha_file(out/'inputs/manifest.json'))
++                atomic_json(control/'arm.json',arm)
++                try:
++                    result=request_one(base_url,name,row,s,a.diagnostic_max_tokens,attempt/'response.json.gz')
++                finally:(control/'arm.json').unlink(missing_ok=True)
++                atomic_json(attempt/'request.json',result)
++                if list(trace.glob('capture_error_*.json')):raise RuntimeError('Capture worker error; inspect current attempt')
++                paths=sorted(trace.glob('trace_*.json'));records=[read_json(p) for p in paths]
++                cov=validate_capture_coverage(records,row,result,layers,a.decode_calls)
++                write_csv(attempt/'capture_coverage.csv',cov)
++                state['status']='analyzing';atomic_json(out/'status.json',state)
++                analyze_paths(paths,attempt/'analysis',a.totals,a.shares,a.methods,a.mask_seeds,a.block_n,
++                              dict(case_key=row['case_key'],family=row['family'],was_truncated=row['was_truncated']))
++                # Verify self-contained analysis files before committing the case.
++                hashes={str(p.relative_to(attempt)):sha_file(p) for p in attempt.rglob('*') if p.is_file() and 'traces' not in p.relative_to(attempt).parts}
++                done=dict(schema='kvbench.asym.case.v1',status='completed',dataset=row['dataset'],case_id=row['case_id'],
++                          case_key=row['case_key'],family=row['family'],attempt=str(attempt.relative_to(out)),
++                          traces=len(paths),expected_capture_points=len(cov),missing_capture_points=sum(not r['captured'] for r in cov),
++                          completion_tokens=result['completion_tokens'],finish_reason=result['finish_reason'],was_truncated=row['was_truncated'],
++                          file_hashes=hashes,raw_arrays_retained=a.keep_traces)
++                atomic_json(base/'done.json',done)
++                if not a.keep_traces:prune_new_arrays(attempt)
++                completed+=1
++                state.update(status='case_completed',completed_cases=completed);atomic_json(out/'status.json',state)
++                print(f"[{completed}/{selected}] {row['dataset']} {row['case_id']}: traces={len(paths)}, missing={done['missing_capture_points']}",flush=True)
++        stop_owned_group(proc);proc=None
++        state['status']='reporting';atomic_json(out/'status.json',state)
++        report(out,a.bootstrap)
++        state.update(status='completed',completed_cases=completed,all_source_records_selected=data_manifest['all_source_records_selected'])
++        atomic_json(out/'status.json',state);print('Completed: '+str(out),flush=True)
++    except BaseException as exc:
++        state.update(status='failed',error=repr(exc),traceback=traceback.format_exc())
++        atomic_json(out/'status.json',state);raise
++    finally:
++        (control/'arm.json').unlink(missing_ok=True)
++        if proc is not None:
++            from kvbench_residual.serve import stop_owned_group
++            stop_owned_group(proc)
++
++
++if __name__=='__main__':main()
+diff --git a/kvbench_asym/run_equal_bytes.sh b/kvbench_asym/run_equal_bytes.sh
+new file mode 100644
+index 0000000..c6076f2
+--- /dev/null
++++ b/kvbench_asym/run_equal_bytes.sh
+@@ -0,0 +1,43 @@
++#!/usr/bin/env bash
++set -euo pipefail
++ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
++cd "$ROOT"
++SUITE="results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json"
++args=("$@")
++for ((i=0;i<${#args[@]};i++)); do
++  if [[ ${args[i]} == --upstream-suite ]]; then
++    if (( i+1>=${#args[@]} )); then echo '--upstream-suite needs a path' >&2; exit 2; fi
++    SUITE=${args[i+1]}
++  elif [[ ${args[i]} == --upstream-suite=* ]]; then
++    SUITE=${args[i]#*=}
++  fi
++done
++BASE=${CONDA_BASE:-/home/wanglin/miniconda3}
++if [[ ! -f "$BASE/etc/profile.d/conda.sh" ]]; then
++  echo 'Set CONDA_BASE to the existing Miniconda root; nothing is installed automatically.' >&2
++  exit 2
++fi
++# Bootstrap only reads the known local suite. No network/model/GPU access.
++BOOT_PY="$BASE/bin/python"
++mapfile -t SETUP < <("$BOOT_PY" - "$SUITE" <<'PY'
++import json,sys
++s=json.load(open(sys.argv[1],encoding='utf-8'))['settings']
++print(s['server_env'])
++print(s['kit'])
++PY
++)
++if [[ ${#SETUP[@]} -ne 2 ]]; then echo 'Unable to read server environment and KIT from suite' >&2; exit 2; fi
++set +u
++source "$BASE/etc/profile.d/conda.sh"
++conda activate "${SETUP[0]}"
++if [[ ! -f "${SETUP[1]}/env.sh" ]]; then echo 'The original KIT/env.sh is missing; refusing guessed CUDA settings' >&2; exit 2; fi
++export KIT="${SETUP[1]}"
++source "$KIT/env.sh"
++set -u
++export PYTHONNOUSERSITE=1
++export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
++# Keep BLAS thread counts explicit so equal-payload diagnostics do not oversubscribe CPUs.
++export OPENBLAS_NUM_THREADS=${AR_ASYM_BLAS_THREADS:-4}
++export OMP_NUM_THREADS=${AR_ASYM_BLAS_THREADS:-4}
++export MKL_NUM_THREADS=${AR_ASYM_BLAS_THREADS:-4}
++exec python -m kvbench_asym.run "$@"
+diff --git a/kvbench_asym/runtime.py b/kvbench_asym/runtime.py
+new file mode 100644
+index 0000000..56752d3
+--- /dev/null
++++ b/kvbench_asym/runtime.py
+@@ -0,0 +1,44 @@
++"""Private native-Parent overlay. No write to installed vLLM or old AR runtime."""
++from __future__ import annotations
++import importlib
++from pathlib import Path
++import shutil
++from .common import atomic_json, sha_file
++
++
++def check_dependencies():
++    pins = __import__('kvbench_asym.dependency_pins', fromlist=['PINS']).PINS
++    actual = {}
++    for module, expected in pins.items():
++        spec = __import__('importlib.util', fromlist=['find_spec']).find_spec(module)
++        if spec is None or not spec.origin:
++            raise RuntimeError('Apply the existing residual and two-experiment packages first: '+module)
++        actual[module] = sha_file(spec.origin)
++        if actual[module] != expected:
++            raise RuntimeError('Reviewed diagnostic dependency changed: '+module+'; do not bypass the hash check. Port and revalidate explicitly.')
++    # v1 handles its own six writer/reader source pins during build_runtime.
++    return actual
++
++
++def build(out):
++    from kvbench_residual.runtime import build_runtime, verify_runtime, TARGET
++    from kvbench_residual_diag import __file__ as diag_file
++    out = Path(out).resolve()
++    manifest = build_runtime(out, 'parent', epsilon=.02)
++    for source in (Path(diag_file).parent, Path(__file__).resolve().parent):
++        shutil.copytree(source, out/source.name, ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
++    kernel = out/'vllm'/TARGET
++    footer = '\n# Isolated equal-payload diagnostic capture; NOT performance instrumentation.\nfrom kvbench_asym.capture import install as _asym_install\n_asym_install(globals(), __file__)\n'
++    text = kernel.read_text(encoding='utf-8') + footer
++    compile(text, str(kernel), 'exec'); kernel.write_text(text, encoding='utf-8')
++    actual = sha_file(kernel)
++    manifest['executed_files_sha256'][str(TARGET)] = actual
++    manifest['executed_source_sha256'] = actual
++    manifest['files_sha256'] = {str(p.relative_to(out)):sha_file(p) for p in sorted(out.rglob('*'))
++                               if p.is_file() and not p.is_symlink() and p != out/'runtime.json'}
++    manifest['equal_payload_capture'] = dict(eager_required=True, parent_representation='native_int4',
++               parent_arithmetic_unchanged=True, selectors_injected_into_generation=False,
++               scope='New observer only; offline comparison does not change generated trajectories.')
++    atomic_json(out/'runtime.json', manifest)
++    verify_runtime(out, 'parent', full=True, epsilon=.02)
++    return manifest
+diff --git a/kvbench_asym/select.py b/kvbench_asym/select.py
+new file mode 100644
+index 0000000..a6137f8
+--- /dev/null
++++ b/kvbench_asym/select.py
+@@ -0,0 +1,110 @@
++"""Reference-free masks with EXACT equal logical payload bytes.
++
++Inputs contain only anchor logits, selected key logits, public geometry and
++costs. Never use full attention output, unread V, best-prefix, or error oracle.
++Physical DRAM transactions and scheduler costs are not inferred by this module.
++"""
++from __future__ import annotations
++from dataclasses import dataclass
++from decimal import Decimal, ROUND_FLOOR, ROUND_HALF_UP
++import numpy as np
++
++
++@dataclass(frozen=True)
++class SelectionView:
++    quantized: np.ndarray
++    eligible: np.ndarray
++    costs: np.ndarray
++    lse_anchor: np.ndarray
++    lse_full_key: np.ndarray
++    packet_bytes: int
++
++
++def from_group(group, block_n):
++    quant = group.quantized
++    costs = group.costs
++    packet = block_n * group.full.shape[-1] // 4
++    eligible = np.array([c['quantized'] and c['tokens'] == block_n and
++                         c['k_bytes'] == packet and c['v_bytes'] == packet for c in group.chunks], bool)
++    # Partial boundary packets are explicitly FULL READ, not silently discarded.
++    return SelectionView(quant, eligible, costs,
++                         np.stack([c['lse_a'] for c in group.chunks]),
++                         np.stack([c['lse_f'] for c in group.chunks]), packet)
++
++
++def quota(n, total, share):
++    """total=rho_K+rho_V in [0,2]; share=K priority within feasible range.
++
++    All shares at the same total receive the SAME integer action count.
++    Odd symmetric counts round K upward; exact achieved K/V rates are reported.
++    """
++    total, share = Decimal(str(total)), Decimal(str(share))
++    if not total.is_finite() or not share.is_finite() or not 0 <= total <= 2 or not 0 <= share <= 1 or n < 0:
++        raise ValueError('Invalid total/share/packet count')
++    m = int((total * n).to_integral_value(rounding=ROUND_FLOOR))
++    lo, hi = max(0, m-n), min(m, n)
++    nk = int((Decimal(lo) + share*(hi-lo)).to_integral_value(rounding=ROUND_HALF_UP))
++    return nk, m-nk, m
++
++
++def _mass(lse):
++    if lse.ndim != 2 or not np.isfinite(lse).all():
++        raise ValueError('Invalid log-masses')
++    x = np.exp(lse-lse.max(axis=0, keepdims=True))
++    return x / x.sum(axis=0, keepdims=True)
++
++
++def _order(score, ids):
++    # Public chunk order breaks ties. No residual-dependent stopping rule.
++    return ids[np.argsort(-score[ids], kind='stable')]
++
++
++def choose(view, nk, nv, method, seed=42):
++    ids = np.flatnonzero(view.eligible)
++    if not (0 <= nk <= len(ids) and 0 <= nv <= len(ids)):
++        raise ValueError('Quota exceeds eligible packets')
++    k, v = np.ones(len(view.quantized), bool), np.ones(len(view.quantized), bool)
++    k[ids] = False; v[ids] = False
++    if method == 'random':
++        rng = np.random.default_rng(seed)
++        ko, vo = rng.permutation(ids), rng.permutation(ids)
++        k[ko[:nk]] = True; v[vo[:nv]] = True
++    elif method in ('anchor_mass', 'staged_mass'):
++        anchor_mass = _mass(view.lse_anchor).max(axis=1)
++        ko = _order(anchor_mass, ids)
++        k[ko[:nk]] = True
++        if method == 'staged_mass':
++            # Only already selected K residuals may affect V's ranking.
++            used_lse = np.where(k[:, None], view.lse_full_key, view.lse_anchor)
++            value_mass = _mass(used_lse).max(axis=1)
++        else:
++            value_mass = anchor_mass
++        vo = _order(value_mass, ids)
++        v[vo[:nv]] = True
++    else:
++        raise ValueError('Unknown selector: ' + method)
++    if int(k[ids].sum()) != nk or int(v[ids].sum()) != nv:
++        raise AssertionError('Selection did not spend its exact quota')
++    if not np.all(k[~view.eligible]) or not np.all(v[~view.eligible]):
++        raise AssertionError('Protected partial packets or FP16 pools were changed')
++    return k, v
++
++
++def accounting(view, k, v):
++    costs = view.costs
++    kb = int((costs[:, 0] * k).sum())
++    vb = int((costs[:, 1] * v).sum())
++    anchor = int(costs.sum())
++    baseline = 2*anchor
++    return dict(selected_key_packets=int(k[view.eligible].sum()),
++                selected_value_packets=int(v[view.eligible].sum()),
++                eligible_residual_read_bytes=int((k[view.eligible].sum()+v[view.eligible].sum())*view.packet_bytes),
++                key_residual_bytes=kb, value_residual_bytes=vb,
++                anchor_payload_bytes=anchor, logical_payload_read_bytes=anchor+kb+vb,
++                full_planar_payload_bytes=baseline,
++                payload_reduction_fraction=(1-(anchor+kb+vb)/baseline) if baseline else None,
++                key_residual_read_fraction=kb/int(costs[:, 0].sum()) if costs[:, 0].sum() else None,
++                value_residual_read_fraction=vb/int(costs[:, 1].sum()) if costs[:, 1].sum() else None,
++                controllable_packets=int(view.eligible.sum()),
++                protected_quantized_packets=int((view.quantized & ~view.eligible).sum()),
++                eligible_for_equal_payload=bool(view.eligible.any()))
+diff --git a/kvbench_asym/tests/__init__.py b/kvbench_asym/tests/__init__.py
+new file mode 100644
+index 0000000..6489d36
+--- /dev/null
++++ b/kvbench_asym/tests/__init__.py
+@@ -0,0 +1 @@
++"""CPU tests; synthetic and mocked inputs are never labelled model results."""
+diff --git a/kvbench_asym/tests/helpers.py b/kvbench_asym/tests/helpers.py
+new file mode 100644
+index 0000000..739a5a2
+--- /dev/null
++++ b/kvbench_asym/tests/helpers.py
+@@ -0,0 +1,24 @@
++import numpy as np
++from kvbench_residual_diag.math_ops import Group, lse
++
++
++def group(seed=1,n=8,partial=False,no_quant=False):
++    rng=np.random.default_rng(seed);h,d=4,8
++    raw=[];chunks=[]
++    for i in range(n):
++        tokens=8 if partial and i==n-1 else 16
++        sa=rng.normal(size=(h,tokens));sf=sa+rng.normal(0,.25,size=sa.shape)
++        va=rng.normal(size=(tokens,d));vf=va+rng.normal(0,.1,size=va.shape)
++        quant=not(no_quant or i==0)
++        if not quant:sa=sf.copy();va=vf.copy()
++        cost=tokens*d//4 if quant else 0
++        chunks.append(dict(quantized=quant,k_bytes=cost,v_bytes=cost,tokens=tokens,
++                           lse_a=lse(sa),lse_f=lse(sf),block=i,chunk=0))
++        raw.append((sa,sf,va,vf))
++    origin=np.stack([np.maximum(a.max(1),b.max(1)) for a,b,_,_ in raw]).max(0)
++    z=np.empty((n,2,h));u=np.empty((n,2,2,h,d))
++    for i,(sa,sf,va,vf) in enumerate(raw):
++        for k,s in enumerate((sa,sf)):
++            p=np.exp(s-origin[:,None]);z[i,k]=p.sum(1);u[i,k,0]=p@va;u[i,k,1]=p@vf
++    full=u[:,1,1].sum(0)/z[:,1].sum(0)[:,None]
++    return Group(z,u,chunks,5.,full,origin)
+diff --git a/kvbench_asym/tests/test_inputs.py b/kvbench_asym/tests/test_inputs.py
+new file mode 100644
+index 0000000..baf9beb
+--- /dev/null
++++ b/kvbench_asym/tests/test_inputs.py
+@@ -0,0 +1,79 @@
++import json
++from pathlib import Path
++import tempfile
++import unittest
++import zipfile
++from kvbench_asym.inputs import (LONG_TASKS,inventory,source_bytes,parse_records,prepare,fit,iter_source)
++from kvbench_asym.common import atomic_json,sha_file,jsonl
++
++
++class Tokenizer:
++    def encode(self,prompt,**kwargs):return list(prompt.encode())
++    def decode(self,ids,**kwargs):return bytes(ids).decode(errors='ignore')
++    def apply_chat_template(self,messages,**kwargs):return [1,2]+self.encode(messages[0]['content'])+[3]
++
++
++def make_zip(path,missing=None):
++    with zipfile.ZipFile(path,'w') as z:
++        for name in LONG_TASKS:
++            if name==missing:continue
++            rows=[dict(_id=str(i),context='context',input='question',answers=['answer']) for i in range(2)]
++            z.writestr('data/'+name+'.jsonl','\n'.join(json.dumps(r) for r in rows))
++
++
++class InputTests(unittest.TestCase):
++    def test_all_21_tasks_and_all_rows(self):
++        with tempfile.TemporaryDirectory() as d:
++            z=Path(d)/'data.zip';make_zip(z)
++            inv=inventory({'settings':{'source':str(z)}},['longbench_all'])
++            self.assertEqual(len(inv),21);self.assertEqual(sum(r['count'] for r in inv),42)
++            m=prepare(Path(d)/'inputs',inv,None,4000,96,True,'head-tail',tokenizer=Tokenizer())
++            self.assertEqual(m['cases'],42);self.assertTrue(m['all_source_records_selected'])
++    def test_missing_task_does_not_fallback_to_six(self):
++        with tempfile.TemporaryDirectory() as d:
++            z=Path(d)/'data.zip';make_zip(z,'lcc')
++            with self.assertRaises(ValueError):inventory({'settings':{'source':str(z)}},['longbench_all'])
++    def test_duplicate_member_refused(self):
++        with tempfile.TemporaryDirectory() as d:
++            z=Path(d)/'data.zip'
++            with zipfile.ZipFile(z,'w') as f:
++                f.writestr('qasper.jsonl','{}');f.writestr('data/qasper.jsonl','{}')
++            with self.assertRaises(ValueError):source_bytes(z,'qasper')
++    def test_zip_not_extracted(self):
++        with tempfile.TemporaryDirectory() as d:
++            z=Path(d)/'data.zip'
++            with zipfile.ZipFile(z,'w') as f:f.writestr('../owned','bad');f.writestr('qasper.jsonl','{}')
++            source_bytes(z,'qasper');self.assertFalse((Path(d)/'owned').exists())
++    def test_duplicate_dataset_scope_refused(self):
++        with self.assertRaises(ValueError):inventory({'settings':{}},['longbench_all','longbench_frozen'])
++    def test_clipping_preserves_count(self):
++        p,orig,n,clipped=fit(Tokenizer(),'x'*1000,'chat',True,90,'head-tail')
++        self.assertTrue(clipped);self.assertEqual(orig,1003);self.assertLessEqual(n,90)
++    def test_overflow_error_explicit(self):
++        with self.assertRaises(ValueError):fit(Tokenizer(),'x'*1000,'chat',True,90,'error')
++    def test_no_clipping_for_short_prompt(self):
++        self.assertEqual(fit(Tokenizer(),'abc','completion',False,100,'error'),('abc',3,3,False))
++    def test_pilot_limit_explicit(self):
++        with tempfile.TemporaryDirectory() as d:
++            z=Path(d)/'data.zip';make_zip(z)
++            inv=inventory({'settings':{'source':str(z)}},['longbench_all'])
++            m=prepare(Path(d)/'inputs',inv,None,4000,96,True,'head-tail',3,Tokenizer())
++            self.assertEqual(m['cases'],3);self.assertFalse(m['all_source_records_selected'])
++    def test_real_data_hash_and_full_count(self):
++        with tempfile.TemporaryDirectory() as d:
++            root=Path(d);p=root/'humaneval.jsonl'
++            p.write_text('\n'.join(json.dumps(dict(case_id=str(i),messages=[dict(role='user',content='safe prompt')],reference='SECRET')) for i in range(164)))
++            atomic_json(root/'manifest.json',{'datasets':{'humaneval':{'file':p.name,'sha256':sha_file(p),'count':164}}})
++            inv=inventory({'settings':{}},['humaneval'],real_data=root)
++            self.assertEqual(inv[0]['count'],164)
++            rows=list(iter_source(inv[0]));self.assertTrue(all('SECRET' not in r['prompt'] for r in rows))
++    def test_wrong_math_count_rejected(self):
++        with tempfile.TemporaryDirectory() as d:
++            root=Path(d);p=root/'math_500.jsonl';p.write_text('{}\n')
++            atomic_json(root/'manifest.json',{'datasets':{'math_500':{'file':p.name,'sha256':sha_file(p),'count':1}}})
++            with self.assertRaises(ValueError):inventory({'settings':{}},['math_500'],real_data=root)
++    def test_invalid_record(self):
++        with self.assertRaises(ValueError):parse_records(b'[]','test')
++    def test_template_coverage(self):
++        p=Path(__file__).parents[1]/'longbench_prompts.json'
++        self.assertEqual(set(json.loads(p.read_text())),set(LONG_TASKS))
+diff --git a/kvbench_asym/tests/test_mock_pipeline.py b/kvbench_asym/tests/test_mock_pipeline.py
+new file mode 100644
+index 0000000..bee1da6
+--- /dev/null
++++ b/kvbench_asym/tests/test_mock_pipeline.py
+@@ -0,0 +1,103 @@
++"""Mock lifecycle tests only. They do NOT run vLLM, CUDA, or real activations."""
++import csv
++import gzip
++from pathlib import Path
++import tempfile
++from types import ModuleType,SimpleNamespace
++from unittest.mock import patch
++import unittest
++import numpy as np
++from kvbench_asym.common import atomic_json,read_json,sha_file
++from kvbench_asym.run import main
++from kvbench_asym.tests.helpers import group
++from kvbench_asym.tests.test_inputs import make_zip,Tokenizer
++from kvbench_asym.inputs import prepare as real_prepare
++from kvbench_asym.analyze import group_rows
++
++
++class Process:
++    def __init__(self):self.pid=123456;self.returncode=None
++    def poll(self):return self.returncode
++
++
++class PipelineTests(unittest.TestCase):
++    def run_mock(self,root,resume=False,fail_case=None):
++        root=Path(root);out=root/'run';suite=root/'suite.json'
++        stopped=[];requests=[];proc=Process()
++        pkg=ModuleType('kvbench_longcontext');pkg.__path__=[]
++        common=ModuleType('kvbench_longcontext.common');common.tokenizer_identity=lambda model:{'mock':str(model)}
++        serve=ModuleType('kvbench_longcontext.serve')
++        serve.launch_command=lambda args,name:['python','-m','server']
++        serve.run_text=lambda *a,**k:{'returncode':0,'stdout':'','stderr':''}
++        kv=ModuleType('kvbench_residual');kv.__path__=[]
++        kserve=ModuleType('kvbench_residual.serve')
++        kserve.stop_owned_group=lambda p:(stopped.append(p.pid),setattr(p,'returncode',0))
++        trace=ModuleType('kvbench_residual.trace');trace.summarize=lambda *a,**k:{'source_verified':True,'fused_launch_observed':True}
++        modules={'kvbench_longcontext':pkg,'kvbench_longcontext.common':common,'kvbench_longcontext.serve':serve,
++                 'kvbench_residual':kv,'kvbench_residual.serve':kserve,'kvbench_residual.trace':trace}
++        def build(path):
++            path.mkdir();atomic_json(path/'runtime.json',{'mock':True})
++            return {'executed_source_sha256':'mock','executed_files_sha256':{}}
++        def ready(*args):
++            atomic_json(out/'trace_control/hook_mock.json',{'mock':True})
++            return {'mock':True}
++        def request(base,name,row,s,cap,dest):
++            dest.write_bytes(b'mock response')
++            arm=out/'trace_control/arm.json'
++            if arm.exists():
++                info=read_json(arm);requests.append(row['sample_index'])
++                if row['sample_index']==fail_case:raise RuntimeError('injected test-only request failure')
++                td=Path(info['trace_dir']);npz=td/'owned.npz';npz.write_bytes(b'mock snapshot')
++                atomic_json(td/'trace_mock.json',dict(request=info,cache_ordinal=0,decode_call_index=0,
++                             arrays_file=npz.name,arrays_sha256=sha_file(npz)))
++            return dict(completion_tokens=2,finish_reason='stop',protocol_valid=True)
++        def analysis(paths,path,*args,**kwargs):
++            path.mkdir()
++            r,_,_=group_rows(group(),16,['1.1'],['0','.5','1'],['staged_mass'],[42],
++                           dict(dataset='narrativeqa',trace='mock',kv_head=0))
++            with gzip.open(path/'rows.csv.gz','wt',encoding='utf-8',newline='') as f:
++                w=csv.DictWriter(f,fieldnames=list(r[0]));w.writeheader();w.writerows(r)
++            atomic_json(path/'receipt.json',{'mock_only':True})
++        def prepare(path,*args,**kwargs):
++            return real_prepare(path,*args,**kwargs,tokenizer=Tokenizer())
++        args=['--upstream-suite',str(suite),'--out',str(out),'--case-limit','3',
++              '--layers','0','--decode-calls','0','--diagnostic-max-tokens','8','--bootstrap','10']
++        if resume:args+=['--resume']
++        with patch.dict('sys.modules',modules),patch('kvbench_asym.runtime.build',side_effect=build),\
++             patch('kvbench_asym.run.prepare',side_effect=prepare),\
++             patch('kvbench_asym.run.subprocess.run',return_value=SimpleNamespace(returncode=0)),\
++             patch('kvbench_asym.run.subprocess.Popen',return_value=proc),\
++             patch('kvbench_residual_diag.run.ready',side_effect=ready),\
++             patch('kvbench_residual_diag.run.request_one',side_effect=request),\
++             patch('kvbench_asym.analyze.analyze_paths',side_effect=analysis),\
++             patch('kvbench_asym.run.socket.socket') as socket:
++            socket.return_value.__enter__.return_value.connect_ex.return_value=1
++            main(args)
++        return requests,stopped
++
++    def setup_data(self,root):
++        root=Path(root);model=root/'model';model.mkdir()
++        atomic_json(model/'config.json',dict(model_type='qwen3',num_attention_heads=32,num_key_value_heads=8,head_dim=128,num_hidden_layers=36))
++        z=root/'data.zip';make_zip(z)
++        atomic_json(root/'suite.json',dict(schema='kvbench.longcontext.full_suite.v1',methods=[{'state':'completed'}],
++             settings=dict(model=str(model),source=str(z),data=str(root),kit=str(root),server_env='mock',max_model_len=4096,
++                           batch_tokens=1024,gpu_util=.85,server_seed=42)))
++
++    def test_complete_and_resume_no_repeat(self):
++        with tempfile.TemporaryDirectory() as d:
++            self.setup_data(d)
++            req,stopped=self.run_mock(d)
++            self.assertEqual(req,[0,1,2]);self.assertEqual(len(stopped),1)
++            state=read_json(Path(d)/'run/status.json');self.assertEqual(state['status'],'completed')
++            req2,stopped2=self.run_mock(d,True)
++            self.assertEqual(req2,[]);self.assertEqual(stopped2,[])
++            self.assertEqual(len(list((Path(d)/'run/cases').glob('*/done.json'))),3)
++
++    def test_failed_request_resumes_only_uncommitted(self):
++        with tempfile.TemporaryDirectory() as d:
++            self.setup_data(d)
++            with self.assertRaisesRegex(RuntimeError,'injected'):
++                self.run_mock(d,fail_case=1)
++            self.assertEqual(read_json(Path(d)/'run/status.json')['status'],'failed')
++            req,_=self.run_mock(d,True)
++            self.assertEqual(req,[1,2])
+diff --git a/kvbench_asym/tests/test_report.py b/kvbench_asym/tests/test_report.py
+new file mode 100644
+index 0000000..3e90cce
+--- /dev/null
++++ b/kvbench_asym/tests/test_report.py
+@@ -0,0 +1,33 @@
++import csv
++import io
++import unittest
++import numpy as np
++from kvbench_asym.report import case_summary,paired_bootstrap
++from kvbench_asym.analyze import group_rows
++from kvbench_asym.tests.helpers import group
++
++
++def rows(no_quant=False):
++    r,_,_=group_rows(group(no_quant=no_quant),16,['1.1'],['0','.5','1'],['staged_mass'],[42],
++                    dict(dataset='test',trace='t',kv_head=0))
++    s=io.StringIO();w=csv.DictWriter(s,fieldnames=list(r[0]));w.writeheader();w.writerows(r)
++    s.seek(0);return list(csv.DictReader(s))
++
++
++class ReportTests(unittest.TestCase):
++    def test_paired_rows(self):
++        s=case_summary(rows());self.assertEqual(len(s),3)
++        sym=next(x for x in s if x['k_priority']==.5)
++        self.assertEqual(sym['paired_mean_error_difference_vs_symmetric'],0.)
++    def test_noninformative_not_zero_success(self):
++        self.assertEqual(case_summary(rows(True)),[])
++    def test_payload_mismatch_stops_report(self):
++        r=rows();r[-1]['logical_payload_read_bytes']='1'
++        with self.assertRaises(ValueError):case_summary(r)
++    def test_bootstrap_reproducible(self):
++        self.assertEqual(paired_bootstrap([1,2,3],100,9),paired_bootstrap([1,2,3],100,9))
++    def test_one_case_no_fake_confidence(self):
++        self.assertEqual(paired_bootstrap([.1],100,9),(None,None))
++    def test_constant_difference_interval(self):
++        lo,hi=paired_bootstrap([.1]*20,100,9)
++        self.assertAlmostEqual(lo,.1);self.assertAlmostEqual(hi,.1)
+diff --git a/kvbench_asym/tests/test_select.py b/kvbench_asym/tests/test_select.py
+new file mode 100644
+index 0000000..da59c23
+--- /dev/null
++++ b/kvbench_asym/tests/test_select.py
+@@ -0,0 +1,95 @@
++import unittest
++from dataclasses import replace
++from decimal import Decimal
++import numpy as np
++from kvbench_asym.select import from_group,quota,choose,accounting
++from kvbench_asym.analyze import group_rows
++from kvbench_asym.tests.helpers import group
++
++
++class SelectionTests(unittest.TestCase):
++    def test_equal_integer_total_for_all_shares(self):
++        for n in (0,1,2,3,9,127,511):
++            for t in ('0','.3','1','1.1','1.9','2'):
++                values=[quota(n,t,s) for s in ('0','.25','.5','.75','1')]
++                self.assertEqual(len({x[2] for x in values}),1)
++                for k,v,m in values:
++                    self.assertEqual(k+v,m);self.assertTrue(0<=k<=n and 0<=v<=n)
++    def test_exact_decimal_floor(self):
++        self.assertEqual(quota(10,'1.1','.5'),(6,5,11))
++    def test_endpoints(self):
++        self.assertEqual(quota(100,'1.1','1'),(100,10,110))
++        self.assertEqual(quota(100,'1.1','0'),(10,100,110))
++        self.assertEqual(quota(100,'1.1','.5'),(55,55,110))
++    def test_invalid_quotas(self):
++        for t,s,n in [('NaN',.5,2),(3,.5,3),(1,-1,3),(1,.5,-1),('Infinity',.5,2)]:
++            with self.assertRaises(ValueError):quota(n,t,s)
++    def test_exact_counts_all_selectors(self):
++        g=group();v=from_group(g,16);n=v.eligible.sum()
++        for method in ('anchor_mass','staged_mass','random'):
++            for nk in range(n+1):
++                for nv in range(n+1):
++                    k,val=choose(v,nk,nv,method)
++                    self.assertEqual(k[v.eligible].sum(),nk);self.assertEqual(val[v.eligible].sum(),nv)
++    def test_protected_pool(self):
++        v=from_group(group(),16)
++        for m in ('anchor_mass','staged_mass','random'):
++            k,val=choose(v,0,0,m);self.assertTrue(k[0] and val[0])
++    def test_partial_chunk_full_read(self):
++        v=from_group(group(partial=True),16)
++        self.assertFalse(v.eligible[-1])
++        k,val=choose(v,0,0,'staged_mass');self.assertTrue(k[-1] and val[-1])
++    def test_byte_equality_with_partial_boundary(self):
++        g=group(partial=True)
++        rows,_,_=group_rows(g,16,['1.1'],['0','.5','1'],['staged_mass','random'],[42],dict(dataset='x'))
++        values=[r['logical_payload_read_bytes'] for r in rows if r['kind']=='paired']
++        self.assertEqual(len(set(values)),1)
++    def test_no_quant_history_ineligible(self):
++        g=group(no_quant=True)
++        rows,_,_=group_rows(g,16,['1.1'],['0','.5','1'],['staged_mass'],[42],{})
++        self.assertTrue(all(not r['eligible_for_equal_payload'] for r in rows))
++        self.assertTrue(all(r['payload_reduction_fraction'] is None for r in rows))
++    def test_no_unread_key_leak_into_value_ranking(self):
++        v=from_group(group(),16)
++        k,mask=choose(v,3,2,'staged_mass')
++        changed=v.lse_full_key.copy();changed[~k]=1e8
++        k2,mask2=choose(replace(v,lse_full_key=changed),3,2,'staged_mass')
++        np.testing.assert_array_equal(k,k2);np.testing.assert_array_equal(mask,mask2)
++    def test_anchor_ranking_never_uses_full_key(self):
++        v=from_group(group(),16)
++        x=choose(v,3,4,'anchor_mass')
++        y=choose(replace(v,lse_full_key=np.full_like(v.lse_full_key,np.nan)),3,4,'anchor_mass')
++        for a,b in zip(x,y):np.testing.assert_array_equal(a,b)
++    def test_masks_do_not_depend_on_reference_output(self):
++        g=group();a=from_group(g,16)
++        g.full[:]=1e9
++        b=from_group(g,16)
++        for method in ('staged_mass','anchor_mass','random'):
++            for x,y in zip(choose(a,2,3,method),choose(b,2,3,method)):np.testing.assert_array_equal(x,y)
++    def test_random_reproducible(self):
++        v=from_group(group(n=30),16)
++        for a,b in zip(choose(v,10,10,'random',42),choose(v,10,10,'random',42)):np.testing.assert_array_equal(a,b)
++    def test_random_seeds_distinct(self):
++        v=from_group(group(n=30),16)
++        self.assertFalse(np.array_equal(choose(v,10,10,'random',42)[0],choose(v,10,10,'random',43)[0]))
++    def test_full_control_zero_error(self):
++        rows,_,_=group_rows(group(),16,['1'],['.5'],['staged_mass'],[42],{})
++        self.assertEqual(rows[0]['relative_l2_max_head'],0.)
++    def test_masks_pack_roundtrip(self):
++        rows,packed,n=group_rows(group(),16,['1.1'],['0','.5','1'],['staged_mass'],[42],{})
++        masks=np.unpackbits(packed,axis=-1)[...,:n]
++        self.assertEqual(masks.shape,(len(rows),2,n));self.assertTrue(masks[0].all())
++    def test_v_only_code_saving(self):
++        v=from_group(group(n=11),16)
++        k,rv=choose(v,10,1,'staged_mass')
++        self.assertAlmostEqual(accounting(v,k,rv)['payload_reduction_fraction'],.225)
++    def test_fixed_budget_spent_even_when_error_worsens(self):
++        g=group(seed=6)
++        rows,_,_=group_rows(g,16,['1.1'],['0','.5','1'],['random'],[42],{})
++        v=from_group(g,16);m=quota(v.eligible.sum(),'1.1','.5')[2]
++        for r in rows[2:]:
++            self.assertEqual(r['key_residual_bytes']+r['value_residual_bytes'],m*v.packet_bytes)
++    def test_invalid_method(self):
++        with self.assertRaises(ValueError):choose(from_group(group(),16),1,1,'oracle')
++    def test_quota_overspend_rejected(self):
++        with self.assertRaises(ValueError):choose(from_group(group(),16),50,1,'random')
+diff --git a/kvbench_asym/tests/test_workflow.py b/kvbench_asym/tests/test_workflow.py
+new file mode 100644
+index 0000000..58fb7a4
+--- /dev/null
++++ b/kvbench_asym/tests/test_workflow.py
+@@ -0,0 +1,72 @@
++import json
++from pathlib import Path
++import tempfile
++import unittest
++from unittest.mock import patch
++from kvbench_asym.common import atomic_json,sha_file,inside
++from kvbench_asym.run import parse,case_valid,prune_new_arrays,validate_capture_coverage
++from kvbench_asym.capture import RollingCapture
++from kvbench_asym.runtime import check_dependencies
++
++
++class WorkflowTests(unittest.TestCase):
++    def test_defaults_full_dataset(self):
++        a=parse([]);self.assertEqual(a.datasets,['longbench_all']);self.assertEqual(a.case_limit,0)
++    def test_no_symmetric_control_refused(self):
++        with self.assertRaises(SystemExit):parse(['--shares','0','1'])
++    def test_late_call_without_room_refused(self):
++        with self.assertRaises(SystemExit):parse(['--decode-calls','95'])
++    def test_resume_requires_directory(self):
++        with self.assertRaises(SystemExit):parse(['--resume'])
++    def test_duplicate_profile_refused(self):
++        with self.assertRaises(SystemExit):parse(['--totals','1','1.0'])
++    def test_package_pins_match_supplied_archive(self):
++        self.assertEqual(len(check_dependencies()),4)
++    def test_missing_capture_is_not_natural_eos(self):
++        with self.assertRaises(RuntimeError):validate_capture_coverage([],{'case_id':'x','dataset':'t'},
++                {'completion_tokens':96,'finish_reason':'length'},[0],[0,63])
++    def test_early_eos_explicit(self):
++        cov=validate_capture_coverage([],{'case_id':'x','dataset':'t'},
++                {'completion_tokens':1,'finish_reason':'stop'},[0],[0,63])
++        self.assertEqual(len(cov),2);self.assertTrue(all(not r['expected_given_output'] for r in cov))
++    def test_complete_capture(self):
++        r={'request':{'case_id':'x','dataset':'t'},'cache_ordinal':0,'decode_call_index':0}
++        cov=validate_capture_coverage([r],{'case_id':'x','dataset':'t'},
++                {'completion_tokens':2,'finish_reason':'stop'},[0],[0,63])
++        self.assertTrue(cov[0]['captured']);self.assertFalse(cov[1]['captured'])
++    def test_duplicate_capture_rejected(self):
++        r={'request':{'case_id':'x','dataset':'t'},'cache_ordinal':0,'decode_call_index':0}
++        with self.assertRaises(ValueError):validate_capture_coverage([r,r],{'case_id':'x','dataset':'t'},
++                {'completion_tokens':2,'finish_reason':'stop'},[0],[0])
++    def test_committed_result_hash_checked(self):
++        with tempfile.TemporaryDirectory() as d:
++            root=Path(d);base=root/'cases/x';a=base/'attempt';a.mkdir(parents=True)
++            f=a/'rows';f.write_text('saved')
++            atomic_json(base/'done.json',dict(schema='kvbench.asym.case.v1',status='completed',attempt='cases/x/attempt',file_hashes={'rows':sha_file(f)}))
++            self.assertTrue(case_valid(root,base));f.write_text('changed')
++            with self.assertRaises(ValueError):case_valid(root,base)
++    def test_prune_only_new_named_arrays(self):
++        with tempfile.TemporaryDirectory() as d:
++            a=Path(d);t=a/'traces';t.mkdir();f=t/'x.npz';f.write_bytes(b'owned')
++            keep=t/'other.npz';keep.write_bytes(b'not named')
++            atomic_json(t/'trace_1.json',dict(arrays_file=f.name,arrays_sha256=sha_file(f)))
++            prune_new_arrays(a);self.assertFalse(f.exists());self.assertTrue(keep.exists())
++    def test_path_escape_refused(self):
++        with tempfile.TemporaryDirectory() as d:
++            with self.assertRaises(ValueError):inside(d,'../escape')
++    def test_rolling_epoch_resets_caps(self):
++        with tempfile.TemporaryDirectory() as d:
++            root=Path(d);control=root/'trace_control';control.mkdir();source=root/'source.py';source.write_text('# mock')
++            atomic_json(control/'capture_config.json',dict(max_bytes=100,layer_ordinals=[0],decode_calls=[0]))
++            cap=RollingCapture(control,source)
++            t1=root/'cases/a/traces';t1.mkdir(parents=True)
++            atomic_json(control/'arm.json',dict(epoch='a',trace_dir=str(t1)))
++            cap.arm();cap.saved=99;cap.bytes=99
++            t2=root/'cases/b/traces';t2.mkdir(parents=True)
++            atomic_json(control/'arm.json',dict(epoch='b',trace_dir=str(t2)))
++            cap.arm();self.assertEqual(cap.saved,0);self.assertEqual(cap.bytes,0);self.assertEqual(cap.root,t2)
++    def test_capture_no_arm(self):
++        with tempfile.TemporaryDirectory() as d:
++            root=Path(d);control=root/'trace_control';control.mkdir();source=root/'source.py';source.write_text('# mock')
++            atomic_json(control/'capture_config.json',{})
++            cap=RollingCapture(control,source);self.assertIsNone(cap.arm())

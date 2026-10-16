@@ -1,0 +1,1152 @@
+diff --git a/kvbench_progressive_online/README.zh-CN.md b/kvbench_progressive_online/README.zh-CN.md
+new file mode 100644
+index 0000000..60f0c2f
+--- /dev/null
++++ b/kvbench_progressive_online/README.zh-CN.md
+@@ -0,0 +1,166 @@
++# Progressive-KV Online v1：Qasper × 20 条，真实 vLLM + GPU Attention
++
++> **这是一次小规模真实在线主实验，不是已出结果的论文结论。** 代码尚未在目标 RTX 3090 上实际编译/运行；若未得到 `status.json: completed` 和三组 `scores.summary.json`，不能声称测得 TPOT 或模型质量。报告中绝不填假数字。
++
++## 1. 一句话运行
++
++```bash
++cd /home/wanglin/kvbench-3090-cu126
++bash kvbench_progressive_online/run_qasper20.sh \
++  --upstream-suite "$PWD/results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json" \
++  --task qasper --count 20 --concurrency 8 --gpu 0
++```
++
++运行脚本复用原 `kvarn-serve`、`evalscope-client`、KIT/env.sh、Qwen3-4B 模型和已冻结 LongBench Qasper 数据。不安装依赖、不下载数据，不重新采集 Trace。`--plan` 可以检查选中的 20 个 case ID（无 GPU 工作，但不是强制阶段）。
++
++输出位于新目录 `results/progressive_online/qasper20_<日期>_<PID>`；已有目录不会覆盖。依次运行三组独立 vLLM 服务，绝不与原服务并行；不会清除旧结果。
++
++## 2. 本次只测一个数据集、三种方法
++
++| 实验组 | KV 存储 | GPU Decode | 用途 |
++|---|---|---|---|
++| `parent` | 原生 KVarN K4V4，每个标量 INT4 | 原生 Attention | **真实性能和质量基线** |
++| `p211_full` | 原始 INT4 无损拆成 High2/Bit1/Bit0 | GPU 对每块完整读取 4bit | 衡量拆分/拼回/额外访存的**表示成本** |
++| `p211_adaptive` | 与 `p211_full` **同样的完整 4bit 存储** | 按 Query 和当前 Chunk 的 Attention 代理分数决定读 2/3/4bit | 衡量多级选择的**实际净收益** |
++
++20 条 Qasper 来自**成功的 2026-10-09 V3 已冻结长上下文数据**，使用其已确定的随机次序前 20 条，无重分词、无隐式裁剪。Three arms 使用完全相同的 20 个 case ID、请求种子、thinking=true、temperature=0.6、top_p=0.95、top_k=20，原主实验协议的 `max_tokens:null` / 剩余上下文预算。默认 C8 并发、显存使用率 0.85、APC 关闭；vLLM 正式路径默认**启用 CUDA Graph（不加 `--enforce-eager`）**。
++
++每组有独立 Runtime copy，基于原 `kvbench_residual.runtime` 的审核过的 KVarN 固定 Commit `7586257f...` 和源码 SHA pins；在独立副本里修改 KVarN 的 torch Writer、torch Unpacker、完整量化 materializer、Verify full-reader、Triton fused Decode single/split。GPU 真实 Attention Kernel 中加载的是独立位平面。不是 HF 输出伪装 GPU 结果，不把 CPU 反事实当 TPOT。
++
++## 3. 2+1+1 的精确编码
++
++原 KVarN K4V4 码为整数 `c`，范围 0..15：
++
++```
++完整 INT4: b3 b2 b1 b0
++
++High2:       b3 b2     -> 每 tile 2bit × N，连续地址
++Bit1:              b1  -> 每 tile 1bit × N，连续地址
++Bit0:                 b0 -> 每 tile 1bit × N，连续地址
++```
++
++重建值：
++
++\[
++Q_2(c)=4(c\gg2)+1.5,\quad
++Q_3(c)=4(c\gg2)+2[(c\gg1)\&1]+0.5,\quad
++Q_4(c)=c.
++\]
++
++完整 Q4 **逐码字、逐字节数值完全等于原 INT4**，不需要重新校准，也不需要 Gaussian Lloyd Tree 的二次量化。原 KVarN 的 Scale、Zero Point、FP16 Sink/Tail Pool 保持不变。
++
++**真实 3bit 读取不会暗中读取完整的 2bit Low Plane**：`High2` 与后两条 1bit plane 在内存中物理分开，各有不同 `tl.load`；K/V 的精度选择路径由 Triton 统一标量分支处理，读取 B1 后才决定是否进一步加载 B0。自变量 `D` 和 `GROUP` 必须同时能被 8 整除，当前明确限定 Qwen3-4B、GQA 32/8、head_dim 128、K4V4/G128。
++
++## 4. 在线 Controller（没有固定每 Query 读取预算）
++
++对于每个当前真实 Decode Query 与当前 KV Chunk，统一处理共享该物理 KV Head 的 4 个 GQA Query Heads。先读 K 高两位，得到近似 Score `s2`，并依靠已有的 K Scale、Q 计算查询敏感度：
++
++\[
++ r_K(q)=|\mathrm{attn\_scale}|\max_{j\in b}|r_{K,j}|
++   \sqrt{\sum_c(q_cs_{K,c})^2}.
++\]
++
++根据当前 Chunk 的粗精度 Logit 和**已处理前缀**在线维护的 LSE，计算一个近似重要性 `mass_proxy`。这里不是完整 Attention 归一化概率，也**不是有保证的误差上界**。
++
++- 若 `mass_proxy × 1.5 × r_K <= risk-k2`，K 选 2bit。
++- 否则加载 K Bit1，重算 3bit Logit；若 `mass_proxy3 × 0.5 × r_K <= risk-k3`，选 3bit。
++- 否则加载 K Bit0，选完整 4bit。
++
++得到已选 K 的 Score 后，在当前 Chunk 内立刻决定 V 精度（无需先扫完全局 K）：
++
++\[
++r_V=\frac{\max_{j\in b}|s_{V,j}|}{\max_{j\in b}\max(|z_{V,j}|,|z_{V,j}+15s_{V,j}|)}.
++\]
++
++当 `mass_proxy × 1.5 × rV <= risk-v2`，V 选 2bit；否则读 Bit1，当 `mass_proxy × 0.5 × rV <= risk-v3`，选择 3bit；否则读 Bit0 得到 4bit。全部 Query Heads 取 max risk，确保一个 GQA 物理 Chunk 统一读取深度。
++
++默认阈值 `risk-k2=.08, risk-k3=.04, risk-v2=.12, risk-v3=.08` **属于未校准的探索性参数**，不是能够保证 Attention Error<epsilon 的置信界。每个 Decode step 读取多少 Residual 完全由实际 Query、Chunk 和阈值决定，既没有全局固定预算 B，也没有按总预算排序的 Controller。这种流式近似可能受历史访问顺序影响，不能直接声称 ReadKV 的分配最优性。
++
++**注意：** 这个 Controller 的 FP16/TF32 舍入效果、在 CUDA Graph 下的 Triton 分支及质量都需要目标 GPU 实测。它可能让推理变慢或产生明显任务质量下降，必须保留并报告负面结果。
++
++## 5. 与 ReadKV 的区别（论文工作要明确）
++
++| 维度 | ReadKV | 本 Progressive-KV Online v1 |
++|---|---|---|
++| 码本 | Gaussian Lloyd 嵌套量化树、校准均值方差 | **原 KVarN INT4 码字无损分级拆分**，无需新量化器 |
++| 完整位数 | 主要使用 W=8 | **W=4（2+1+1）**，控制变量匹配已有 Qwen3-4B 基线 |
++| 读取预算 | **固定 R**，按各元素边际失真贪心分配 | **无固定总预算**，在线根据当前 Chunk 的粗 Attention 风险阈值选择深度 |
++| K/V 粒度 | Key 按通道，Value 按历史 Token | **K/V 都按 GPU Token Chunk**，一个物理 GQA 组统一深度 |
++| 依赖 | K 精度决定后计算近似 Attention，再对 V 全局分配 | **流式处理当前 Chunk 的 K → V → Online Softmax 继续**；不建立完整 Attention 概率矩阵 |
++| 精度理论 | 固定预算内校准失真代理最优 | **暂不保证误差阈值**，需要在线 Quality/TPOT 实证和后续严格风险研究 |
++| 主要目标 | 读比特预算的理论失真质量 | 在现有 vLLM K4V4 GPU fused 路径上验证**实际 TPOT/吞吐与质量权衡** |
++
++二者都基于 Progressive Precision 和 Query-aware Reading，**不应把这两个已有概念本身声称为原创**。这版的区分点是兼容已有量化缓存 + 块级融合实时判断 + 非固定每 Query 读取量。但是否具有足够新的论文贡献，仍取决于质量/延迟实验的真实性能提升和后续系统/理论完善。
++
++## 6. TPOT 与输出文件
++
++每组重用 `kvbench_longcontext.run`（服务端 OpenAI SSE 真正解码）以及 `kvbench_longcontext.scoring`（原 LongBench QA F1），不重新定义评分。正式结果直接输出：
++
++```
++results/progressive_online/qasper20_.../
++  plan.json                   # 20个固定case ID、源套件/模型 SHA
++  status.json                 # 完成/失败状态，真实完成前绝不报告成功
++  settings.json
++  data/qasper.jsonl           # 选中请求、Prompt、答案及原生预算
++  data/manifest.json          # 新数据集Hash + 来源
++  runtimes/{parent,p211_full,p211_adaptive}/runtime.json
++  servers/<arm>/progressive.launch.json
++  servers/<arm>/server.log
++  servers/<arm>/dispatch_summary.json
++  runs/<arm>/r01_qasper_C8/requests.jsonl
++  runs/<arm>/r01_qasper_C8/performance.summary.json
++  runs/<arm>/r01_qasper_C8/scores.jsonl
++  runs/<arm>/r01_qasper_C8/scores.summary.json
++  runs/<arm>/r01_qasper_C8/telemetry.jsonl
++  logs/*.log
++  comparison.csv
++  comparison.json
++  paired_quality.csv
++  readout.md                  # 最终中文三组对照表
++```
++
++### 指标定义
++
++- **TPOT**：每请求 `(E2E - 首个内容/思考片段时间)/(native completion_tokens-1)`，按请求等权平均；报告 P95。这是包含 HTTP/调度的在线 TPOT，不是一个纯 Triton Kernel 时间。
++- **TTFT**：首个内容或 reasoning 片段的延迟；不是“最终验证完成的第一个回答 token”专用指标。
++- **Output Tokens/s**：并发请求总完成 Token / 真实测量窗口。
++- **LongBench Score**：Qasper 官方 QA F1，转换为 0~100 分；20 个 case 逐一配对，不丢弃截断响应。
++- **GPU 使用量**：nvidia-smi 周期采样的显存使用峰值，是 GPU-wide 采样值，不等于算子的 Peak Allocated 或 HBM 物理读取计数。
++- **输出长度/E2E/Preemptions**：报告辅助解读 TPOT，避免把生成更短误当作 Kernel 加速。
++
++本补丁**不**提供真实 `dram__bytes_read`、逐 Chunk 的动态精度占比或逐 token CUDA events；如以后要核实逻辑节省是否变成物理 DRAM 节省，可再单独启用 ncu。但这不是运行此次 20 条在线主实验的前置条件。
++
++## 7. 补丁使用步骤
++
++方案 A（Git Apply）：
++
++```bash
++cd /home/wanglin/kvbench-3090-cu126
++PATCH=/绝对路径/kvbench_progressive_online_qasper20_20261015.patch
++git apply --check "$PATCH"
++git apply "$PATCH"
++# 可选的轻量正确性测试，CPU 9 项
++source /home/wanglin/miniconda3/etc/profile.d/conda.sh
++conda activate kvarn-serve
++python -m unittest discover -s kvbench_progressive_online/tests -v
++# 真正的三组 GPU 在线实验
++bash kvbench_progressive_online/run_qasper20.sh \
++ --upstream-suite "$PWD/results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json" \
++ --task qasper --count 20 --concurrency 8 --gpu 0
++```
++
++方案 B：源码 ZIP 直接解压到项目根目录，跳过 `git apply`，后续执行完全相同。不要既解压又重复应用补丁。
++
++如需要先看选择了哪 20 条（非必须）：
++
++```bash
++bash kvbench_progressive_online/run_qasper20.sh --plan
++```
++
++若 CUDA 编译失败，先读 `status.json`、`logs/p211_*.server_launcher.log`、`servers/p211_*/server.log`，保留实际 Triton traceback；不要用其他生成结果代替失败实验。源码固定 SHA 不匹配时明确停止，不强行修改旧版 vLLM。
++
++### 运行环境与验证边界
++
++依赖仓库已有 `kvbench_residual/`、`kvbench_longcontext/` 和已运行的 Qwen3-4B/KVarN fork。没有使用之前的离线 `kvbench_progressive` 包，因此可直接在未应用上一版补丁时使用。
++
++已经在交付环境验证：Python 编译、Shell 语法、NumPy/Torch CPU 编码无损往返、物理 bit-plane 地址、源码变换局部测试。**未在交付环境运行目标 RTX 3090、Triton Kernel 编译、在线生成、LongBench 打分或 TPOT**。实际结果应从本补丁的用户侧运行中产生。
+diff --git a/kvbench_progressive_online/__init__.py b/kvbench_progressive_online/__init__.py
+new file mode 100644
+index 0000000..556c7ca
+--- /dev/null
++++ b/kvbench_progressive_online/__init__.py
+@@ -0,0 +1 @@
++"""Progressive 2+1+1 INT4 online GPU decode, experimental Qwen3 KVarN bridge."""
+diff --git a/kvbench_progressive_online/codec.py b/kvbench_progressive_online/codec.py
+new file mode 100644
+index 0000000..21f3cf2
+--- /dev/null
++++ b/kvbench_progressive_online/codec.py
+@@ -0,0 +1,99 @@
++# SPDX-License-Identifier: Apache-2.0
++"""Bit-exact 2+1+1 unpackable planar packing of the original native INT4 codes.
++
++One tile contains all packed high2, then all packed bit1, then all packed bit0.
++For K [D,G], for V [G,D]; both dimensions are multiples of 8. No extra KV
++allocation: (2+1+1) bits per code, including the whole tile.
++"""
++from __future__ import annotations
++import numpy as np
++
++
++def _check_array(a):
++    if a.ndim < 2 or a.shape[-1] % 8:
++        raise ValueError('Expected tile (..., rows, columns) with columns divisible by 8')
++    if np.any(a < 0) or np.any(a > 15):
++        raise ValueError('Original K4V4 codes must be within [0,15]')
++
++
++def _bits_numpy(a, nbits):
++    a=np.asarray(a,np.uint8)
++    div=8//nbits
++    m=(1<<nbits)-1
++    a=a.reshape(*a.shape[:-1],a.shape[-1]//div,div)
++    out=np.zeros(a.shape[:-1],np.uint8)
++    for i in range(div):out|=(a[...,i]&m)<<(i*nbits)
++    return out
++
++
++def pack_numpy(c):
++    c=np.asarray(c)
++    _check_array(c)
++    c=c.astype(np.uint8)
++    shape=c.shape
++    parts=[_bits_numpy(c>>2,2),_bits_numpy((c>>1)&1,1),_bits_numpy(c&1,1)]
++    return np.concatenate([p.reshape(*shape[:-2],-1) for p in parts],axis=-1).reshape(*shape[:-1],shape[-1]//2)
++
++
++def unpack_numpy(packed,cols,depth=4):
++    p=np.asarray(packed,np.uint8)
++    if depth not in (2,3,4) or p.ndim<2 or cols%8 or p.shape[-1]*2!=cols:
++        raise ValueError('Invalid packed tile/precision')
++    rows=p.shape[-2]
++    flat=p.reshape(*p.shape[:-2],-1)
++    n=rows*cols
++    n2,n1=n//4,n//8
++    def unpack(raw,bits,width):
++        raw=raw.reshape(*p.shape[:-2],rows,cols//(8//bits))
++        shifts=np.arange(8//bits,dtype=np.uint8)*bits
++        return ((raw[...,None]>>shifts)&((1<<bits)-1)).reshape(*p.shape[:-2],rows,cols)
++    h=unpack(flat[...,:n2],2,cols).astype(np.int32)
++    if depth==2:return 4*h+1.5
++    m=unpack(flat[...,n2:n2+n1],1,cols).astype(np.int32)
++    if depth==3:return 4*h+2*m+0.5
++    l=unpack(flat[...,n2+n1:n2+2*n1],1,cols).astype(np.int32)
++    return (4*h+2*m+l).astype(np.uint8)
++
++
++def _torch_plane(q,bits):
++    div=8//bits
++    shape=q.shape
++    r=q.reshape(*shape[:-1],shape[-1]//div,div)
++    v=r[...,0]
++    for i in range(1,div): v=v | (r[...,i] << (bits*i))
++    return v.reshape(*shape[:-2],-1)
++
++
++def pack_211_torch(code):
++    """Drop-in for KVarN store _pack_4bit and 4-bit _pack_lowbit."""
++    import torch
++    if code.ndim<2 or code.shape[-1]%8:
++        raise ValueError('INT4 tile width must be divisible by eight')
++    q=code.to(torch.uint8)&15
++    hi=_torch_plane(q>>2,2)
++    b1=_torch_plane((q>>1)&1,1)
++    b0=_torch_plane(q&1,1)
++    return torch.cat((hi,b1,b0),dim=-1).reshape(*q.shape[:-1],q.shape[-1]//2)
++
++
++def _torch_unplane(raw,rows,cols,bits):
++    import torch
++    div=8//bits
++    t=raw.reshape(*raw.shape[:-1],rows,cols//div)
++    return torch.stack(tuple((t>>(bits*i))&((1<<bits)-1) for i in range(div)),dim=-1).reshape(*raw.shape[:-1],rows,cols)
++
++
++def unpack_211_torch(packed,original_last_dim):
++    """Drop-in for KVarN torch decode _unpack_4bit; full INT4 recovered."""
++    import torch
++    p=packed.to(torch.uint8)
++    cols=original_last_dim
++    if p.ndim<2 or cols%8 or p.shape[-1]*2!=cols:
++        raise ValueError('Invalid 2+1+1 tile shape')
++    rows=p.shape[-2]
++    flat=p.reshape(*p.shape[:-2],-1)
++    n=rows*cols
++    hi=_torch_unplane(flat[...,:n//4],rows,cols,2)
++    b1=_torch_unplane(flat[...,n//4:3*n//8],rows,cols,1)
++    b0=_torch_unplane(flat[...,3*n//8:n//2],rows,cols,1)
++    return ((hi<<2)|(b1<<1)|b0).to(torch.uint8)
+diff --git a/kvbench_progressive_online/kernel.py b/kvbench_progressive_online/kernel.py
+new file mode 100644
+index 0000000..cc28f41
+--- /dev/null
++++ b/kvbench_progressive_online/kernel.py
+@@ -0,0 +1,126 @@
++# SPDX-License-Identifier: Apache-2.0
++"""Triton snippets for genuine fused progressive decode (no Python per-token loop).
++
++K and V code layout is high2|bit1|bit0, each plane a contiguous tile region.
++The adaptive branch is heuristic: approximate, prefix-relative chunk mass and
++query/scale RMS are NOT a certified output-error bound. There is intentionally
++no predeclared byte budget; read-depth is selected anew per decode chunk.
++"""
++
++FULL = r'''
++                # ProgKV high2 + bit1 + bit0; all K/V source bits read.
++                s_row_K = tl.load(ku16 + (K_S_ROW_OFFSET // 2) + cols,
++                                  mask=cmask, other=0).to(tl.float16, bitcast=True).to(tl.float32)
++                s_row_V = tl.load(ku16 + (V_S_ROW_OFFSET // 2) + cols,
++                                  mask=cmask, other=0).to(tl.float16, bitcast=True).to(tl.float32)
++                zp_V = tl.load(ku16 + (V_ZP_OFFSET // 2) + cols,
++                               mask=cmask, other=0).to(tl.float16, bitcast=True).to(tl.float32)
++                tl.static_assert(K_BITS == 4 and V_BITS == 4)
++                tl.static_assert(D % 8 == 0 and GROUP % 8 == 0)
++                ar_skip_k = False
++                ar_skip_v = False
++                ar_eps = tl.zeros([Q_PER_KV_PAD], tl.float32)
++                ar_count = tl.sum(cmask.to(tl.int32), axis=0)
++                ar_k_hi_addr = tile_base + K_PACKED_OFFSET + d_offs[:, None] * (GROUP // 4) + cols[None, :] // 4
++                ar_k_bit_addr = tile_base + K_PACKED_OFFSET + D * GROUP // 4 + d_offs[:, None] * (GROUP // 8) + cols[None, :] // 8
++                ar_kh_b = tl.load(KV_cache_ptr + ar_k_hi_addr, mask=cmask[None, :], other=0).to(tl.int32)
++                ar_k1_b = tl.load(KV_cache_ptr + ar_k_bit_addr, mask=cmask[None, :], other=0).to(tl.int32)
++                ar_k0_b = tl.load(KV_cache_ptr + ar_k_bit_addr + D * GROUP // 8, mask=cmask[None, :], other=0).to(tl.int32)
++                ar_kh = ((ar_kh_b >> (2 * (cols[None, :] % 4))) & 3).to(tl.float32)
++                ar_k1 = ((ar_k1_b >> (cols[None, :] % 8)) & 1).to(tl.float32)
++                ar_k0 = ((ar_k0_b >> (cols[None, :] % 8)) & 1).to(tl.float32)
++                q_K = 4.0 * ar_kh + 2.0 * ar_k1 + ar_k0
++                K_dg = (q_K * s_col_K[:, None] + zp_K[:, None]) * s_row_K[None, :]
++                scores = tl.where(cmask[None, :], tl.dot(q, K_dg) * scale, -float('inf'))
++                ar_v_hi_addr = tile_base + V_PACKED_OFFSET + cols[:, None] * (D // 4) + d_offs[None, :] // 4
++                ar_v_bit_addr = tile_base + V_PACKED_OFFSET + D * GROUP // 4 + cols[:, None] * (D // 8) + d_offs[None, :] // 8
++                ar_vh_b = tl.load(KV_cache_ptr + ar_v_hi_addr, mask=cmask[:, None], other=0).to(tl.int32)
++                ar_v1_b = tl.load(KV_cache_ptr + ar_v_bit_addr, mask=cmask[:, None], other=0).to(tl.int32)
++                ar_v0_b = tl.load(KV_cache_ptr + ar_v_bit_addr + D * GROUP // 8, mask=cmask[:, None], other=0).to(tl.int32)
++                ar_vh = ((ar_vh_b >> (2 * (d_offs[None, :] % 4))) & 3).to(tl.float32)
++                ar_v1 = ((ar_v1_b >> (d_offs[None, :] % 8)) & 1).to(tl.float32)
++                ar_v0 = ((ar_v0_b >> (d_offs[None, :] % 8)) & 1).to(tl.float32)
++                q_V = 4.0 * ar_vh + 2.0 * ar_v1 + ar_v0
++                Vc = (q_V * s_row_V[:, None] + zp_V[:, None]) * s_col_V[None, :]
++'''
++
++# PROG_K_2 / PROG_K_3 / PROG_V_2 / PROG_V_3 are compile-time constants
++# placed at the top of each JIT kernel by transform.py. Unlike ReadKV, there
++# is NO global B and NO second full-K scan; cost depends on per-chunk decisions.
++ADAPTIVE = r'''
++                s_row_K = tl.load(ku16 + (K_S_ROW_OFFSET // 2) + cols,
++                                  mask=cmask, other=0).to(tl.float16, bitcast=True).to(tl.float32)
++                s_row_V = tl.load(ku16 + (V_S_ROW_OFFSET // 2) + cols,
++                                  mask=cmask, other=0).to(tl.float16, bitcast=True).to(tl.float32)
++                zp_V = tl.load(ku16 + (V_ZP_OFFSET // 2) + cols,
++                               mask=cmask, other=0).to(tl.float16, bitcast=True).to(tl.float32)
++                tl.static_assert(K_BITS == 4 and V_BITS == 4)
++                tl.static_assert(D % 8 == 0 and GROUP % 8 == 0)
++                ar_skip_k = False
++                ar_skip_v = False
++                ar_eps = tl.zeros([Q_PER_KV_PAD], tl.float32)
++                ar_count = tl.sum(cmask.to(tl.int32), axis=0)
++                ar_k_hi_addr = tile_base + K_PACKED_OFFSET + d_offs[:, None] * (GROUP // 4) + cols[None, :] // 4
++                ar_k_bit_addr = tile_base + K_PACKED_OFFSET + D * GROUP // 4 + d_offs[:, None] * (GROUP // 8) + cols[None, :] // 8
++                ar_kh_b = tl.load(KV_cache_ptr + ar_k_hi_addr, mask=cmask[None, :], other=0).to(tl.int32)
++                ar_kh = ((ar_kh_b >> (2 * (cols[None, :] % 4))) & 3).to(tl.float32)
++                q_K = 4.0 * ar_kh + 1.5
++                K_dg = (q_K * s_col_K[:, None] + zp_K[:, None]) * s_row_K[None, :]
++                ar_scores_2 = tl.where(cmask[None, :], tl.dot(q, K_dg) * scale, -float('inf'))
++                # Low-cost RMS-style QUERY SENSITIVITY (not a worst-case bound).
++                ar_qscale = q.to(tl.float32) * s_col_K[None, :]
++                ar_rms_k = tl.sqrt(tl.sum(ar_qscale * ar_qscale, axis=1) + 1.0e-12)
++                ar_rms_k = ar_rms_k * tl.max(tl.abs(s_row_K), axis=0) * tl.abs(scale)
++                ar_mass_2, _ = _ar_chunk_mass(ar_scores_2, ar_eps, ar_prefix_lower, ar_count)
++                ar_risk_k2 = tl.max(tl.where(qmask, ar_mass_2 * (1.5 * ar_rms_k), 0.0), axis=0)
++                if ar_risk_k2 <= PROG_K_2:
++                    scores = ar_scores_2
++                    ar_skip_k = True
++                else:
++                    ar_k1_b = tl.load(KV_cache_ptr + ar_k_bit_addr,
++                                     mask=cmask[None, :], other=0).to(tl.int32)
++                    ar_k1 = ((ar_k1_b >> (cols[None, :] % 8)) & 1).to(tl.float32)
++                    q_K = 4.0 * ar_kh + 2.0 * ar_k1 + 0.5
++                    K_dg = (q_K * s_col_K[:, None] + zp_K[:, None]) * s_row_K[None, :]
++                    ar_scores_3 = tl.where(cmask[None, :], tl.dot(q, K_dg) * scale, -float('inf'))
++                    ar_mass_3, _ = _ar_chunk_mass(ar_scores_3, ar_eps, ar_prefix_lower, ar_count)
++                    ar_risk_k3 = tl.max(tl.where(qmask, ar_mass_3 * (0.5 * ar_rms_k), 0.0), axis=0)
++                    if ar_risk_k3 <= PROG_K_3:
++                        scores = ar_scores_3
++                    else:
++                        ar_k0_b = tl.load(KV_cache_ptr + ar_k_bit_addr + D * GROUP // 8,
++                                         mask=cmask[None, :], other=0).to(tl.int32)
++                        ar_k0 = ((ar_k0_b >> (cols[None, :] % 8)) & 1).to(tl.float32)
++                        q_K = 4.0 * ar_kh + 2.0 * ar_k1 + ar_k0
++                        K_dg = (q_K * s_col_K[:, None] + zp_K[:, None]) * s_row_K[None, :]
++                        scores = tl.where(cmask[None, :], tl.dot(q, K_dg) * scale, -float('inf'))
++                # Value depth uses already-computed selected K logits. This is
++                # an online, streaming estimation, NOT normalized full attention.
++                ar_mass_v, _ = _ar_chunk_mass(scores, ar_eps, ar_prefix_lower, ar_count)
++                ar_mass_v = tl.max(tl.where(qmask, ar_mass_v, 0.0), axis=0)
++                ar_v_range = tl.maximum(tl.abs(zp_V), tl.abs(zp_V + 15.0 * s_row_V))
++                ar_v_range = tl.max(tl.where(cmask, ar_v_range, 0.0), axis=0)
++                ar_v_s = tl.max(tl.abs(s_row_V), axis=0)
++                ar_v_ratio = tl.where(ar_v_range > 0, ar_v_s / tl.maximum(ar_v_range, 1.0e-30), 0.0)
++                ar_v_hi_addr = tile_base + V_PACKED_OFFSET + cols[:, None] * (D // 4) + d_offs[None, :] // 4
++                ar_v_bit_addr = tile_base + V_PACKED_OFFSET + D * GROUP // 4 + cols[:, None] * (D // 8) + d_offs[None, :] // 8
++                ar_vh_b = tl.load(KV_cache_ptr + ar_v_hi_addr, mask=cmask[:, None], other=0).to(tl.int32)
++                ar_vh = ((ar_vh_b >> (2 * (d_offs[None, :] % 4))) & 3).to(tl.float32)
++                if ar_mass_v * (1.5 * ar_v_ratio) <= PROG_V_2:
++                    q_V = 4.0 * ar_vh + 1.5
++                    ar_skip_v = True
++                else:
++                    ar_v1_b = tl.load(KV_cache_ptr + ar_v_bit_addr,
++                                     mask=cmask[:, None], other=0).to(tl.int32)
++                    ar_v1 = ((ar_v1_b >> (d_offs[None, :] % 8)) & 1).to(tl.float32)
++                    if ar_mass_v * (0.5 * ar_v_ratio) <= PROG_V_3:
++                        q_V = 4.0 * ar_vh + 2.0 * ar_v1 + 0.5
++                    else:
++                        ar_v0_b = tl.load(KV_cache_ptr + ar_v_bit_addr + D * GROUP // 8,
++                                         mask=cmask[:, None], other=0).to(tl.int32)
++                        ar_v0 = ((ar_v0_b >> (d_offs[None, :] % 8)) & 1).to(tl.float32)
++                        q_V = 4.0 * ar_vh + 2.0 * ar_v1 + ar_v0
++                # Advance the single-pass prefix estimate AFTER this chunk.
++                ar_unused, ar_prefix_lower = _ar_chunk_mass(scores, ar_eps, ar_prefix_lower, ar_count)
++                Vc = (q_V * s_row_V[:, None] + zp_V[:, None]) * s_col_V[None, :]
++'''
+diff --git a/kvbench_progressive_online/run.py b/kvbench_progressive_online/run.py
+new file mode 100644
+index 0000000..cc74fbd
+--- /dev/null
++++ b/kvbench_progressive_online/run.py
+@@ -0,0 +1,371 @@
++# SPDX-License-Identifier: Apache-2.0
++"""One LongBench task, exactly 20 matched cases, three REAL vLLM K4V4 GPU arms.
++
++This is NOT a simulator: starts one GPU-backed vLLM service at a time, invokes
++existing frozen-input SSE benchmark+LongBench scorer, measures actual TPOT,
++TTFT, E2E, output throughput and GPU telemetry. No result is fabricated.
++"""
++from __future__ import annotations
++import argparse
++import csv
++from datetime import datetime
++import json
++import os
++from pathlib import Path
++import shutil
++import signal
++import socket
++import subprocess
++import sys
++import time
++import traceback
++
++from kvbench_longcontext.common import checked_data,read_jsonl,write_jsonl,atomic_json,sha_file,digest
++from .runtime import build,verify
++from .transform import ARMS,DEFAULT_THRESHOLDS
++
++DEFAULT_UPSTREAM='results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json'
++
++
++def _read(p):return json.loads(Path(p).read_text(encoding='utf-8'))
++def _write_csv(p,rows):
++    if not rows:return
++    keys=list(dict.fromkeys(k for r in rows for k in r))
++    with Path(p).open('w',encoding='utf-8-sig',newline='') as f:
++        w=csv.DictWriter(f,keys);w.writeheader();w.writerows(rows)
++
++
++def freeze_cases(source,out,task,n):
++    """No new tokenization or truncation. Immutable exact V3 cohort subset."""
++    manifest,datasets=checked_data(source)
++    if task not in datasets:raise ValueError('Requested task absent from frozen V3 LongBench: '+task)
++    rows=datasets[task]
++    if len(rows)<n:raise ValueError(f'Only {len(rows)} eligible frozen cases, required {n}')
++    selected=rows[:n]     # already deterministic hash-shuffled by V3 data_seed
++    if len({r['case_id'] for r in selected})!=n:raise ValueError('Duplicate case IDs')
++    out.mkdir(parents=True,exist_ok=False)
++    m=json.loads(json.dumps(manifest))
++    m['datasets']={task:dict(manifest['datasets'][task])}
++    m['settings']['sample_size']=n
++    m['subset_provenance']={'source_manifest_sha256':sha_file(Path(source)/'manifest.json'),
++         'source_dir':str(Path(source).resolve()),'selection':'first N in frozen hash-shuffled V3 order',
++         'source_selected_count':len(rows),'selected_count':n,'selected_case_ids':[r['case_id'] for r in selected]}
++    srcinfo=m['datasets'][task]
++    data_path=out/(task+'.jsonl')
++    write_jsonl(data_path,selected)
++    srcinfo.update(file=data_path.name,sha256=sha_file(data_path),selected_count=n,
++                   selected_case_ids=[r['case_id'] for r in selected],
++                   truncated_count=sum(bool(r['was_truncated']) for r in selected),
++                   cohort=f'locked V3 subset of {n}, no new truncation')
++    for k in ('raw_file',):
++        rel=srcinfo.get(k)
++        if rel:
++            sourcefile=Path(source)/rel
++            if not sourcefile.exists() or sha_file(sourcefile)!=srcinfo['raw_sha256']:
++                raise ValueError('Original LongBench raw source is missing/corrupt')
++            destination=out/rel;destination.parent.mkdir(parents=True,exist_ok=True)
++            shutil.copy2(sourcefile,destination)
++    atomic_json(out/'manifest.json',m)
++    checked,_=checked_data(out)
++    if checked['datasets'][task]['selected_count']!=n:raise AssertionError('Frozen subset invalid')
++    return selected
++
++
++def _client_python(cfg):
++    if os.environ.get('PROG_CLIENT_PYTHON'):
++        candidate=Path(os.environ['PROG_CLIENT_PYTHON']).resolve()
++    else:
++        # Both preinstalled environments live under the same Miniconda envs/.
++        envs=Path(sys.prefix).parent
++        candidate=(envs/cfg['client_env']/'bin/python').resolve()
++    if not candidate.is_file():
++        raise ValueError('Client Python not found; set PROG_CLIENT_PYTHON to the existing evalscope-client/bin/python')
++    return candidate
++
++
++def _gpu_idle(gpu):
++    from kvbench_longcontext.serve import run_text
++    x=run_text(['nvidia-smi','-i',gpu,'--query-compute-apps=pid,process_name','--format=csv,noheader,nounits'])
++    if x.get('returncode')!=0:raise RuntimeError('GPU query failed: '+str(x))
++    if x['stdout'] and 'No running processes found' not in x['stdout']:
++        raise RuntimeError('GPU has other compute processes. Refusing to interrupt another experiment: '+x['stdout'])
++
++
++def _run_logged(executable,args,path,env,cwd):
++    path.parent.mkdir(parents=True,exist_ok=True)
++    print('EXEC '+str(path)+': '+' '.join(map(str,[executable,*args])),flush=True)
++    with path.open('w',encoding='utf-8') as f:
++        r=subprocess.run([str(executable),*map(str,args)],env=env,cwd=cwd,stdout=f,stderr=subprocess.STDOUT)
++    return r.returncode
++
++
++def _start_server(args,arm,runtime,server_dir,logfile,env):
++    parent_policy='parent' if arm=='parent' else 'repacked_full'
++    cmd=[sys.executable,'-m','kvbench_residual.serve','--model',str(args.model),
++         '--method','kvarn44','--policy',parent_policy,'--runtime',str(runtime),
++         '--epsilon','0.02','--out',str(server_dir),'--port',str(args.port),
++         '--gpu',str(args.gpu),'--max-model-len',str(args.max_model_len),
++         '--max-seqs',str(args.max_seqs),'--batch-tokens',str(args.batch_tokens),
++         '--gpu-util',str(args.gpu_util),'--server-seed',str(args.server_seed),
++         '--startup-timeout',str(args.startup_timeout)]
++    if args.eager:cmd.append('--eager')
++    logfile.parent.mkdir(parents=True,exist_ok=True)
++    logfile_handle=logfile.open('w',encoding='utf-8')
++    proc=subprocess.Popen(cmd,cwd=args.repo,env=env,stdout=logfile_handle,
++                          stderr=subprocess.STDOUT,start_new_session=True)
++    launch=server_dir/'launch.json'
++    deadline=time.monotonic()+args.startup_timeout+180
++    try:
++        while time.monotonic()<deadline:
++            if proc.poll() is not None:
++                raise RuntimeError(f'{arm} server launcher exited before ready; see {logfile}, {server_dir}/server.log')
++            if launch.is_file():
++                record=_read(launch)
++                if record.get('native_verified') is True:
++                    if record['config']['kv_dtype']!='kvarn_k4v4_g128':
++                        raise RuntimeError('Actual GPU cache dtype is not original K4V4')
++                    if record['residual']['executed_source_sha256']!=_read(runtime/'runtime.json')['executed_source_sha256']:
++                        raise RuntimeError('Fused GPU decode source does not match runtime manifest')
++                    clone=json.loads(json.dumps(record))
++                    clone['config']['method']=arm
++                    clone['progressive_online']={'arm':arm,'runtime':str(runtime),
++                        'runtime_sha256':sha_file(runtime/'runtime.json'),
++                        'server_launch_original_sha256':sha_file(launch),
++                        'selection':_read(runtime/'runtime.json')['progressive']}
++                    user_manifest=server_dir/'progressive.launch.json'
++                    atomic_json(user_manifest,clone)
++                    return proc,logfile_handle,user_manifest
++            time.sleep(1)
++        raise TimeoutError('Timed out waiting for native KVarN vLLM startup: '+arm)
++    except BaseException:
++        _stop_server(proc)
++        logfile_handle.close()
++        raise
++
++
++def _stop_server(proc):
++    if proc is None:return
++    if proc.poll() is None:
++        proc.send_signal(signal.SIGINT)
++        try:
++            proc.wait(timeout=65)
++        except subprocess.TimeoutExpired:
++            # Only own launcher process group. It is responsible for cleaning
++            # its separately created vLLM engine group.
++            os.killpg(proc.pid,signal.SIGTERM)
++            try:proc.wait(timeout=25)
++            except subprocess.TimeoutExpired:
++                os.killpg(proc.pid,signal.SIGKILL)
++                proc.wait(timeout=15)
++                raise RuntimeError('Own server did not cleanly terminate; halt subsequent arms')
++
++
++def _summary(out,arms,task):
++    summary=[];scored={}
++    for arm in arms:
++        concurrency=_read(out/"settings.json")["concurrency"]
++        folder=out/"runs"/arm/f"r01_{task}_C{concurrency}"
++        perf=folder/'performance.summary.json';quality=folder/'scores.summary.json'
++        if not perf.is_file() or not quality.is_file():continue
++        p,q=_read(perf),_read(quality)
++        s={'arm':arm,'dataset':task,'expected':p.get('expected_tasks'),
++           'measurement_complete':p.get('measurement_complete'),
++           'scoring_complete':q.get('evaluation_complete'),
++           'valid':p.get('valid_responses'),'task_score_0_100':q.get('task_score_0_100'),
++           'tpot_ms_mean':(p.get('tpot_s') or {}).get('mean')*1000 if (p.get('tpot_s') or {}).get('mean') is not None else None,
++           'tpot_ms_p95':(p.get('tpot_s') or {}).get('p95')*1000 if (p.get('tpot_s') or {}).get('p95') is not None else None,
++           'ttft_ms_mean':(p.get('ttft_s') or {}).get('mean')*1000 if (p.get('ttft_s') or {}).get('mean') is not None else None,
++           'e2e_s_mean':(p.get('e2e_s') or {}).get('mean'),
++           'output_tokens_per_s':p.get('output_tokens_per_s'),
++           'output_length_mean':(p.get('completion_tokens') or {}).get('mean'),
++           'length_capped':p.get('length_capped'),
++           'preemptions_delta':p.get('preemptions_delta'),
++           'native_kv_capacity_tokens':p.get('native_kv_capacity_tokens')}
++        # Native telemetry written by the existing LongBench Observer, sampled
++        # outside the attention kernel. Peak memory is a sampled GPU-wide value.
++        telemetry=folder/'telemetry.jsonl'
++        if telemetry.is_file():
++            used=[]
++            for line in telemetry.read_text(encoding='utf-8').splitlines():
++                try:
++                    v=json.loads(line).get('gpu',{})
++                    if v.get('returncode')==0:
++                        used.append(float(v['stdout'].split(',')[0].strip()))
++                except (ValueError,KeyError,IndexError,TypeError):pass
++            s['sampled_gpu_used_mib_max']=max(used) if used else None
++        summary.append(s)
++        if (folder/'scores.jsonl').exists():
++            scored[arm]={r['case_id']:r for r in read_jsonl(folder/'scores.jsonl')}
++    if summary:
++        baselines=[s for s in summary if s['arm']=='parent']
++        if baselines:
++            baseline=baselines[0]
++            for r in summary:
++                if r['tpot_ms_mean'] and baseline['tpot_ms_mean']:
++                    r['tpot_improvement_pct_vs_parent']=100*(1-r['tpot_ms_mean']/baseline['tpot_ms_mean'])
++                if r['output_tokens_per_s'] and baseline['output_tokens_per_s']:
++                    r['throughput_gain_pct_vs_parent']=100*(r['output_tokens_per_s']/baseline['output_tokens_per_s']-1)
++                if r['task_score_0_100'] is not None and baseline['task_score_0_100'] is not None:
++                    r['task_score_delta_pp_vs_parent']=r['task_score_0_100']-baseline['task_score_0_100']
++        _write_csv(out/'comparison.csv',summary)
++        atomic_json(out/'comparison.json',summary)
++    paired=[]
++    if 'parent' in scored:
++        for arm in arms:
++            if arm=='parent' or arm not in scored:continue
++            for case_id,base in scored['parent'].items():
++                v=scored[arm].get(case_id)
++                paired.append({'arm':arm,'case_id':case_id,'baseline_scored':base['scored'],
++                               'candidate_scored':v['scored'] if v else False,
++                               'baseline_score':base['score'],
++                               'candidate_score':v['score'] if v else None,
++                               'delta_score':v['score']-base['score'] if v and v['score'] is not None and base['score'] is not None else None})
++    _write_csv(out/'paired_quality.csv',paired)
++    lines=['# Qwen3-4B · LongBench '+task+' ×20：Progressive-KV 在线实验','',
++           '性能来自 vLLM 正式在线 SSE 请求与 GPU Attention；不是离线 Oracle。',
++           'TPOT 采用已有客户端定义 `(E2E-TTFT)/(completion_tokens-1)`，包含服务调度与传输开销。',
++           '不提供 DRAM 字节实测或逐 Chunk GPU 计数；所有缓存统一为原生 K4V4 容量。','',
++           '| 方法 | 评分/100 | TPOT ms | P95 TPOT ms | TTFT ms | tok/s | 输出长度 | GPU峰值MiB | 得分Δpp | TPOT改善 |',
++           '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|']
++    def fmt(x,pct=False):return 'NA' if x is None else f'{x:.2f}{"%" if pct else ""}'
++    for s in summary:
++        lines.append('| '+s['arm']+' | '+fmt(s['task_score_0_100'])+' | '+fmt(s['tpot_ms_mean'])+
++                     ' | '+fmt(s['tpot_ms_p95'])+' | '+fmt(s['ttft_ms_mean'])+
++                     ' | '+fmt(s['output_tokens_per_s'])+' | '+fmt(s['output_length_mean'])+
++                     ' | '+fmt(s.get('sampled_gpu_used_mib_max'))+
++                     ' | '+fmt(s.get('task_score_delta_pp_vs_parent'))+
++                     ' | '+fmt(s.get('tpot_improvement_pct_vs_parent'),True)+' |')
++    lines+=['','**重要限制：** Adaptive Controller 的风险评分是在线启发式，不是经过校准的误差上界；',
++            '当前阶段是 20 条请求的工程可行性/收益筛选，不具有统计非劣保证。',
++            '`p211_full` 用于验证新的表示布局是否引入额外延迟；`p211_adaptive` 同时改变读取行为。',
++            '两组 K4V4 完整码字与原始 native INT4 等价，但实时 FP16 kernel 舍入与采样可能导致输出轨迹不同。','']
++    (out/'readout.md').write_text('\n'.join(lines),encoding='utf-8')
++    return summary
++
++
++def main(argv=None):
++    p=argparse.ArgumentParser(description=__doc__)
++    p.add_argument('--upstream-suite',type=Path,default=Path(DEFAULT_UPSTREAM))
++    p.add_argument('--out',type=Path)
++    p.add_argument('--task',default='qasper')
++    p.add_argument('--count',type=int,default=20)
++    p.add_argument('--arms',nargs='+',choices=ARMS,default=list(ARMS))
++    p.add_argument('--concurrency',type=int,default=8)
++    p.add_argument('--gpu',default='0')
++    p.add_argument('--port',type=int,default=18181)
++    p.add_argument('--eager',action='store_true',help='Disable CUDA graphs; not the primary main-run setting')
++    p.add_argument('--risk-k2',type=float,default=.08)
++    p.add_argument('--risk-k3',type=float,default=.04)
++    p.add_argument('--risk-v2',type=float,default=.12)
++    p.add_argument('--risk-v3',type=float,default=.08)
++    p.add_argument('--startup-timeout',type=int,default=1800)
++    p.add_argument('--gpu-util',type=float,default=.85)
++    p.add_argument('--plan',action='store_true',help='No GPU or server; show exact 20-case plan')
++    a=p.parse_args(argv)
++    if a.count!=20: p.error('This experiment freezes exactly 20 cases; changing count requires a separate protocol')
++    if not (1<=a.concurrency<=a.count):p.error('Invalid concurrency')
++    if len(set(a.arms))!=len(a.arms):p.error('Duplicate arms')
++    if not a.gpu.isdigit() or not 1024<=a.port<=65535:p.error('Invalid GPU or port')
++    if not (0<a.gpu_util<1):p.error('Invalid gpu memory util')
++    thresholds={'k2':a.risk_k2,'k3':a.risk_k3,'v2':a.risk_v2,'v3':a.risk_v3}
++    if any(not 0<=x<10 for x in thresholds.values()):p.error('Invalid thresholds')
++    a.repo=Path(__file__).resolve().parents[1]
++    suite_path=a.upstream_suite.resolve(strict=True)
++    suite=_read(suite_path)
++    if suite.get('schema')!='kvbench.longcontext.full_suite.v1' or suite.get('exit_code')!=0:
++        raise ValueError('Pass the successful frozen V3 LongBench suite.json')
++    cfg=suite['settings']
++    a.model=Path(cfg['model']).resolve(strict=True)
++    a.max_model_len=cfg['max_model_len'];a.max_seqs=cfg['max_seqs']
++    a.batch_tokens=cfg['batch_tokens'];a.server_seed=cfg['server_seed']
++    src=Path(cfg['data']).resolve(strict=True)
++    _,datasets=checked_data(src)
++    if a.task not in datasets or len(datasets[a.task])<a.count:
++        raise ValueError('Not enough selected cases in original frozen cohort for '+a.task)
++    subset=datasets[a.task][:a.count]
++    info={'schema':'kvbench.progressive.online.plan.v1','task':a.task,'count':a.count,
++          'concurrency':a.concurrency,'arms':a.arms,'risk_thresholds':thresholds,
++          'source_suite':str(suite_path),'source_suite_sha256':sha_file(suite_path),
++          'source_data_sha256':sha_file(src/'manifest.json'),
++          'model':str(a.model),'model_config_sha256':sha_file(a.model/'config.json'),
++          'case_ids':[r['case_id'] for r in subset],
++          'precision':'kvarn_k4v4_g128','cache_capacity':'all arms same original 4-bit code capacity',
++          'generation':'same V3 sampling=0.6/top_p=0.95/top_k=20, thinking, max_tokens=null',
++          'timing':'online, native vLLM GPU decode Attention (not offline replay)'}
++    if a.plan:
++        print(json.dumps(info,ensure_ascii=False,indent=2));return
++    if not a.out:
++        a.out=a.repo/'results/progressive_online'/('qasper20_'+datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+str(os.getpid()))
++    a.out=a.out.expanduser().resolve()
++    if a.out.exists():raise ValueError('Output must be a new directory, never overwrite an existing run')
++    if Path(sys.prefix).name!=cfg['server_env']:
++        raise ValueError('Activate original '+cfg['server_env']+' server environment')
++    client=_client_python(cfg)
++    _gpu_idle(a.gpu)
++    with socket.socket() as s:
++        if s.connect_ex(('127.0.0.1',a.port))==0:
++            raise RuntimeError('Target port is already occupied; will not stop existing services')
++    a.out.mkdir(parents=True)
++    atomic_json(a.out/'plan.json',info)
++    atomic_json(a.out/'settings.json',{'concurrency':a.concurrency,'gpu':a.gpu,'eager':a.eager,'port':a.port})
++    selected=freeze_cases(src,a.out/'data',a.task,a.count)
++    if [r['case_id'] for r in selected]!=info['case_ids']:
++        raise AssertionError('Frozen request cohort changed during preparation')
++    env=os.environ.copy();env.pop('PYTHONPATH',None);env.pop('PYTHONHOME',None)
++    env.update(PYTHONNOUSERSITE='1',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1')
++    state={'status':'running','arms':{arm:'pending' for arm in a.arms},'completed_arms':0}
++    atomic_json(a.out/'status.json',state)
++    try:
++        for arm in a.arms:
++            state['arms'][arm]='building_runtime';atomic_json(a.out/'status.json',state)
++            print('=== '+arm+' building private vLLM runtime ===',flush=True)
++            runtime=a.out/'runtimes'/arm
++            build(runtime,arm,thresholds)
++            verify(runtime,arm)
++            proc=log=None
++            try:
++                state['arms'][arm]='starting_server';atomic_json(a.out/'status.json',state)
++                proc,log,manifest=_start_server(a,arm,runtime,a.out/'servers'/arm,
++                                               a.out/'logs'/(arm+'.server_launcher.log'),env)
++                state['arms'][arm]='generating_gpu';atomic_json(a.out/'status.json',state)
++                run=a.out/'runs'/arm
++                runargs=['-m','kvbench_longcontext.run','--data-dir',a.out/'data',
++                    '--out',run,'--server-manifest',manifest,'--concurrency',str(a.concurrency),
++                    '--repeats','1','--temperature','0.6','--top-p','0.95','--top-k','20',
++                    '--min-p','0','--seed',str(cfg['request_seed']),
++                    '--request-timeout','0','--warmup','1','--warmup-per-point',str(min(2,a.concurrency)),
++                    '--gpu',a.gpu]
++                rc=_run_logged(client,runargs,a.out/'logs'/(arm+'.run.log'),env,a.repo)
++                if rc:raise RuntimeError(f'{arm} GPU run exited {rc}; see logs/{arm}.run.log')
++            finally:
++                try:_stop_server(proc)
++                finally:
++                    if log is not None:log.close()
++            if not (a.out/'runs'/arm/'run.json').is_file():
++                raise RuntimeError(arm+' did not produce a formal run manifest')
++            state['arms'][arm]='scoring';atomic_json(a.out/'status.json',state)
++            for module in ('scoring','report'):
++                prog=['-m','kvbench_longcontext.'+module,
++                      '--run-dir',a.out/'runs'/arm,'--data-dir',a.out/'data'] if module=='scoring' else [
++                      '-m','kvbench_longcontext.report','--run-dir',a.out/'runs'/arm,
++                      '--out',a.out/'runs'/arm/'readout']
++                rc=_run_logged(client,prog,a.out/'logs'/(arm+'.'+module+'.log'),env,a.repo)
++                if rc:raise RuntimeError(f'{arm} {module} failed: {rc}, inspect log')
++            point=a.out/'runs'/arm/f'r01_{a.task}_C{a.concurrency}'
++            if _read(point/'performance.summary.json')['measurement_complete'] is not True:
++                raise RuntimeError(arm+' has incomplete measured requests')
++            if _read(point/'scores.summary.json')['evaluation_complete'] is not True:
++                raise RuntimeError(arm+' has incomplete scored responses')
++            state['arms'][arm]='completed';state['completed_arms']+=1
++            atomic_json(a.out/'status.json',state)
++            _summary(a.out,a.arms,a.task)
++        state['status']='completed';atomic_json(a.out/'status.json',state)
++    except BaseException as e:
++        state.update(status='failed',error=repr(e),traceback=traceback.format_exc())
++        atomic_json(a.out/'status.json',state)
++        _summary(a.out,a.arms,a.task)
++        raise
++    print('Complete. Results: '+str(a.out/'readout.md'),flush=True)
++
++
++if __name__=='__main__':main()
+diff --git a/kvbench_progressive_online/run_qasper20.sh b/kvbench_progressive_online/run_qasper20.sh
+new file mode 100755
+index 0000000..b0abbec
+--- /dev/null
++++ b/kvbench_progressive_online/run_qasper20.sh
+@@ -0,0 +1,35 @@
++#!/usr/bin/env bash
++# One-command real GPU online LongBench run. Existing server/client env only.
++set -euo pipefail
++ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
++cd "$ROOT"
++SUITE="$ROOT/results/longcontext_v3/full_longbench_C8_20261009_201156_2217646/suite.json"
++ARGS=("$@")
++for ((i=0;i<${#ARGS[@]};i++));do
++  if [[ ${ARGS[i]} == --upstream-suite && $((i+1)) -lt ${#ARGS[@]} ]];then
++    SUITE=${ARGS[i+1]}
++  elif [[ ${ARGS[i]} == --upstream-suite=* ]];then
++    SUITE=${ARGS[i]#*=}
++  fi
++done
++BASE=${CONDA_BASE:-/home/wanglin/miniconda3}
++if [[ ! -f "$BASE/etc/profile.d/conda.sh" ]];then
++  echo "Set CONDA_BASE to the existing Miniconda root" >&2; exit 2
++fi
++mapfile -t PREP < <("$BASE/bin/python" - "$SUITE" <<'PY'
++import json,sys
++from pathlib import Path
++p=Path(sys.argv[1]).expanduser().resolve(strict=True)
++s=json.loads(p.read_text())['settings']
++print(s['server_env'])
++print(s['kit'])
++PY
++)
++if [[ ${#PREP[@]} -ne 2 ]];then echo "Invalid upstream V3 suite" >&2;exit 2;fi
++set +u
++source "$BASE/etc/profile.d/conda.sh"
++conda activate "${PREP[0]}"
++source "${PREP[1]}/env.sh"
++set -u
++export PYTHONNOUSERSITE=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
++exec python -m kvbench_progressive_online.run "$@"
+diff --git a/kvbench_progressive_online/runtime.py b/kvbench_progressive_online/runtime.py
+new file mode 100644
+index 0000000..7ce6817
+--- /dev/null
++++ b/kvbench_progressive_online/runtime.py
+@@ -0,0 +1,61 @@
++# SPDX-License-Identifier: Apache-2.0
++"""Build hash-checked, independent on-line vLLM copies from pinned existing AR bridge.
++
++Does not mutate installed KVarN, reuse old results, or bypass the validated
++native hash pins. Compatible with kvbench_residual.serve/trace/bootstrap.
++"""
++from __future__ import annotations
++import ast
++import json
++from pathlib import Path
++import shutil
++from kvbench_residual.runtime import build_runtime,verify_runtime,sha_file,atomic_json,text_sha,trace_footer
++from .transform import ARMS,DECODE,STORE,TORCH_DECODE,DEFAULT_THRESHOLDS,transform_dequant,transform_writer,transform_torch_decode
++
++
++def build(out,arm,thresholds=None):
++    if arm not in ARMS:raise ValueError('Unknown progressive arm')
++    thresholds=DEFAULT_THRESHOLDS if thresholds is None else dict(thresholds)
++    parent_policy='parent' if arm=='parent' else 'repacked_full'
++    out=Path(out).resolve()
++    original=build_runtime(out,parent_policy,epsilon=.02)
++    if arm=='parent':
++        original['progressive']={'arm':arm,'layout':'original KVarN K4V4','compiler_source':'original reviewed parent'}
++        atomic_json(out/'runtime.json',original)
++        verify_runtime(out,parent_policy,full=True,epsilon=.02)
++        return original
++    package=Path(__file__).parent
++    shutil.copytree(package,out/'kvbench_progressive_online',
++        ignore=shutil.ignore_patterns('__pycache__','*.pyc','*.pyo','tests'))
++    for rel,fn in ((STORE,transform_writer),(TORCH_DECODE,transform_torch_decode),
++                   (DECODE,lambda s:transform_dequant(s,arm,thresholds))):
++        file=out/'vllm'/rel
++        new=fn(file.read_text(encoding='utf-8'))
++        ast.parse(new)
++        file.write_text(new,encoding='utf-8')
++        original['generated_sha256'][rel]=text_sha(new[:-len(trace_footer(parent_policy))]) if rel==DECODE else text_sha(new)
++        original['executed_files_sha256'][rel]=sha_file(file)
++    original['transformed_source_sha256']=original['generated_sha256'][DECODE]
++    original['executed_source_sha256']=original['executed_files_sha256'][DECODE]
++    original['representation']='2+1+1 separately loadable planes (high2|bit1|bit0), native INT4 full-read identical'
++    original['progressive']={
++        'schema':'kvbench.progressive.online.v1',
++        'arm':arm,'thresholds':thresholds if arm=='p211_adaptive' else None,
++        'selection_scope':'per KV head and token chunk; GQA query heads share depth',
++        'read_precision_levels':[2,3,4],
++        'quality_guarantee':'heuristic; NO deterministic or statistical attention-output error guarantee',
++        'physical_memory':'same 4-bit K/V code payload plus unchanged original KVarN metadata/pool',
++        'formal_attention_traffic_bytes':None,
++        'implementation_note':'All native packed consumers and producer updated in pinned private copy'}
++    original['files_sha256']={str(p.relative_to(out)):sha_file(p) for p in sorted(out.rglob('*'))
++                              if p.is_file() and not p.is_symlink() and p.name!='runtime.json'}
++    atomic_json(out/'runtime.json',original)
++    verify_runtime(out,parent_policy,full=True,epsilon=.02)
++    return original
++
++
++def verify(root,arm):
++    parent_policy='parent' if arm=='parent' else 'repacked_full'
++    r=verify_runtime(root,parent_policy,full=True,epsilon=.02)
++    if r.get('progressive',{}).get('arm')!=arm:raise ValueError('Incorrect progressive policy runtime')
++    return r
+diff --git a/kvbench_progressive_online/tests/__init__.py b/kvbench_progressive_online/tests/__init__.py
+new file mode 100644
+index 0000000..60a629d
+--- /dev/null
++++ b/kvbench_progressive_online/tests/__init__.py
+@@ -0,0 +1 @@
++"""Independent CPU source/representation checks. GPU evidence needs actual RTX 3090 run."""
+diff --git a/kvbench_progressive_online/tests/test_codec.py b/kvbench_progressive_online/tests/test_codec.py
+new file mode 100644
+index 0000000..8f898ae
+--- /dev/null
++++ b/kvbench_progressive_online/tests/test_codec.py
+@@ -0,0 +1,53 @@
++from __future__ import annotations
++import unittest
++import numpy as np
++from kvbench_progressive_online.codec import pack_numpy,unpack_numpy,pack_211_torch,unpack_211_torch
++
++
++class ProgressiveCodecTest(unittest.TestCase):
++    def test_full_int4_exact(self):
++        for seed in (0,7,31):
++            q=np.random.default_rng(seed).integers(0,16,(3,128,128),dtype=np.uint8)
++            p=pack_numpy(q)
++            self.assertEqual(p.shape,(3,128,64))
++            np.testing.assert_array_equal(unpack_numpy(p,128,4),q)
++    def test_midpoints_and_refinement(self):
++        q=np.broadcast_to(np.arange(16,dtype=np.uint8),(128,16))
++        p=pack_numpy(q)
++        d2=unpack_numpy(p,16,2)
++        d3=unpack_numpy(p,16,3)
++        d4=unpack_numpy(p,16,4)
++        np.testing.assert_allclose(d2,4*(q//4)+1.5)
++        np.testing.assert_allclose(d3,4*(q//4)+2*((q//2)%2)+0.5)
++        np.testing.assert_array_equal(d4,q)
++    def test_physical_triton_bit_addressing(self):
++        # Verify the exact addressing formulas used by fused GPU code for
++        # both K=[D,G] and V=[G,D] complete 4-bit reconstruction.
++        rng=np.random.default_rng(23)
++        for rows,cols in ((128,128),(64,128),(128,64)):
++            original=rng.integers(0,16,(rows,cols),dtype=np.uint8)
++            packed=pack_numpy(original).ravel()
++            count=rows*cols
++            for row in (0,1,rows//2,rows-1):
++                for col in (0,1,6,7,8,31,cols-1):
++                    high_addr=row*(cols//4)+col//4
++                    bit_addr=count//4+row*(cols//8)+col//8
++                    high=(int(packed[high_addr])>>(2*(col%4)))&3
++                    bit1=(int(packed[bit_addr])>>(col%8))&1
++                    bit0=(int(packed[bit_addr+count//8])>>(col%8))&1
++                    self.assertEqual(4*high+2*bit1+bit0,int(original[row,col]))
++
++    def test_bad_inputs(self):
++        for arr in [np.array([1,2,3]),np.full((2,8),16)]:
++            with self.assertRaises(ValueError):pack_numpy(arr)
++    def test_torch_matches_numpy(self):
++        try:import torch
++        except ImportError:self.skipTest('torch unavailable')
++        for rows,cols in ((128,128),(3,16)):
++            q=np.random.default_rng(cols).integers(0,16,(rows,cols),dtype=np.uint8)
++            p=pack_211_torch(torch.from_numpy(q))
++            np.testing.assert_array_equal(p.numpy(),pack_numpy(q))
++            np.testing.assert_array_equal(unpack_211_torch(p,cols).numpy(),q)
++
++
++if __name__=='__main__':unittest.main()
+diff --git a/kvbench_progressive_online/tests/test_transform.py b/kvbench_progressive_online/tests/test_transform.py
+new file mode 100644
+index 0000000..de61012
+--- /dev/null
++++ b/kvbench_progressive_online/tests/test_transform.py
+@@ -0,0 +1,46 @@
++from __future__ import annotations
++import unittest
++from kvbench_progressive_online.kernel import ADAPTIVE,FULL
++from kvbench_progressive_online.transform import (_full_consumer,_fused,DEFAULT_THRESHOLDS,
++    transform_writer,transform_torch_decode)
++
++
++class SourceGateTest(unittest.TestCase):
++    def test_progressive_gpu_bit_loads_are_conditional(self):
++        self.assertLess(ADAPTIVE.index('ar_kh_b = tl.load'),ADAPTIVE.index('if ar_risk_k2 <= PROG_K_2'))
++        self.assertIn('ar_k1_b = tl.load',ADAPTIVE)
++        self.assertIn('ar_k0_b = tl.load',ADAPTIVE)
++        self.assertIn('ar_v1_b = tl.load',ADAPTIVE)
++        self.assertIn('ar_v0_b = tl.load',ADAPTIVE)
++        self.assertIn('ar_prefix_lower = _ar_chunk_mass',ADAPTIVE)
++        self.assertIn('ar_v0_b = tl.load',FULL)
++    def test_strict_full_consumer(self):
++        old=('    ar_k_high = tl.load(KV_cache_ptr + k_addrs).to(tl.int32)\n'
++             '    ar_k_low = tl.load(KV_cache_ptr + k_addrs + D * GROUP // 4).to(tl.int32)\n'
++             '    q_K = (4 * ((ar_k_high >> ((g_offs[None, :] % 4) * 2)) & 3) + ((ar_k_low >> ((g_offs[None, :] % 4) * 2)) & 3)).to(tl.float32)\n')
++        result=_full_consumer(old,'k','g_offs')
++        self.assertIn('ar_k_bit_addr',result)
++        self.assertIn('d_offs[:, None] * (GROUP // 8)',result)
++        self.assertIn('ar_k_bit0',result)
++        with self.assertRaises(ValueError):_full_consumer(old,'v','g_offs')
++    def test_fused_strict_and_adaptive_thresholds(self):
++        chunk_start='                # Separate 2-bit planes occupy disjoint halves of each code field.'
++        chunk_end='                Vc = (q_V * s_row_V[:, None] + zp_V[:, None]) * s_col_V[None, :]'
++        body='def f():\n    AR_POLICY: tl.constexpr = 1\n    b = tl.program_id(0)\n                if AR_POLICY >= 3:\n                    pass\n'+chunk_start+'\n'+chunk_end+'\n'
++        prog=_fused(body,'p211_adaptive',DEFAULT_THRESHOLDS)
++        self.assertIn('PROG_K_2: tl.constexpr = 0.08',prog)
++        self.assertIn('if ar_risk_k2 <= PROG_K_2:',prog)
++        self.assertIn('if True:',prog)
++        full=_fused(body,'p211_full',DEFAULT_THRESHOLDS)
++        self.assertIn('ar_k0_b = tl.load',full)
++        with self.assertRaises(ValueError):_fused('def f():\n  pass\n','p211_adaptive',DEFAULT_THRESHOLDS)
++    def test_store_imports_exact(self):
++        s=('from kvbench_residual.representation import pack_planes_torch\nreturn pack_planes_torch(q)\n')*2
++        t=transform_writer(s)
++        self.assertEqual(t.count('pack_211_torch(q)'),2)
++        d='from kvbench_residual.representation import unpack_planes_torch\nreturn unpack_planes_torch(packed, original_last_dim)\n'
++        t=transform_torch_decode(d)
++        self.assertIn('return unpack_211_torch(packed, original_last_dim)',t)
++
++
++if __name__=='__main__':unittest.main()
+diff --git a/kvbench_progressive_online/transform.py b/kvbench_progressive_online/transform.py
+new file mode 100644
+index 0000000..cb41e8f
+--- /dev/null
++++ b/kvbench_progressive_online/transform.py
+@@ -0,0 +1,127 @@
++# SPDX-License-Identifier: Apache-2.0
++"""Strict source-to-source transformation on the pinned KVarN AR full-reader.
++
++NOT a monkeypatch to the live package. Independent private vLLM runtime only.
++All five packed consumers of the original full 4-bit code must be adapted:
++(1) full-read dequant helper, (2) packed materializer, (3) dedicated verify,
++(4) fused decode single, (5) fused decode split.
++The store (torch writer) and torch unpack are also adapted.
++"""
++from __future__ import annotations
++import ast
++import re
++
++from .kernel import FULL, ADAPTIVE
++
++DECODE='v1/attention/ops/triton_kvarn_decode.py'
++STORE='v1/attention/ops/kvarn_store.py'
++TORCH_DECODE='v1/attention/ops/kvarn_decode.py'
++ARMS=('parent','p211_full','p211_adaptive')
++DEFAULT_THRESHOLDS={'k2':0.08,'k3':0.04,'v2':0.12,'v3':0.08}
++
++
++def _fn_rewrite(source,updates):
++    lines=source.splitlines(keepends=True)
++    edits=[]
++    for node in ast.parse(source).body:
++        if isinstance(node,ast.FunctionDef) and node.name in updates:
++            old=''.join(lines[node.lineno-1:node.end_lineno])
++            edits.append((node.lineno-1,node.end_lineno,updates[node.name](old)))
++    missing=set(updates)-{node.name for node in ast.parse(source).body if isinstance(node,ast.FunctionDef)}
++    if missing:raise ValueError('Missing KVarN pinned functions: '+str(sorted(missing)))
++    for begin,end,text in sorted(edits,reverse=True):lines[begin:end]=[text]
++    result=''.join(lines)
++    ast.parse(result)
++    return result
++
++
++def _full_consumer(body,side,cols):
++    # Exactly the strings emitted by kvbench_residual.transform._consumer.
++    high=side.upper()
++    pattern=(rf'(?m)^(?P<ind> +)ar_{side}_high = tl.load\(KV_cache_ptr \+ {side}_addrs\).to\(tl.int32\)\n'
++             rf'(?P=ind)ar_{side}_low = tl.load\(KV_cache_ptr \+ {side}_addrs \+ D \* GROUP // 4\).to\(tl.int32\)\n'
++             rf'(?P=ind)q_{high} = .*?\.to\(tl.float32\)')
++    found=list(re.finditer(pattern,body))
++    if len(found)!=1:
++        raise ValueError(f'Expected one exact {side} full-consumer span, got {len(found)}')
++    m=found[0]; ind=m.group('ind')
++    if side=='k':
++        addr=f'tile_base + K_PACKED_OFFSET + D * GROUP // 4 + d_offs[:, None] * (GROUP // 8) + {cols}[None, :] // 8'
++        shift=f'{cols}[None, :] % 8'
++        highshift=f'2 * ({cols}[None, :] % 4)'
++    else:
++        addr=f'tile_base + V_PACKED_OFFSET + D * GROUP // 4 + {cols}[:, None] * (D // 8) + d_offs[None, :] // 8'
++        shift='d_offs[None, :] % 8'
++        highshift='2 * (d_offs[None, :] % 4)'
++    repl=[f'ar_{side}_bit_addr = {addr}',
++          f'ar_{side}_high = tl.load(KV_cache_ptr + {side}_addrs).to(tl.int32)',
++          f'ar_{side}_bit1 = tl.load(KV_cache_ptr + ar_{side}_bit_addr).to(tl.int32)',
++          f'ar_{side}_bit0 = tl.load(KV_cache_ptr + ar_{side}_bit_addr + D * GROUP // 8).to(tl.int32)',
++          f'q_{high} = (4 * ((ar_{side}_high >> ({highshift})) & 3) + 2 * ((ar_{side}_bit1 >> ({shift})) & 1) + ((ar_{side}_bit0 >> ({shift})) & 1)).to(tl.float32)']
++    return body[:m.start()]+('\n'.join(ind+x for x in repl))+body[m.end():]
++
++
++def _fused(body,arm,thresholds):
++    first='                # Separate 2-bit planes occupy disjoint halves of each code field.'
++    last='                Vc = (q_V * s_row_V[:, None] + zp_V[:, None]) * s_col_V[None, :]'
++    if body.count(first)!=1 or body.count(last)!=1:
++        raise ValueError('Expected exact original AR quantized-chunk landmarks')
++    a=body.index(first);b=body.index(last,a)+len(last)
++    body=body[:a]+((ADAPTIVE if arm=='p211_adaptive' else FULL).strip('\n'))+body[b:]
++    if arm=='p211_adaptive':
++        # Pool chunks must update the same single-pass selected-K prefix LSE.
++        marker='                if AR_POLICY >= 3:'
++        if body.count(marker)!=1:
++            raise ValueError(f'Expected exactly one pool-prefix marker, got {body.count(marker)}')
++        body=body.replace(marker,'                if True:',1)
++        local='    AR_POLICY: tl.constexpr = 1\n'
++        if body.count(local)!=1:raise ValueError('Unable to pin compile-time adaptive constants')
++        constants=''.join(f'    PROG_{k.upper()}: tl.constexpr = {thresholds[k]!r}\n' for k in ('k2','k3','v2','v3'))
++        # Triton local compile-time parameters are inserted before the program IDs.
++        constants=constants.replace('PROG_K2','PROG_K_2').replace('PROG_K3','PROG_K_3').replace('PROG_V2','PROG_V_2').replace('PROG_V3','PROG_V_3')
++        body=body.replace(local,local+constants,1)
++    return body
++
++
++def transform_dequant(original,arm,thresholds=None):
++    if arm not in ('p211_full','p211_adaptive'):raise ValueError('Unexpected arm')
++    thresholds=DEFAULT_THRESHOLDS if thresholds is None else thresholds
++    for k in DEFAULT_THRESHOLDS:
++        if k not in thresholds or not 0<=float(thresholds[k])<10:raise ValueError('Invalid risk threshold '+k)
++    marker='\n# AR-KV provenance hook:'
++    if marker not in original:raise ValueError('AR source must include its provenance hook')
++    source=original
++    sources={
++        '_kvarn_dequant_blocks_kernel':lambda s:_full_consumer(_full_consumer(s,'k','g_offs'),'v','g_offs'),
++        '_kvarn_build_packed_kv_kernel':lambda s:_full_consumer(_full_consumer(s,'k','g_offs'),'v','g_offs'),
++        '_kvarn_fused_verify_stage1':lambda s:_full_consumer(_full_consumer(s,'k','cols'),'v','cols'),
++        '_kvarn_fused_decode_kernel':lambda s:_fused(s,arm,thresholds),
++        '_kvarn_fused_decode_stage1':lambda s:_fused(s,arm,thresholds),
++    }
++    source=_fn_rewrite(source,sources)
++    # AR policy and hash stay bound to this private runtime through the updated
++    # runtime.json; do NOT omit the provenance hook appended by the AR builder.
++    return source
++
++
++def transform_writer(original):
++    old='from kvbench_residual.representation import pack_planes_torch'
++    if original.count(old)!=2:raise ValueError('Expected two KVarN store packer imports')
++    result=original.replace(old,'from kvbench_progressive_online.codec import pack_211_torch')
++    if result.count('return pack_planes_torch(q)')!=2:
++        raise ValueError('Expected exactly two 4-bit store uses')
++    result=result.replace('return pack_planes_torch(q)','return pack_211_torch(q)')
++    ast.parse(result)
++    return result
++
++
++def transform_torch_decode(original):
++    old='from kvbench_residual.representation import unpack_planes_torch'
++    if original.count(old)!=1:raise ValueError('Expected KVarN unpack source')
++    result=original.replace(old,'from kvbench_progressive_online.codec import unpack_211_torch')
++    if result.count('return unpack_planes_torch(packed, original_last_dim)')!=1:
++        raise ValueError('Expected KVarN torch unpack call')
++    result=result.replace('return unpack_planes_torch(packed, original_last_dim)',
++                          'return unpack_211_torch(packed, original_last_dim)')
++    ast.parse(result)
++    return result

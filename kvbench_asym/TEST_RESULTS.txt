@@ -1,0 +1,240 @@
+Actual delivery tests: CPU and simulated interfaces only.
+Python source compilation: PASS
+Shell syntax (bash -n): PASS
+No CUDA/Triton compilation, real vLLM service, model inference or GPU measurements executed.
+Command: python -m unittest discover -s kvbench_asym/tests -v
+
+test_all_21_tasks_and_all_rows (test_inputs.InputTests.test_all_21_tasks_and_all_rows) ... prepared narrativeqa: 2/2, clipped=0
+prepared qasper: 2/2, clipped=0
+prepared multifieldqa_en: 2/2, clipped=0
+prepared multifieldqa_zh: 2/2, clipped=0
+prepared hotpotqa: 2/2, clipped=0
+prepared 2wikimqa: 2/2, clipped=0
+prepared musique: 2/2, clipped=0
+prepared dureader: 2/2, clipped=0
+prepared gov_report: 2/2, clipped=0
+prepared qmsum: 2/2, clipped=0
+prepared multi_news: 2/2, clipped=0
+prepared vcsum: 2/2, clipped=0
+prepared trec: 2/2, clipped=0
+prepared triviaqa: 2/2, clipped=0
+prepared samsum: 2/2, clipped=0
+prepared lsht: 2/2, clipped=0
+prepared passage_count: 2/2, clipped=0
+prepared passage_retrieval_en: 2/2, clipped=0
+prepared passage_retrieval_zh: 2/2, clipped=0
+prepared lcc: 2/2, clipped=0
+prepared repobench-p: 2/2, clipped=0
+ok
+test_clipping_preserves_count (test_inputs.InputTests.test_clipping_preserves_count) ... ok
+test_duplicate_dataset_scope_refused (test_inputs.InputTests.test_duplicate_dataset_scope_refused) ... ok
+test_duplicate_member_refused (test_inputs.InputTests.test_duplicate_member_refused) ... ok
+test_invalid_record (test_inputs.InputTests.test_invalid_record) ... ok
+test_missing_task_does_not_fallback_to_six (test_inputs.InputTests.test_missing_task_does_not_fallback_to_six) ... ok
+test_no_clipping_for_short_prompt (test_inputs.InputTests.test_no_clipping_for_short_prompt) ... ok
+test_overflow_error_explicit (test_inputs.InputTests.test_overflow_error_explicit) ... ok
+test_pilot_limit_explicit (test_inputs.InputTests.test_pilot_limit_explicit) ... prepared narrativeqa: 2/2, clipped=0
+prepared qasper: 1/2, clipped=0
+prepared multifieldqa_en: 0/2, clipped=0
+prepared multifieldqa_zh: 0/2, clipped=0
+prepared hotpotqa: 0/2, clipped=0
+prepared 2wikimqa: 0/2, clipped=0
+prepared musique: 0/2, clipped=0
+prepared dureader: 0/2, clipped=0
+prepared gov_report: 0/2, clipped=0
+prepared qmsum: 0/2, clipped=0
+prepared multi_news: 0/2, clipped=0
+prepared vcsum: 0/2, clipped=0
+prepared trec: 0/2, clipped=0
+prepared triviaqa: 0/2, clipped=0
+prepared samsum: 0/2, clipped=0
+prepared lsht: 0/2, clipped=0
+prepared passage_count: 0/2, clipped=0
+prepared passage_retrieval_en: 0/2, clipped=0
+prepared passage_retrieval_zh: 0/2, clipped=0
+prepared lcc: 0/2, clipped=0
+prepared repobench-p: 0/2, clipped=0
+ok
+test_real_data_hash_and_full_count (test_inputs.InputTests.test_real_data_hash_and_full_count) ... ok
+test_template_coverage (test_inputs.InputTests.test_template_coverage) ... ok
+test_wrong_math_count_rejected (test_inputs.InputTests.test_wrong_math_count_rejected) ... ok
+test_zip_not_extracted (test_inputs.InputTests.test_zip_not_extracted) ... ok
+test_complete_and_resume_no_repeat (test_mock_pipeline.PipelineTests.test_complete_and_resume_no_repeat) ... prepared narrativeqa: 2/2, clipped=0
+prepared qasper: 1/2, clipped=0
+prepared multifieldqa_en: 0/2, clipped=0
+prepared multifieldqa_zh: 0/2, clipped=0
+prepared hotpotqa: 0/2, clipped=0
+prepared 2wikimqa: 0/2, clipped=0
+prepared musique: 0/2, clipped=0
+prepared dureader: 0/2, clipped=0
+prepared gov_report: 0/2, clipped=0
+prepared qmsum: 0/2, clipped=0
+prepared multi_news: 0/2, clipped=0
+prepared vcsum: 0/2, clipped=0
+prepared trec: 0/2, clipped=0
+prepared triviaqa: 0/2, clipped=0
+prepared samsum: 0/2, clipped=0
+prepared lsht: 0/2, clipped=0
+prepared passage_count: 0/2, clipped=0
+prepared passage_retrieval_en: 0/2, clipped=0
+prepared passage_retrieval_zh: 0/2, clipped=0
+prepared lcc: 0/2, clipped=0
+prepared repobench-p: 0/2, clipped=0
+[1/3] narrativeqa narrativeqa/0: traces=1, missing=0
+[2/3] narrativeqa narrativeqa/1: traces=1, missing=0
+[3/3] qasper qasper/0: traces=1, missing=0
+Completed: /tmp/tmpupcefjb2/run
+ok
+test_failed_request_resumes_only_uncommitted (test_mock_pipeline.PipelineTests.test_failed_request_resumes_only_uncommitted) ... /tmp/tmpupcefjb2/run
+prepared narrativeqa: 2/2, clipped=0
+prepared qasper: 1/2, clipped=0
+prepared multifieldqa_en: 0/2, clipped=0
+prepared multifieldqa_zh: 0/2, clipped=0
+prepared hotpotqa: 0/2, clipped=0
+prepared 2wikimqa: 0/2, clipped=0
+prepared musique: 0/2, clipped=0
+prepared dureader: 0/2, clipped=0
+prepared gov_report: 0/2, clipped=0
+prepared qmsum: 0/2, clipped=0
+prepared multi_news: 0/2, clipped=0
+prepared vcsum: 0/2, clipped=0
+prepared trec: 0/2, clipped=0
+prepared triviaqa: 0/2, clipped=0
+prepared samsum: 0/2, clipped=0
+prepared lsht: 0/2, clipped=0
+prepared passage_count: 0/2, clipped=0
+prepared passage_retrieval_en: 0/2, clipped=0
+prepared passage_retrieval_zh: 0/2, clipped=0
+prepared lcc: 0/2, clipped=0
+prepared repobench-p: 0/2, clipped=0
+[1/3] narrativeqa narrativeqa/0: traces=1, missing=0
+[2/3] narrativeqa narrativeqa/1: traces=1, missing=0
+[3/3] qasper qasper/0: traces=1, missing=0
+Completed: /tmp/tmpxalawmgu/run
+ok
+test_bootstrap_reproducible (test_report.ReportTests.test_bootstrap_reproducible) ... ok
+test_constant_difference_interval (test_report.ReportTests.test_constant_difference_interval) ... ok
+test_noninformative_not_zero_success (test_report.ReportTests.test_noninformative_not_zero_success) ... ok
+test_one_case_no_fake_confidence (test_report.ReportTests.test_one_case_no_fake_confidence) ... ok
+test_paired_rows (test_report.ReportTests.test_paired_rows) ... ok
+test_payload_mismatch_stops_report (test_report.ReportTests.test_payload_mismatch_stops_report) ... ok
+test_anchor_ranking_never_uses_full_key (test_select.SelectionTests.test_anchor_ranking_never_uses_full_key) ... ok
+test_byte_equality_with_partial_boundary (test_select.SelectionTests.test_byte_equality_with_partial_boundary) ... ok
+test_endpoints (test_select.SelectionTests.test_endpoints) ... ok
+test_equal_integer_total_for_all_shares (test_select.SelectionTests.test_equal_integer_total_for_all_shares) ... ok
+test_exact_counts_all_selectors (test_select.SelectionTests.test_exact_counts_all_selectors) ... ok
+test_exact_decimal_floor (test_select.SelectionTests.test_exact_decimal_floor) ... ok
+test_fixed_budget_spent_even_when_error_worsens (test_select.SelectionTests.test_fixed_budget_spent_even_when_error_worsens) ... ok
+test_full_control_zero_error (test_select.SelectionTests.test_full_control_zero_error) ... ok
+test_invalid_method (test_select.SelectionTests.test_invalid_method) ... ok
+test_invalid_quotas (test_select.SelectionTests.test_invalid_quotas) ... ok
+test_masks_do_not_depend_on_reference_output (test_select.SelectionTests.test_masks_do_not_depend_on_reference_output) ... ok
+test_masks_pack_roundtrip (test_select.SelectionTests.test_masks_pack_roundtrip) ... ok
+test_no_quant_history_ineligible (test_select.SelectionTests.test_no_quant_history_ineligible) ... ok
+test_no_unread_key_leak_into_value_ranking (test_select.SelectionTests.test_no_unread_key_leak_into_value_ranking) ... ok
+test_partial_chunk_full_read (test_select.SelectionTests.test_partial_chunk_full_read) ... ok
+test_protected_pool (test_select.SelectionTests.test_protected_pool) ... ok
+test_quota_overspend_rejected (test_select.SelectionTests.test_quota_overspend_rejected) ... ok
+test_random_reproducible (test_select.SelectionTests.test_random_reproducible) ... ok
+test_random_seeds_distinct (test_select.SelectionTests.test_random_seeds_distinct) ... ok
+test_v_only_code_saving (test_select.SelectionTests.test_v_only_code_saving) ... ok
+test_capture_no_arm (test_workflow.WorkflowTests.test_capture_no_arm) ... ok
+test_committed_result_hash_checked (test_workflow.WorkflowTests.test_committed_result_hash_checked) ... ok
+test_complete_capture (test_workflow.WorkflowTests.test_complete_capture) ... ok
+test_defaults_full_dataset (test_workflow.WorkflowTests.test_defaults_full_dataset) ... ok
+test_duplicate_capture_rejected (test_workflow.WorkflowTests.test_duplicate_capture_rejected) ... ok
+test_duplicate_profile_refused (test_workflow.WorkflowTests.test_duplicate_profile_refused) ... usage: python -m unittest [-h] [--upstream-suite UPSTREAM_SUITE]
+                          [--datasets {longbench_all,longbench_frozen,math_500,humaneval} [{longbench_all,longbench_frozen,math_500,humaneval} ...]]
+                          [--longbench-source LONGBENCH_SOURCE]
+                          [--real-data REAL_DATA] [--out OUT] [--resume]
+                          [--plan] [--prepare-only]
+                          [--overflow {head-tail,error}]
+                          [--case-limit CASE_LIMIT]
+                          [--layers LAYERS [LAYERS ...]]
+                          [--decode-calls DECODE_CALLS [DECODE_CALLS ...]]
+                          [--diagnostic-max-tokens DIAGNOSTIC_MAX_TOKENS]
+                          [--block-n {16,32,64}]
+                          [--totals TOTALS [TOTALS ...]]
+                          [--shares SHARES [SHARES ...]]
+                          [--methods {anchor_mass,staged_mass,random} [{anchor_mass,staged_mass,random} ...]]
+                          [--mask-seeds MASK_SEEDS [MASK_SEEDS ...]]
+                          [--gpu GPU] [--port PORT]
+                          [--startup-timeout STARTUP_TIMEOUT]
+                          [--scratch-gib SCRATCH_GIB] [--keep-traces]
+                          [--bootstrap BOOTSTRAP]
+python -m unittest: error: Distinct shares/totals and the symmetric share 0.5 are required
+ok
+test_early_eos_explicit (test_workflow.WorkflowTests.test_early_eos_explicit) ... ok
+test_late_call_without_room_refused (test_workflow.WorkflowTests.test_late_call_without_room_refused) ... usage: python -m unittest [-h] [--upstream-suite UPSTREAM_SUITE]
+                          [--datasets {longbench_all,longbench_frozen,math_500,humaneval} [{longbench_all,longbench_frozen,math_500,humaneval} ...]]
+                          [--longbench-source LONGBENCH_SOURCE]
+                          [--real-data REAL_DATA] [--out OUT] [--resume]
+                          [--plan] [--prepare-only]
+                          [--overflow {head-tail,error}]
+                          [--case-limit CASE_LIMIT]
+                          [--layers LAYERS [LAYERS ...]]
+                          [--decode-calls DECODE_CALLS [DECODE_CALLS ...]]
+                          [--diagnostic-max-tokens DIAGNOSTIC_MAX_TOKENS]
+                          [--block-n {16,32,64}]
+                          [--totals TOTALS [TOTALS ...]]
+                          [--shares SHARES [SHARES ...]]
+                          [--methods {anchor_mass,staged_mass,random} [{anchor_mass,staged_mass,random} ...]]
+                          [--mask-seeds MASK_SEEDS [MASK_SEEDS ...]]
+                          [--gpu GPU] [--port PORT]
+                          [--startup-timeout STARTUP_TIMEOUT]
+                          [--scratch-gib SCRATCH_GIB] [--keep-traces]
+                          [--bootstrap BOOTSTRAP]
+python -m unittest: error: Distinct decode calls must be in [0, diagnostic-max-tokens-2]
+ok
+test_missing_capture_is_not_natural_eos (test_workflow.WorkflowTests.test_missing_capture_is_not_natural_eos) ... ok
+test_no_symmetric_control_refused (test_workflow.WorkflowTests.test_no_symmetric_control_refused) ... usage: python -m unittest [-h] [--upstream-suite UPSTREAM_SUITE]
+                          [--datasets {longbench_all,longbench_frozen,math_500,humaneval} [{longbench_all,longbench_frozen,math_500,humaneval} ...]]
+                          [--longbench-source LONGBENCH_SOURCE]
+                          [--real-data REAL_DATA] [--out OUT] [--resume]
+                          [--plan] [--prepare-only]
+                          [--overflow {head-tail,error}]
+                          [--case-limit CASE_LIMIT]
+                          [--layers LAYERS [LAYERS ...]]
+                          [--decode-calls DECODE_CALLS [DECODE_CALLS ...]]
+                          [--diagnostic-max-tokens DIAGNOSTIC_MAX_TOKENS]
+                          [--block-n {16,32,64}]
+                          [--totals TOTALS [TOTALS ...]]
+                          [--shares SHARES [SHARES ...]]
+                          [--methods {anchor_mass,staged_mass,random} [{anchor_mass,staged_mass,random} ...]]
+                          [--mask-seeds MASK_SEEDS [MASK_SEEDS ...]]
+                          [--gpu GPU] [--port PORT]
+                          [--startup-timeout STARTUP_TIMEOUT]
+                          [--scratch-gib SCRATCH_GIB] [--keep-traces]
+                          [--bootstrap BOOTSTRAP]
+python -m unittest: error: Distinct shares/totals and the symmetric share 0.5 are required
+ok
+test_package_pins_match_supplied_archive (test_workflow.WorkflowTests.test_package_pins_match_supplied_archive) ... ok
+test_path_escape_refused (test_workflow.WorkflowTests.test_path_escape_refused) ... ok
+test_prune_only_new_named_arrays (test_workflow.WorkflowTests.test_prune_only_new_named_arrays) ... ok
+test_resume_requires_directory (test_workflow.WorkflowTests.test_resume_requires_directory) ... usage: python -m unittest [-h] [--upstream-suite UPSTREAM_SUITE]
+                          [--datasets {longbench_all,longbench_frozen,math_500,humaneval} [{longbench_all,longbench_frozen,math_500,humaneval} ...]]
+                          [--longbench-source LONGBENCH_SOURCE]
+                          [--real-data REAL_DATA] [--out OUT] [--resume]
+                          [--plan] [--prepare-only]
+                          [--overflow {head-tail,error}]
+                          [--case-limit CASE_LIMIT]
+                          [--layers LAYERS [LAYERS ...]]
+                          [--decode-calls DECODE_CALLS [DECODE_CALLS ...]]
+                          [--diagnostic-max-tokens DIAGNOSTIC_MAX_TOKENS]
+                          [--block-n {16,32,64}]
+                          [--totals TOTALS [TOTALS ...]]
+                          [--shares SHARES [SHARES ...]]
+                          [--methods {anchor_mass,staged_mass,random} [{anchor_mass,staged_mass,random} ...]]
+                          [--mask-seeds MASK_SEEDS [MASK_SEEDS ...]]
+                          [--gpu GPU] [--port PORT]
+                          [--startup-timeout STARTUP_TIMEOUT]
+                          [--scratch-gib SCRATCH_GIB] [--keep-traces]
+                          [--bootstrap BOOTSTRAP]
+python -m unittest: error: --resume requires the exact existing --out directory
+ok
+test_rolling_epoch_resets_caps (test_workflow.WorkflowTests.test_rolling_epoch_resets_caps) ... ok
+
+----------------------------------------------------------------------
+Ran 56 tests in 0.691s
+
+OK

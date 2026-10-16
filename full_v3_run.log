@@ -1,0 +1,11 @@
+[2026-10-09T19:55:16+08:00] 批次目录：/home/wanglin/kvbench-3090-cu126/results/longcontext_v3/full_longbench_C8_20261009_195516_2204425
+[2026-10-09T19:55:16+08:00] 全部9方法各一次；六任务全量合格样本；C8；thinking=true；max_tokens=null；request-timeout=0。
+[2026-10-09T19:55:20+08:00] 依赖检查失败时，请在客户端环境安装 V3 requirements-client.txt；尚未启动GPU服务。
+[2026-10-09T19:55:20+08:00] 开始 preflight_client；日志 /home/wanglin/kvbench-3090-cu126/results/longcontext_v3/full_longbench_C8_20261009_195516_2204425/logs/preflight_client.log
+[2026-10-09T19:55:21+08:00] 结束 preflight_client；exit=0
+[2026-10-09T19:55:21+08:00] 开始 preflight_server；日志 /home/wanglin/kvbench-3090-cu126/results/longcontext_v3/full_longbench_C8_20261009_195516_2204425/logs/preflight_server.log
+[2026-10-09T19:55:25+08:00] 结束 preflight_server；exit=0
+[2026-10-09T19:55:25+08:00] 开始 prepare_all_data；日志 /home/wanglin/kvbench-3090-cu126/results/longcontext_v3/full_longbench_C8_20261009_195516_2204425/logs/prepare_all_data.log
+[2026-10-09T19:55:27+08:00] 结束 prepare_all_data；exit=1
+[2026-10-09T19:55:27+08:00] 批次停止：Dataset preparation failed. Check logs/prepare_all_data.log; if download is blocked, set LC_SOURCE to the pinned official data.zip and check HF_HUB_OFFLINE.
+[2026-10-09T19:55:27+08:00] 完成 0/9 方法；exit=1。先看 /home/wanglin/kvbench-3090-cu126/results/longcontext_v3/full_longbench_C8_20261009_195516_2204425/suite_status.md，再看 comparison/overview.md。

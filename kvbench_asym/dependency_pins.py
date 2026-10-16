@@ -1,0 +1,2 @@
+# Reviewed against LinWang1225/test commit 5702570b and the supplied v1 archive.
+PINS = {'kvbench_residual_diag.common': 'fd0638631351597212569a76ac7cf2d6396ad35bb99db45833f210ed4b583d4c', 'kvbench_residual_diag.math_ops': '485e9d1358866ecdc612fe87be2a7918f3b5a2329fce89cd2cb35d84a1d0fbc6', 'kvbench_residual_diag.capture': '7281dc7caf2b0afbd93f05aa41cc55921c90a83d39014ad82a354bf3c8c1f70e', 'kvbench_residual_diag.run': '9e1d76b55e3e210ad0dc5cd481c4b062821d2ebec85fd17f3413bc583cec8027'}
