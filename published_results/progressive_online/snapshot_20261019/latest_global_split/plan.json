@@ -1,0 +1,52 @@
+{
+  "arms": [
+    "native",
+    "tile_full",
+    "split_full",
+    "tile_k2",
+    "split_k2"
+  ],
+  "orders": [
+    [
+      "native",
+      "tile_full",
+      "split_full",
+      "tile_k2",
+      "split_k2"
+    ],
+    [
+      "tile_k2",
+      "split_full",
+      "native",
+      "split_k2",
+      "tile_full"
+    ],
+    [
+      "split_k2",
+      "tile_full",
+      "tile_k2",
+      "native",
+      "split_full"
+    ]
+  ],
+  "tokens": 512,
+  "tasks": [
+    "qasper",
+    "hotpotqa"
+  ],
+  "requests_each": 8,
+  "concurrency": [
+    1,
+    8
+  ],
+  "generation": "exact fixed length; greedy; ignore_eos=true; no task-quality claim",
+  "storage": "8 disjoint global regions within existing vLLM allocation, high K/V first; no shadow copy",
+  "controlled": "same codes, same precision within layout pairs, fused packer in all planar arms, default reader tuning; no adaptive metadata/controller",
+  "attribution": "tile vs split at same precision isolates layout+scatter; full vs low isolates read depth; backend flush and matched reader graph measured separately",
+  "limitations": [
+    "APC off; raw block relocation unsupported; any preemption invalidates point",
+    "No DRAM counters",
+    "C1 real TPOT; C8 common content interval only if chunks map one-to-one",
+    "Component times are not additive online percentages"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "status": "completed",
+  "checks": [
+    "all five actual backend records byte-equal after canonicalization",
+    "split physical rewrite exact",
+    "full and low GPU outputs match tile layout, eager and graph"
+  ]
+}
